@@ -693,20 +693,24 @@ const Battle = (() => {
       if (state.attackAnimWho === "enemy") enemyLungeX = -lunge;
       else playerLungeX = lunge;
     }
-    const eShakeX = state.enemyShake > 0 ? (Math.random()*6-3) : 0;
-    const pShakeX = state.playerShake > 0 ? (Math.random()*6-3) : 0;
+    const eShakeX = state.enemyShake > 0 ? (Math.random()*3-1.5) : 0;
+    const pShakeX = state.playerShake > 0 ? (Math.random()*3-1.5) : 0;
 
+    // sized for 240x160 canvas: scale based on canvas width
+    const scale = W / 240;
+    const eSize = 48 * scale;
+    const pSize = 64 * scale;
     // enemy mon
-    const ex = W*0.78 - 48 + state.enemyOffsetX + eShakeX + enemyLungeX;
-    const ey = H*0.18 + state.enemyOffsetY;
+    const ex = W*0.78 - eSize/2 + state.enemyOffsetX + eShakeX + enemyLungeX;
+    const ey = H*0.20 + state.enemyOffsetY;
     if (!state.enemyFainted || state.enemyOffsetY < 50) {
-      drawMonWithFlash(ctx, state.enemyMon.species, ex, ey, 96, time, state.enemyFlash);
+      drawMonWithFlash(ctx, state.enemyMon.species, ex, ey, eSize, time, state.enemyFlash);
     }
     // player mon
-    const px = W*0.25 - 64 + state.playerOffsetX + pShakeX + playerLungeX;
-    const py = H*0.55 + state.playerOffsetY;
+    const px = W*0.25 - pSize/2 + state.playerOffsetX + pShakeX + playerLungeX;
+    const py = H*0.50 + state.playerOffsetY;
     if (!state.playerFainted || state.playerOffsetY < 70) {
-      drawMonWithFlash(ctx, playerMon().species, px, py, 128, time, state.playerFlash);
+      drawMonWithFlash(ctx, playerMon().species, px, py, pSize, time, state.playerFlash);
     }
 
     // typing arrow indicator

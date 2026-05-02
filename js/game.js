@@ -147,6 +147,7 @@
 
     if (loadSave()) {
       game.mode = "overworld";
+      Music.start();
       showDialog([`Welcome back!\nYou have ${game.team.length} monster${game.team.length===1?'':'s'} in your team.`], () => {});
       return;
     }
@@ -178,13 +179,22 @@
     const id = STARTERS[game.starterIdx];
     const mon = makeMon(id, 5);
     game.team.push(mon);
+    markDexCaught(id);
     game.mode = "dialog";
     showDialog([
       `You chose ${SPECIES[id].name}!`,
       `"${SPECIES[id].flavor}"`,
       "Professor: Now go! And remember — when in doubt, say 'tralalero'.",
+      "═══ HOW TO PLAY ═══",
+      "▶ ARROW KEYS — walk around\n▶ Z — talk / confirm / fight\n▶ X — open menu / cancel",
+      "▶ WALK INTO tall dark-green grass to find wild memes!",
+      "▶ Walk up to the Cappuccino Bar (red cross) to FULLY HEAL.\nA Bar is just NORTH of where you start.",
+      "▶ Beat 5 GYM LEADERS for badges, then face the Champion!",
+      "When you face an NPC, a [Z] bubble appears above them. Press Z to talk!",
+      "Good luck, trainer!",
     ], () => {
       game.mode = "overworld";
+      Music.start();
       saveGame();
     });
   }
@@ -676,6 +686,10 @@
   }
 
   function startWildBattle() {
+    if (game.team.every(m => m.hp <= 0)) {
+      whiteOut();
+      return;
+    }
     Audio.play("encounter");
     const tableId = World.encounterTableAt(game.player.tileX, game.player.tileY);
     const table = ENCOUNTERS[tableId] || ENCOUNTERS.ROUTE_1;
@@ -697,9 +711,40 @@
           else game.box.push(result.enemyMon);
         }
         game.mode = "overworld";
-        saveGame();
+        if (game.team.every(m => m.hp <= 0)) {
+          whiteOut();
+        } else {
+          saveGame();
+        }
       },
     });
+  }
+
+  function whiteOut() {
+    // Pokemon-style: heal team fully, teleport to nearest Cappuccino Bar, lose half cash.
+    const lost = Math.floor(game.money / 2);
+    game.money -= lost;
+    for (const m of game.team) {
+      m.hp = m.maxHp;
+      for (const mv of m.moves) mv.pp = mv.maxPp;
+    }
+    // teleport to spawn (in front of original Cappuccino Bar)
+    game.player.tileX = 9;
+    game.player.tileY = 22;
+    game.player.pixelX = 9 * 16;
+    game.player.pixelY = 22 * 16;
+    game.player.facing = "down";
+    game.player.moving = false;
+    game.encounterCooldown = 8;
+    game.flashTime = 18;
+    Audio.play("faint");
+    saveGame();
+    showDialog([
+      "You blacked out!",
+      "...",
+      `You lost $${lost} from your panic.`,
+      "A kind passerby dragged you to the Cappuccino Bar.\nYour team has been fully restored.",
+    ], () => {});
   }
 
   function markDexSeen(speciesId) {
@@ -841,48 +886,47 @@
   function drawStarterScreen(time) {
     ctx.fillStyle = "#0d0d18";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // animated bg
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 20; i++) {
       const t = time * 0.0005 + i;
       const x = ((Math.sin(t) * 0.5 + 0.5) * canvas.width);
       const y = ((Math.cos(t * 1.3 + i) * 0.5 + 0.5) * canvas.height);
       ctx.fillStyle = `rgba(255,203,5,${0.04 + (i%3)*0.02})`;
-      ctx.fillRect(x, y, 2, 2);
+      ctx.fillRect(x, y, 1, 1);
     }
     ctx.fillStyle = "#ffcb05";
-    ctx.font = "bold 14px Courier New";
+    ctx.font = "bold 8px monospace";
     ctx.textAlign = "center";
-    ctx.fillText("CHOOSE YOUR STARTER", canvas.width/2, 28);
+    ctx.fillText("CHOOSE YOUR STARTER", canvas.width/2, 14);
     const slots = [
-      { x: canvas.width/2 - 160 },
-      { x: canvas.width/2 - 48 },
-      { x: canvas.width/2 + 64 },
+      { x: canvas.width/2 - 80 },
+      { x: canvas.width/2 - 24 },
+      { x: canvas.width/2 + 32 },
     ];
     for (let i = 0; i < STARTERS.length; i++) {
       const s = slots[i];
       const isSel = i === game.starterIdx;
-      const bob = isSel ? Math.sin(time * 0.005) * 3 : 0;
+      const bob = isSel ? Math.sin(time * 0.005) * 2 : 0;
       if (isSel) {
         ctx.fillStyle = "rgba(255,203,5,0.2)";
-        ctx.fillRect(s.x - 8, 50, 112, 112);
+        ctx.fillRect(s.x - 4, 24, 56, 56);
         ctx.strokeStyle = "#ffcb05";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(s.x - 8, 50, 112, 112);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(s.x - 4, 24, 56, 56);
       }
-      SpriteRenderer.drawMon(ctx, STARTERS[i], s.x, 60 + bob, 96, time);
+      SpriteRenderer.drawMon(ctx, STARTERS[i], s.x, 30 + bob, 48, time);
     }
     ctx.fillStyle = "#fff";
-    ctx.font = "12px Courier New";
+    ctx.font = "bold 7px monospace";
     const sel = STARTERS[game.starterIdx];
-    ctx.fillText(SPECIES[sel].name, canvas.width/2, 190);
+    ctx.fillText(SPECIES[sel].name, canvas.width/2, 92);
     ctx.fillStyle = "#ffd";
-    ctx.font = "10px Courier New";
-    const flavor = SPECIES[sel].flavor;
-    wrapText(ctx, flavor, canvas.width/2, 210, 360, 12);
+    ctx.font = "5px monospace";
+    wrapText(ctx, SPECIES[sel].flavor, canvas.width/2, 102, 220, 7);
     ctx.fillStyle = "#cfe9ff";
-    wrapText(ctx, STARTER_INFO[sel], canvas.width/2, 250, 360, 12);
+    wrapText(ctx, STARTER_INFO[sel], canvas.width/2, 128, 220, 7);
     ctx.fillStyle = "#aaa";
-    ctx.fillText("◀ ▶ choose · Z / Enter to confirm", canvas.width/2, 295);
+    ctx.font = "5px monospace";
+    ctx.fillText("LEFT/RIGHT to choose - Z/Enter to confirm", canvas.width/2, 152);
   }
 
   function wrapText(ctx, text, x, y, maxW, lh) {
@@ -955,6 +999,12 @@
     }
     if (game.mode === "dialog") tickDialogTypewriter(dt);
     if (game.flashTime > 0) game.flashTime--;
+    // try to keep overworld music alive
+    if ((game.mode === "overworld" || game.mode === "menu" || game.mode === "team" ||
+         game.mode === "bag" || game.mode === "dex" || game.mode === "shop") &&
+        !Audio.isMuted()) {
+      Music.start();
+    }
   }
 
   function render(time) {
@@ -976,13 +1026,65 @@
       ctx.fillStyle = `rgba(255,255,255,${game.flashTime / 12})`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
-    // hud
-    ctx.fillStyle = "rgba(0,0,0,0.55)";
-    ctx.fillRect(4, 4, 156, 18);
-    ctx.fillStyle = "#fff";
-    ctx.font = "10px Courier New";
+    // floating Z prompt above NPC the player faces
+    drawInteractionPrompt(time);
+
+    // top hud
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    ctx.fillRect(2, 2, 110, 12);
+    ctx.fillStyle = "#ffcb05";
+    ctx.font = "bold 5px monospace";
     ctx.textAlign = "left";
-    ctx.fillText(`Team:${game.team.length}/6  $${game.money}  Bdg:${game.badges}`, 8, 16);
+    ctx.fillText(`Bdg:${game.badges}/5  $${game.money}  T:${game.team.length}/6`, 4, 10);
+
+    // bottom controls hint (always visible, prominent)
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
+    ctx.fillStyle = "#ffd";
+    ctx.font = "5px monospace";
+    ctx.textAlign = "center";
+    const grassHere = World.isEncounterTile(game.player.tileX, game.player.tileY);
+    if (grassHere) {
+      ctx.fillStyle = "#ff8a8a";
+      ctx.fillText("! TALL GRASS - WILD MEMES MAY APPEAR !", canvas.width/2, canvas.height - 3);
+    } else {
+      ctx.fillText("Z=Talk  X=Menu  Walk INTO tall grass to fight", canvas.width/2, canvas.height - 3);
+    }
+  }
+
+  function drawInteractionPrompt(time) {
+    const p = game.player;
+    if (p.moving) return;
+    let tx = p.tileX, ty = p.tileY;
+    if (p.facing === "up") ty--;
+    else if (p.facing === "down") ty++;
+    else if (p.facing === "left") tx--;
+    else if (p.facing === "right") tx++;
+    const npc = World.npcAt(tx, ty);
+    if (!npc) return;
+    if (npc.consumed) return;
+    // bobbing Z indicator
+    const sx = npc.x * 16 - game.cam.x;
+    const sy = npc.y * 16 - game.cam.y;
+    const bob = Math.sin(time * 0.008) * 1;
+    // bubble
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(sx + 4, sy - 8 + bob, 8, 7);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(sx + 4, sy - 8 + bob, 8, 1);
+    ctx.fillRect(sx + 4, sy - 2 + bob, 8, 1);
+    ctx.fillRect(sx + 4, sy - 8 + bob, 1, 7);
+    ctx.fillRect(sx + 11, sy - 8 + bob, 1, 7);
+    // tail
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(sx + 7, sy - 1 + bob, 2, 1);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(sx + 7, sy + bob, 2, 1);
+    // letter Z
+    ctx.fillStyle = "#000";
+    ctx.font = "bold 5px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("Z", sx + 8, sy - 3 + bob);
   }
 
   requestAnimationFrame(loop);

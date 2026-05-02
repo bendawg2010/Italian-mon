@@ -706,6 +706,32 @@ const ENCOUNTERS = {
     { id: "GLORBO", weight: 12, minLvl: 14, maxLvl: 18 },
     { id: "RIZZLER", weight: 16, minLvl: 16, maxLvl: 20 },
   ],
+  SOUTH_VALLEY: [
+    { id: "OHIO", weight: 12, minLvl: 22, maxLvl: 28 },
+    { id: "GIGACHEF", weight: 12, minLvl: 24, maxLvl: 30 },
+    { id: "ESPRESSEUR", weight: 14, minLvl: 24, maxLvl: 30 },
+    { id: "CRINGELORD", weight: 14, minLvl: 22, maxLvl: 28 },
+    { id: "TUNGTUNGTUNG", weight: 10, minLvl: 25, maxLvl: 30 },
+    { id: "TRALALERONE", weight: 10, minLvl: 25, maxLvl: 30 },
+    { id: "BOMBARDIRO", weight: 10, minLvl: 25, maxLvl: 30 },
+    { id: "RAVIOLINONE", weight: 8, minLvl: 22, maxLvl: 28 },
+    { id: "LASAGNONE", weight: 6, minLvl: 22, maxLvl: 28 },
+    { id: "MARGHERITRON", weight: 5, minLvl: 24, maxLvl: 30 },
+    { id: "TRALATITAN", weight: 1, minLvl: 38, maxLvl: 44 },
+    { id: "BRAINCORE", weight: 1, minLvl: 38, maxLvl: 44 },
+  ],
+  EASTERN_WILDS: [
+    { id: "ZESTYBOI", weight: 14, minLvl: 14, maxLvl: 18 },
+    { id: "GROCCO", weight: 14, minLvl: 13, maxLvl: 17 },
+    { id: "PIGEONORE", weight: 12, minLvl: 12, maxLvl: 16 },
+    { id: "TURBOFROGGO", weight: 14, minLvl: 14, maxLvl: 18 },
+    { id: "SHRIMPELO", weight: 12, minLvl: 14, maxLvl: 18 },
+    { id: "POMODORO", weight: 12, minLvl: 12, maxLvl: 16 },
+    { id: "RIZZARDO", weight: 8, minLvl: 16, maxLvl: 20 },
+    { id: "MOSSARELLA", weight: 8, minLvl: 13, maxLvl: 17 },
+    { id: "RIZZLER", weight: 4, minLvl: 18, maxLvl: 22 },
+    { id: "OHIO", weight: 2, minLvl: 22, maxLvl: 26 },
+  ],
 };
 
 // Trainers - simple NPCs with teams. badge >0 = gym leader.
@@ -841,6 +867,43 @@ const TRAINERS = {
     defeat: "Mario: Mamma mia... it's all over...",
     team: [{ id: "MARGHERITRON", lvl: 36 }, { id: "PARMIGIANO", lvl: 37 }, { id: "LASAGNONE", lvl: 38 }, { id: "GIGACHEF", lvl: 39 }],
     reward: 3000, requiresBadge: 5,
+  },
+
+  // ----- POST-GAME / SOUTH VALLEY -----
+  POST_VETERAN: {
+    name: "Veteran Carlo",
+    intro: "Carlo: I've trained for 800 years. Show me your dedication.",
+    defeat: "Carlo: 800 years... wasted...",
+    team: [{ id: "BOMBARDIRO", lvl: 38 }, { id: "TRALALERONE", lvl: 38 }, { id: "PARMIGIANO", lvl: 39 }, { id: "GIGACHEF", lvl: 40 }],
+    reward: 4000, requiresBadge: 5,
+  },
+  POST_CULT_LEADER: {
+    name: "Cult Leader Vibrius",
+    intro: "Vibrius: GLORBO! GLORBO! He has shown me visions of your defeat!",
+    defeat: "Vibrius: Glorbo lied to me...",
+    team: [{ id: "GLORBO", lvl: 40 }, { id: "RIZZARDO", lvl: 40 }, { id: "OHIO", lvl: 42 }, { id: "BRAINCORE", lvl: 44 }],
+    reward: 5000, requiresBadge: 5,
+  },
+  POST_RIVAL: {
+    name: "Final Marco",
+    intro: "Marco: One. Last. Time.\nMarco: I have trained until my Boneca is built different.",
+    defeat: "Marco: Well played, friend. We've come a long way.",
+    team: [{ id: "BONECA", lvl: 42 }, { id: "BOMBARDIRO", lvl: 43 }, { id: "OHIO", lvl: 44 }, { id: "TRALATITAN", lvl: 46 }, { id: "MARGHERITRON", lvl: 45 }],
+    reward: 8000, requiresBadge: 5,
+  },
+  EAST_HIKER: {
+    name: "Easterner Mateo",
+    intro: "Mateo: I'm climbing east. Like Marco Polo but worse.",
+    defeat: "Mateo: I'll just sit here and rest.",
+    team: [{ id: "FRIGO", lvl: 17 }, { id: "PARMIGIANO", lvl: 18 }, { id: "GROCCO", lvl: 19 }],
+    reward: 600,
+  },
+  EAST_BEACH: {
+    name: "Beachgoer Lucia",
+    intro: "Lucia: Bro the rays here are SIGMA.",
+    defeat: "Lucia: Sunscreen wasn't enough...",
+    team: [{ id: "SHRIMPELO", lvl: 19 }, { id: "TRIPPI", lvl: 20 }, { id: "GELATO", lvl: 20 }],
+    reward: 700,
   },
 
   // ----- CHAMPION -----

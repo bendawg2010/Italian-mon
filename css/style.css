@@ -259,9 +259,42 @@ html, body {
   animation: blink 1s steps(2) infinite;
 }
 #title-screen .credits {
-  margin-top: 32px;
-  font-size: clamp(10px, 1.5vw, 13px);
+  margin-top: 12px;
+  font-size: clamp(9px, 1.3vw, 12px);
   color: #aab;
+}
+#title-screen .controls-box {
+  margin: 16px auto 16px auto;
+  background: rgba(0,0,0,0.6);
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-family: "Courier New", monospace;
+  font-size: clamp(11px, 1.6vw, 14px);
+  color: #fff;
+  display: inline-block;
+  text-align: left;
+  min-width: 240px;
+}
+#title-screen .controls-box .row { padding: 2px 0; }
+#title-screen .controls-box .key {
+  display: inline-block;
+  background: var(--accent);
+  color: #000;
+  font-weight: bold;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-right: 8px;
+  min-width: 36px;
+  text-align: center;
+}
+#title-screen .controls-box .tip {
+  margin-top: 8px;
+  color: #ffe070;
+  text-align: center;
+  font-style: italic;
+  border-top: 1px solid #444;
+  padding-top: 6px;
 }
 
 #hud {

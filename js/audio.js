@@ -88,7 +88,109 @@ const Audio = (() => {
   return {
     unlock,
     play: (k) => { if (SFX[k]) SFX[k](); },
-    setMuted: (m) => { muted = m; },
+    setMuted: (m) => {
+      muted = m;
+      if (m) Music.stop();
+      else if (Music._wasPlaying) Music.start();
+    },
     isMuted: () => muted,
+    _ctx: () => ctx,
+    _master: () => masterGain,
+    _isUnlocked: () => unlocked,
+    _isMuted: () => muted,
+  };
+})();
+
+// =====================================================
+// Background music — simple chiptune loops
+// =====================================================
+const Music = (() => {
+  // OVERWORLD: cheerful, tracker-style 4/4 tune
+  // notes are [pitch (Hz), duration in beats]
+  const NOTE = (n) => 440 * Math.pow(2, (n - 69) / 12);
+  // Simple cheerful melody (lead) + bass
+  const overworldLead = [
+    [NOTE(72), 0.5], [NOTE(76), 0.5], [NOTE(79), 0.5], [NOTE(76), 0.5],
+    [NOTE(74), 0.5], [NOTE(77), 0.5], [NOTE(72), 0.5], [0, 0.5],
+    [NOTE(74), 0.5], [NOTE(77), 0.5], [NOTE(81), 0.5], [NOTE(77), 0.5],
+    [NOTE(76), 0.5], [NOTE(72), 0.5], [NOTE(69), 1.0],
+    [NOTE(72), 0.5], [NOTE(76), 0.5], [NOTE(79), 0.5], [NOTE(83), 0.5],
+    [NOTE(81), 0.5], [NOTE(79), 0.5], [NOTE(77), 1.0],
+    [NOTE(76), 0.5], [NOTE(74), 0.5], [NOTE(72), 0.5], [NOTE(69), 0.5],
+    [NOTE(72), 1.0], [0, 1.0],
+  ];
+  const overworldBass = [
+    [NOTE(48), 1.0], [NOTE(52), 1.0], [NOTE(55), 1.0], [NOTE(52), 1.0],
+    [NOTE(50), 1.0], [NOTE(53), 1.0], [NOTE(48), 1.0], [NOTE(48), 1.0],
+    [NOTE(48), 1.0], [NOTE(52), 1.0], [NOTE(55), 1.0], [NOTE(59), 1.0],
+    [NOTE(57), 1.0], [NOTE(53), 1.0], [NOTE(48), 1.0], [NOTE(48), 1.0],
+  ];
+
+  let timer = null;
+  let currentScheduler = null;
+  let _wasPlaying = false;
+
+  function start() {
+    if (_wasPlaying) return;
+    if (Audio._isMuted && Audio._isMuted()) { _wasPlaying = true; return; }
+    const ctx = Audio._ctx && Audio._ctx();
+    if (!ctx) { _wasPlaying = true; return; }
+    if (!Audio._isUnlocked || !Audio._isUnlocked()) { _wasPlaying = true; return; }
+    _wasPlaying = true;
+    const bpm = 144;
+    const beat = 60 / bpm;
+    const master = Audio._master();
+    const musicGain = ctx.createGain();
+    musicGain.gain.value = 0.30;
+    musicGain.connect(master);
+    let leadAt = ctx.currentTime + 0.05;
+    let bassAt = ctx.currentTime + 0.05;
+    // schedule a few seconds ahead, then loop
+    function schedule() {
+      const horizon = ctx.currentTime + 1.5;
+      while (leadAt < horizon) {
+        for (const [freq, dur] of overworldLead) {
+          if (leadAt >= horizon) break;
+          if (freq > 0) playNote(ctx, musicGain, freq, leadAt, dur * beat * 0.95, "square", 0.3);
+          leadAt += dur * beat;
+        }
+      }
+      while (bassAt < horizon) {
+        for (const [freq, dur] of overworldBass) {
+          if (bassAt >= horizon) break;
+          if (freq > 0) playNote(ctx, musicGain, freq, bassAt, dur * beat * 0.95, "triangle", 0.4);
+          bassAt += dur * beat;
+        }
+      }
+    }
+    schedule();
+    timer = setInterval(schedule, 800);
+    currentScheduler = { stop: () => { clearInterval(timer); timer = null; try { musicGain.disconnect(); } catch(e) {} } };
+  }
+
+  function playNote(ctx, dest, freq, t, dur, type, vol) {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.01);
+    g.gain.linearRampToValueAtTime(vol * 0.7, t + dur * 0.7);
+    g.gain.linearRampToValueAtTime(0, t + dur);
+    osc.connect(g);
+    g.connect(dest);
+    osc.start(t);
+    osc.stop(t + dur + 0.05);
+  }
+
+  function stop() {
+    if (currentScheduler) { currentScheduler.stop(); currentScheduler = null; }
+    _wasPlaying = false;
+  }
+
+  return {
+    start, stop,
+    get _wasPlaying() { return _wasPlaying; },
+    set _wasPlaying(v) { _wasPlaying = v; },
   };
 })();
