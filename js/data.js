@@ -708,42 +708,15 @@ const ENCOUNTERS = {
   ],
 };
 
-// Trainers - simple NPCs with teams
+// Trainers - simple NPCs with teams. badge >0 = gym leader.
 const TRAINERS = {
+  // Regular trainers
   RIVAL_1: {
     name: "Rival Marco",
     intro: "Marco: Yo! You picked your meme? Mine'll absolutely cook yours.",
     defeat: "Marco: WHAT?! That's so brainrot of you. I'll be back!",
     team: [{ id: "BONECA", lvl: 6 }, { id: "GUSINI", lvl: 7 }],
     reward: 100,
-  },
-  TRAINER_1: {
-    name: "Pasta Chef Luigi",
-    intro: "Luigi: Mamma mia! Taste the al dente!",
-    defeat: "Luigi: My pasta... she is overcooked...",
-    team: [{ id: "LASAGNINI", lvl: 8 }, { id: "RAVIOLINO", lvl: 9 }, { id: "CHIMPANZ", lvl: 10 }],
-    reward: 200,
-  },
-  TRAINER_2: {
-    name: "Sigma Bro Kai",
-    intro: "Kai: I don't lose. Sigma rule #1.",
-    defeat: "Kai: Bro... that wasn't very alpha of you.",
-    team: [{ id: "SIGMAWOLF", lvl: 11 }, { id: "CAPPUASS", lvl: 12 }, { id: "MOSSARELLA", lvl: 12 }],
-    reward: 250,
-  },
-  BIRD_LADY: {
-    name: "Bird Lady Pia",
-    intro: "Pia: Coo coo! My babies will peck your eyes out!",
-    defeat: "Pia: My babies... they need cookies now...",
-    team: [{ id: "PIGEONORE", lvl: 9 }, { id: "GUSINI", lvl: 10 }, { id: "PASTANELLO", lvl: 11 }],
-    reward: 220,
-  },
-  FISHER: {
-    name: "Fisher Tony",
-    intro: "Tony: I'll reel ya in good, kid!",
-    defeat: "Tony: Bait... taken... by the BAITED.",
-    team: [{ id: "SHRIMPELO", lvl: 12 }, { id: "TRIPPI", lvl: 13 }, { id: "CHEESETOPUS", lvl: 14 }],
-    reward: 300,
   },
   BEACH_BUM: {
     name: "Beach Bum Brad",
@@ -754,31 +727,137 @@ const TRAINERS = {
   },
   RIVAL_2: {
     name: "Rival Marco (Round 2)",
-    intro: "Marco: I've been training in the cave. I'm built different.",
-    defeat: "Marco: I... I'll go meditate in the forest.",
-    team: [{ id: "BONECA", lvl: 14 }, { id: "GUSINI", lvl: 15 }, { id: "BOMBARDINO", lvl: 16 }, { id: "OHIO", lvl: 17 }],
-    reward: 600,
+    intro: "Marco: I've been training. I've got 3 badges already. Pathetic.",
+    defeat: "Marco: How... I had OHIO!",
+    team: [{ id: "BONECA", lvl: 18 }, { id: "GUSINI", lvl: 19 }, { id: "BOMBARDINO", lvl: 20 }, { id: "OHIO", lvl: 22 }],
+    reward: 800,
+    requiresBadge: 3,
   },
-  PIZZA_CHEF: {
-    name: "Pizza Chef Greg",
-    intro: "Greg: 800 degrees! Wood fired! YOU WILL BE CHARRED!",
-    defeat: "Greg: I... need to lower the heat...",
-    team: [{ id: "PIZZADIRO", lvl: 16 }, { id: "MARGHERITRON", lvl: 17 }],
-    reward: 500,
+  HIKER: {
+    name: "Hiker Beppe",
+    intro: "Beppe: Salve! I climbed Mount Everest in espadrilles!",
+    defeat: "Beppe: My slippers... torn...",
+    team: [{ id: "FRIGO", lvl: 10 }, { id: "PARMIGIANO", lvl: 11 }],
+    reward: 280,
   },
+  YOUNGSTER: {
+    name: "Youngster Tito",
+    intro: "Tito: I challenge you with my SHORTS!",
+    defeat: "Tito: Aww, my mom's gonna laugh.",
+    team: [{ id: "RAVIOLINO", lvl: 5 }, { id: "POMODORO", lvl: 6 }],
+    reward: 80,
+  },
+  LASS: {
+    name: "Lass Bianca",
+    intro: "Bianca: My memes are the cutest! Don't underestimate cute!",
+    defeat: "Bianca: My babies! Hmph!",
+    team: [{ id: "BALLERINA", lvl: 8 }, { id: "TIRAMISU", lvl: 9 }],
+    reward: 150,
+  },
+  CULTIST: {
+    name: "Cultist Velvelo",
+    intro: "Velvelo: GLORBO! GLORBO! He whom we serve!",
+    defeat: "Velvelo: Glorbo... has forsaken me...",
+    team: [{ id: "GLORBO", lvl: 16 }, { id: "TRIPPI", lvl: 16 }, { id: "RIZZARDO", lvl: 17 }],
+    reward: 450,
+    requiresBadge: 2,
+  },
+
+  // ----- GYM LEADERS (5) -----
+  GYM_PASTA: {
+    name: "Gym Leader Luigi",
+    title: "The Al Dente Maestro",
+    intro: "Luigi: Mamma mia! I am the leader of the Pasta Gym!\nYou must defeat me to earn the AL DENTE BADGE!",
+    defeat: "Luigi: My pasta... is overcooked. You earned this badge.",
+    team: [{ id: "RAVIOLINO", lvl: 10 }, { id: "LASAGNINI", lvl: 11 }, { id: "PIZZADIRO", lvl: 13 }],
+    reward: 500, badge: 1, badgeName: "AL DENTE BADGE",
+  },
+  GYM_BIRD: {
+    name: "Gym Leader Pia",
+    title: "Mistress of the Skies",
+    intro: "Pia: Coo! Welcome to the Aviary Gym. The wind tells me you've got 1 badge.\nLet's see if you can earn the GUSINI BADGE.",
+    defeat: "Pia: My babies need cookies and tissues...",
+    team: [{ id: "PIGEONORE", lvl: 14 }, { id: "GUSINI", lvl: 15 }, { id: "PASTANELLO", lvl: 16 }, { id: "CRINGEFLY", lvl: 14 }],
+    reward: 800, badge: 2, badgeName: "GUSINI BADGE",
+    requiresBadge: 1,
+  },
+  GYM_SIGMA: {
+    name: "Gym Leader Kai",
+    title: "The Sigma",
+    intro: "Kai: I don't lose. Sigma rule #1. Earn the SIGMA BADGE if you can.",
+    defeat: "Kai: That wasn't very alpha of you.",
+    team: [{ id: "SIGMAWOLF", lvl: 18 }, { id: "MOSSARELLA", lvl: 19 }, { id: "CAPPUASS", lvl: 20 }, { id: "PROSCIUTTO", lvl: 21 }],
+    reward: 1100, badge: 3, badgeName: "SIGMA BADGE",
+    requiresBadge: 2,
+  },
+  GYM_BEACH: {
+    name: "Gym Leader Tony",
+    title: "The Sea Bait",
+    intro: "Tony: I caught a tralalero this big once.\nThe TRALALERO BADGE will be your reward... if you reel me in.",
+    defeat: "Tony: Hooked... by the bait... again...",
+    team: [{ id: "SHRIMPELO", lvl: 22 }, { id: "TRIPPI", lvl: 22 }, { id: "CHEESETOPUS", lvl: 23 }, { id: "TRALALERO", lvl: 24 }, { id: "TRALALERONE", lvl: 25 }],
+    reward: 1500, badge: 4, badgeName: "TRALALERO BADGE",
+    requiresBadge: 3,
+  },
+  GYM_FIRE: {
+    name: "Gym Leader Greg",
+    title: "The 800-Degree Pizzaiolo",
+    intro: "Greg: 800 degrees! Wood fired!\nThe BOMBARDINO BADGE awaits — if you survive the heat.",
+    defeat: "Greg: The dough... fell flat...",
+    team: [{ id: "PIZZADIRO", lvl: 26 }, { id: "MARGHERITRON", lvl: 27 }, { id: "BOMBARDINO", lvl: 28 }, { id: "ESPRESSEUR", lvl: 29 }, { id: "GIGACHEF", lvl: 30 }],
+    reward: 2000, badge: 5, badgeName: "BOMBARDINO BADGE",
+    requiresBadge: 4,
+  },
+
+  // ----- ESPRESSO FOUR (Elite) -----
   ELITE_1: {
     name: "Elite Cappuccino Marco",
+    title: "Espresso Four #1",
     intro: "Cappuccino: I am steam. I am crema. I am inevitable.",
     defeat: "Cappuccino: I have been... decaffed.",
-    team: [{ id: "CAPPUASS", lvl: 22 }, { id: "BALLERINA", lvl: 22 }, { id: "ESPRESSEUR", lvl: 24 }],
-    reward: 1500,
+    team: [{ id: "CAPPUASS", lvl: 32 }, { id: "BALLERINA", lvl: 32 }, { id: "ESPRESSITO", lvl: 33 }, { id: "ESPRESSEUR", lvl: 35 }],
+    reward: 3000, requiresBadge: 5,
   },
-  GYM_LEADER: {
-    name: "Brainrot Queen Tralala",
-    intro: "Queen: Welcome, challenger. I am the embodiment of TikTok 2026.",
-    defeat: "Queen: Impossible! You... you understand the lore?!",
-    team: [{ id: "GLORBO", lvl: 22 }, { id: "RIZZLER", lvl: 24 }, { id: "CRINGELORD", lvl: 26 }, { id: "OHIO", lvl: 28 }],
-    reward: 3000,
+  ELITE_2: {
+    name: "Elite Sigma Stella",
+    title: "Espresso Four #2",
+    intro: "Stella: My aura blocks pasta. Try me.",
+    defeat: "Stella: Tch. Mid.",
+    team: [{ id: "SIGMAWOLF", lvl: 33 }, { id: "MOSSARELLA", lvl: 34 }, { id: "PROSCIUTTO", lvl: 35 }, { id: "RIZZLER", lvl: 36 }],
+    reward: 3000, requiresBadge: 5,
+  },
+  ELITE_3: {
+    name: "Elite Lore Master Don",
+    title: "Espresso Four #3",
+    intro: "Don: I have studied the deepest brainrot. Have you?",
+    defeat: "Don: ...The lore continues, despite me.",
+    team: [{ id: "GLORBO", lvl: 35 }, { id: "RIZZARDO", lvl: 35 }, { id: "TIRAMISU", lvl: 36 }, { id: "CRINGELORD", lvl: 37 }],
+    reward: 3000, requiresBadge: 5,
+  },
+  ELITE_4: {
+    name: "Elite Chef Mario",
+    title: "Espresso Four #4",
+    intro: "Mario: It's-a me! I will-a cook you!",
+    defeat: "Mario: Mamma mia... it's all over...",
+    team: [{ id: "MARGHERITRON", lvl: 36 }, { id: "PARMIGIANO", lvl: 37 }, { id: "LASAGNONE", lvl: 38 }, { id: "GIGACHEF", lvl: 39 }],
+    reward: 3000, requiresBadge: 5,
+  },
+
+  // ----- CHAMPION -----
+  CHAMPION: {
+    name: "Champion Brainrot Queen",
+    title: "Embodiment of TikTok 2026",
+    intro: "Queen: You've climbed far, challenger.\nThe lore deepest is mine alone.\nTralalero tralala... your final test begins.",
+    defeat: "Queen: Impossible! You... understand the lore!",
+    team: [
+      { id: "GLORBO", lvl: 40 },
+      { id: "OHIO", lvl: 41 },
+      { id: "CRINGELORD", lvl: 42 },
+      { id: "RIZZLER", lvl: 43 },
+      { id: "GIGACHEF", lvl: 44 },
+      { id: "BRAINCORE", lvl: 46 },
+    ],
+    reward: 10000, isChampion: true, requiresBadge: 5,
   },
 };
 

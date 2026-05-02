@@ -125,6 +125,15 @@ html, body {
 }
 #menu-list li.selected small { color: #222; }
 #menu-list small { opacity: 0.8; }
+#menu-list li.dex-detail {
+  background: #251235;
+  border: 1px solid var(--accent2);
+  color: #f4d8ff;
+  font-size: 0.95em;
+  cursor: default;
+  margin-top: 6px;
+}
+#menu-list li.dex-detail b { color: var(--accent); }
 
 .hidden { display: none !important; }
 
@@ -1190,42 +1199,15 @@ const ENCOUNTERS = {
   ],
 };
 
-// Trainers - simple NPCs with teams
+// Trainers - simple NPCs with teams. badge >0 = gym leader.
 const TRAINERS = {
+  // Regular trainers
   RIVAL_1: {
     name: "Rival Marco",
     intro: "Marco: Yo! You picked your meme? Mine'll absolutely cook yours.",
     defeat: "Marco: WHAT?! That's so brainrot of you. I'll be back!",
     team: [{ id: "BONECA", lvl: 6 }, { id: "GUSINI", lvl: 7 }],
     reward: 100,
-  },
-  TRAINER_1: {
-    name: "Pasta Chef Luigi",
-    intro: "Luigi: Mamma mia! Taste the al dente!",
-    defeat: "Luigi: My pasta... she is overcooked...",
-    team: [{ id: "LASAGNINI", lvl: 8 }, { id: "RAVIOLINO", lvl: 9 }, { id: "CHIMPANZ", lvl: 10 }],
-    reward: 200,
-  },
-  TRAINER_2: {
-    name: "Sigma Bro Kai",
-    intro: "Kai: I don't lose. Sigma rule #1.",
-    defeat: "Kai: Bro... that wasn't very alpha of you.",
-    team: [{ id: "SIGMAWOLF", lvl: 11 }, { id: "CAPPUASS", lvl: 12 }, { id: "MOSSARELLA", lvl: 12 }],
-    reward: 250,
-  },
-  BIRD_LADY: {
-    name: "Bird Lady Pia",
-    intro: "Pia: Coo coo! My babies will peck your eyes out!",
-    defeat: "Pia: My babies... they need cookies now...",
-    team: [{ id: "PIGEONORE", lvl: 9 }, { id: "GUSINI", lvl: 10 }, { id: "PASTANELLO", lvl: 11 }],
-    reward: 220,
-  },
-  FISHER: {
-    name: "Fisher Tony",
-    intro: "Tony: I'll reel ya in good, kid!",
-    defeat: "Tony: Bait... taken... by the BAITED.",
-    team: [{ id: "SHRIMPELO", lvl: 12 }, { id: "TRIPPI", lvl: 13 }, { id: "CHEESETOPUS", lvl: 14 }],
-    reward: 300,
   },
   BEACH_BUM: {
     name: "Beach Bum Brad",
@@ -1236,31 +1218,137 @@ const TRAINERS = {
   },
   RIVAL_2: {
     name: "Rival Marco (Round 2)",
-    intro: "Marco: I've been training in the cave. I'm built different.",
-    defeat: "Marco: I... I'll go meditate in the forest.",
-    team: [{ id: "BONECA", lvl: 14 }, { id: "GUSINI", lvl: 15 }, { id: "BOMBARDINO", lvl: 16 }, { id: "OHIO", lvl: 17 }],
-    reward: 600,
+    intro: "Marco: I've been training. I've got 3 badges already. Pathetic.",
+    defeat: "Marco: How... I had OHIO!",
+    team: [{ id: "BONECA", lvl: 18 }, { id: "GUSINI", lvl: 19 }, { id: "BOMBARDINO", lvl: 20 }, { id: "OHIO", lvl: 22 }],
+    reward: 800,
+    requiresBadge: 3,
   },
-  PIZZA_CHEF: {
-    name: "Pizza Chef Greg",
-    intro: "Greg: 800 degrees! Wood fired! YOU WILL BE CHARRED!",
-    defeat: "Greg: I... need to lower the heat...",
-    team: [{ id: "PIZZADIRO", lvl: 16 }, { id: "MARGHERITRON", lvl: 17 }],
-    reward: 500,
+  HIKER: {
+    name: "Hiker Beppe",
+    intro: "Beppe: Salve! I climbed Mount Everest in espadrilles!",
+    defeat: "Beppe: My slippers... torn...",
+    team: [{ id: "FRIGO", lvl: 10 }, { id: "PARMIGIANO", lvl: 11 }],
+    reward: 280,
   },
+  YOUNGSTER: {
+    name: "Youngster Tito",
+    intro: "Tito: I challenge you with my SHORTS!",
+    defeat: "Tito: Aww, my mom's gonna laugh.",
+    team: [{ id: "RAVIOLINO", lvl: 5 }, { id: "POMODORO", lvl: 6 }],
+    reward: 80,
+  },
+  LASS: {
+    name: "Lass Bianca",
+    intro: "Bianca: My memes are the cutest! Don't underestimate cute!",
+    defeat: "Bianca: My babies! Hmph!",
+    team: [{ id: "BALLERINA", lvl: 8 }, { id: "TIRAMISU", lvl: 9 }],
+    reward: 150,
+  },
+  CULTIST: {
+    name: "Cultist Velvelo",
+    intro: "Velvelo: GLORBO! GLORBO! He whom we serve!",
+    defeat: "Velvelo: Glorbo... has forsaken me...",
+    team: [{ id: "GLORBO", lvl: 16 }, { id: "TRIPPI", lvl: 16 }, { id: "RIZZARDO", lvl: 17 }],
+    reward: 450,
+    requiresBadge: 2,
+  },
+
+  // ----- GYM LEADERS (5) -----
+  GYM_PASTA: {
+    name: "Gym Leader Luigi",
+    title: "The Al Dente Maestro",
+    intro: "Luigi: Mamma mia! I am the leader of the Pasta Gym!\nYou must defeat me to earn the AL DENTE BADGE!",
+    defeat: "Luigi: My pasta... is overcooked. You earned this badge.",
+    team: [{ id: "RAVIOLINO", lvl: 10 }, { id: "LASAGNINI", lvl: 11 }, { id: "PIZZADIRO", lvl: 13 }],
+    reward: 500, badge: 1, badgeName: "AL DENTE BADGE",
+  },
+  GYM_BIRD: {
+    name: "Gym Leader Pia",
+    title: "Mistress of the Skies",
+    intro: "Pia: Coo! Welcome to the Aviary Gym. The wind tells me you've got 1 badge.\nLet's see if you can earn the GUSINI BADGE.",
+    defeat: "Pia: My babies need cookies and tissues...",
+    team: [{ id: "PIGEONORE", lvl: 14 }, { id: "GUSINI", lvl: 15 }, { id: "PASTANELLO", lvl: 16 }, { id: "CRINGEFLY", lvl: 14 }],
+    reward: 800, badge: 2, badgeName: "GUSINI BADGE",
+    requiresBadge: 1,
+  },
+  GYM_SIGMA: {
+    name: "Gym Leader Kai",
+    title: "The Sigma",
+    intro: "Kai: I don't lose. Sigma rule #1. Earn the SIGMA BADGE if you can.",
+    defeat: "Kai: That wasn't very alpha of you.",
+    team: [{ id: "SIGMAWOLF", lvl: 18 }, { id: "MOSSARELLA", lvl: 19 }, { id: "CAPPUASS", lvl: 20 }, { id: "PROSCIUTTO", lvl: 21 }],
+    reward: 1100, badge: 3, badgeName: "SIGMA BADGE",
+    requiresBadge: 2,
+  },
+  GYM_BEACH: {
+    name: "Gym Leader Tony",
+    title: "The Sea Bait",
+    intro: "Tony: I caught a tralalero this big once.\nThe TRALALERO BADGE will be your reward... if you reel me in.",
+    defeat: "Tony: Hooked... by the bait... again...",
+    team: [{ id: "SHRIMPELO", lvl: 22 }, { id: "TRIPPI", lvl: 22 }, { id: "CHEESETOPUS", lvl: 23 }, { id: "TRALALERO", lvl: 24 }, { id: "TRALALERONE", lvl: 25 }],
+    reward: 1500, badge: 4, badgeName: "TRALALERO BADGE",
+    requiresBadge: 3,
+  },
+  GYM_FIRE: {
+    name: "Gym Leader Greg",
+    title: "The 800-Degree Pizzaiolo",
+    intro: "Greg: 800 degrees! Wood fired!\nThe BOMBARDINO BADGE awaits — if you survive the heat.",
+    defeat: "Greg: The dough... fell flat...",
+    team: [{ id: "PIZZADIRO", lvl: 26 }, { id: "MARGHERITRON", lvl: 27 }, { id: "BOMBARDINO", lvl: 28 }, { id: "ESPRESSEUR", lvl: 29 }, { id: "GIGACHEF", lvl: 30 }],
+    reward: 2000, badge: 5, badgeName: "BOMBARDINO BADGE",
+    requiresBadge: 4,
+  },
+
+  // ----- ESPRESSO FOUR (Elite) -----
   ELITE_1: {
     name: "Elite Cappuccino Marco",
+    title: "Espresso Four #1",
     intro: "Cappuccino: I am steam. I am crema. I am inevitable.",
     defeat: "Cappuccino: I have been... decaffed.",
-    team: [{ id: "CAPPUASS", lvl: 22 }, { id: "BALLERINA", lvl: 22 }, { id: "ESPRESSEUR", lvl: 24 }],
-    reward: 1500,
+    team: [{ id: "CAPPUASS", lvl: 32 }, { id: "BALLERINA", lvl: 32 }, { id: "ESPRESSITO", lvl: 33 }, { id: "ESPRESSEUR", lvl: 35 }],
+    reward: 3000, requiresBadge: 5,
   },
-  GYM_LEADER: {
-    name: "Brainrot Queen Tralala",
-    intro: "Queen: Welcome, challenger. I am the embodiment of TikTok 2026.",
-    defeat: "Queen: Impossible! You... you understand the lore?!",
-    team: [{ id: "GLORBO", lvl: 22 }, { id: "RIZZLER", lvl: 24 }, { id: "CRINGELORD", lvl: 26 }, { id: "OHIO", lvl: 28 }],
-    reward: 3000,
+  ELITE_2: {
+    name: "Elite Sigma Stella",
+    title: "Espresso Four #2",
+    intro: "Stella: My aura blocks pasta. Try me.",
+    defeat: "Stella: Tch. Mid.",
+    team: [{ id: "SIGMAWOLF", lvl: 33 }, { id: "MOSSARELLA", lvl: 34 }, { id: "PROSCIUTTO", lvl: 35 }, { id: "RIZZLER", lvl: 36 }],
+    reward: 3000, requiresBadge: 5,
+  },
+  ELITE_3: {
+    name: "Elite Lore Master Don",
+    title: "Espresso Four #3",
+    intro: "Don: I have studied the deepest brainrot. Have you?",
+    defeat: "Don: ...The lore continues, despite me.",
+    team: [{ id: "GLORBO", lvl: 35 }, { id: "RIZZARDO", lvl: 35 }, { id: "TIRAMISU", lvl: 36 }, { id: "CRINGELORD", lvl: 37 }],
+    reward: 3000, requiresBadge: 5,
+  },
+  ELITE_4: {
+    name: "Elite Chef Mario",
+    title: "Espresso Four #4",
+    intro: "Mario: It's-a me! I will-a cook you!",
+    defeat: "Mario: Mamma mia... it's all over...",
+    team: [{ id: "MARGHERITRON", lvl: 36 }, { id: "PARMIGIANO", lvl: 37 }, { id: "LASAGNONE", lvl: 38 }, { id: "GIGACHEF", lvl: 39 }],
+    reward: 3000, requiresBadge: 5,
+  },
+
+  // ----- CHAMPION -----
+  CHAMPION: {
+    name: "Champion Brainrot Queen",
+    title: "Embodiment of TikTok 2026",
+    intro: "Queen: You've climbed far, challenger.\nThe lore deepest is mine alone.\nTralalero tralala... your final test begins.",
+    defeat: "Queen: Impossible! You... understand the lore!",
+    team: [
+      { id: "GLORBO", lvl: 40 },
+      { id: "OHIO", lvl: 41 },
+      { id: "CRINGELORD", lvl: 42 },
+      { id: "RIZZLER", lvl: 43 },
+      { id: "GIGACHEF", lvl: 44 },
+      { id: "BRAINCORE", lvl: 46 },
+    ],
+    reward: 10000, isChampion: true, requiresBadge: 5,
   },
 };
 
@@ -2029,6 +2117,38 @@ const SpriteRenderer = (() => {
         ctx.fillStyle = "#ffe070";
         ctx.fillRect(x+7, y+7, 2, 2);
         break;
+      case 14: // SHOP_FLOOR
+        ctx.fillStyle = "#ffe070";
+        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = "#a07040";
+        ctx.fillRect(x+1, y+1, 14, 1);
+        ctx.fillRect(x+1, y+14, 14, 1);
+        ctx.fillStyle = "#5a3818";
+        ctx.fillText && (ctx.fillText("$", x+5, y+13));
+        break;
+      case 15: // HEAL_SIGN (red cross sign on building exterior)
+        ctx.fillStyle = "#7a5a4a";
+        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        // big bright cross
+        ctx.fillStyle = "#ff3d3d";
+        ctx.fillRect(x+5, y+2, 6, 12);
+        ctx.fillRect(x+2, y+5, 12, 6);
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(x+6, y+3, 4, 10);
+        ctx.fillRect(x+3, y+6, 10, 4);
+        ctx.fillStyle = "#ff3d3d";
+        ctx.fillRect(x+7, y+4, 2, 8);
+        ctx.fillRect(x+4, y+7, 8, 2);
+        break;
+      case 16: // GYM_FLOOR (purple gym floor)
+        ctx.fillStyle = "#5a1a8a";
+        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = "#7a3aaa";
+        ctx.fillRect(x+1, y+1, 14, 1);
+        ctx.fillRect(x+1, y+14, 14, 1);
+        ctx.fillStyle = "#c93dff";
+        ctx.fillRect(x+6, y+6, 4, 4);
+        break;
       default:
         ctx.fillStyle = "#000";
         ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
@@ -2070,14 +2190,10 @@ const World = (() => {
   const T = {
     G: 0, H: 1, P: 2, W: 3, R: 4, B: 5, D: 6, S: 7, F: 8, L: 9,
     SAND: 10, SNOW: 11, ROCK: 12, BRIDGE: 13, SHOP_FLOOR: 14,
+    HEAL_SIGN: 15, GYM_FLOOR: 16,
   };
 
   // 50 wide x 40 tall
-  // Regions:
-  // North: Forest (rows 1-12)
-  // Middle: Hometown / Pasta Town (rows 13-25)
-  // East: Beach / Coast (cols 30-49, rows 13-30)
-  // South: Gym Town (rows 26-38)
   const RAW_MAP = [
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WGGWWWWWWWGGGGGGGGGGGGGGGGGGGWWWWWWWWWWWGGGGGGGGGW",
@@ -2095,17 +2211,17 @@ const World = (() => {
     "WGGGGGGGGPGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
     "WWGGGLGGGPPPPPPPPPPPPPPPPPPPPPPGGGGGGGGGGGGGGGGGGW",
     "WGGGBBBBBPGGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGGW",
-    "WGGGBFFFBPGGGGGGGGGGSGGGGGGGGGPGGGGGGGGGGGGGGGGGGW",
+    "WGGGB##FBPGGGGGGGGGGSGGGGGGGGGPGGGGGGGGGGGGGGGGGGW",
     "WGGGBFFFDPGGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGGW",
     "WGGGBFFFBPGGGBBBBBGGGGGGGGGGGGPGGGGGRRRRRRRRRRGGGW",
     "WGGGBBBBBPGGGB$$BGGGGGGGGGGGGPPPPPPGGRRRRRRRRGGGW",
     "WGGGGGGGGPGGGB$$DGGGGGGGGGGGGGGGGGGGGGRRRRRRGGGGW",
     "WGGGGGGGGPGGGBBBBBGGGGGGGGGGGGGGGGGGGGGGRRRRGGGGGW",
-    "WGGGGGGGGPGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
-    "WGGGGGGGGPGGGSGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
-    "WGGGGGGGGPGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
-    "WGGGGGGGGPGGHHHHHGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
-    "WGGGGGGGGPGGHHHHHGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGGPGGGGGGGGGGGGGGGBBBBBBBGGGGGBBBBBGGGGGGGW",
+    "WGGGGGGGGPGGGSGGGGGGGGGGGB%%%%%BGGGGGB##FBGGGGGGGW",
+    "WGGGGGGGGPGGGGGGGGGGGGGGGB%%%%%DPPPPPDFFFBGGGGGGGW",
+    "WGGGGGGGGPGGHHHHHGGGGGGGGB%%%%%BGGGGGBFFFBGGGGGGGW",
+    "WGGGGGGGGPGGHHHHHGGGGGGGGBBBBBBBGGGGGBBBBBGGGGGGGW",
     "WGGGGGGGGPPPPPPPPPPPPPPPGGGGGGGGGGGGGGGGGGGGGGGGGW",
     "WGGGGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGGGGGGGGGW",
     "WGGGGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGGGGGGGGGW",
@@ -2126,6 +2242,8 @@ const World = (() => {
       G: T.G, H: T.H, P: T.P, W: T.W, R: T.R,
       B: T.B, D: T.D, S: T.S, F: T.F, L: T.L,
       $: T.SHOP_FLOOR,
+      "#": T.HEAL_SIGN,
+      "%": T.GYM_FLOOR,
     })[c] ?? T.G;
   }
 
@@ -2134,118 +2252,112 @@ const World = (() => {
   const WIDTH = map[0].length;
   const TILE = SpriteRenderer.TILE_SIZE;
 
-  // NPCs
+  // NPCs (gym leaders are flagged via trainerKey + GYM_*)
   const npcs = [
-    {
-      id: "rival_1", x: 14, y: 13, color: "#ff5e5e", facing: "down", defeated: false,
-      type: "trainer",
+    // Starting town
+    { id: "rival_1", x: 14, y: 13, color: "#ff5e5e", facing: "down", defeated: false, type: "trainer",
       dialog: ["Marco: Hey! You finally have a meme of your own?", "Marco: Let's see if you've got the rizz to back it up!"],
-      trainerKey: "RIVAL_1",
-    },
-    {
-      id: "nurse", x: 5, y: 17, color: "#ff8aa8", facing: "down", type: "healer",
-      dialog: ["Barista: Welcome to the Cappuccino Bar!", "Barista: Your monsters look exhausted... Let me top them up.", "(*HSSSS* — espresso machine sounds)", "Barista: All restored. Ciao!"],
-    },
-    {
-      id: "shopkeeper", x: 16, y: 19, color: "#ffd700", facing: "down", type: "shop",
-      dialog: ["Shopkeeper: Welcome to the Brain Cell Mart!", "Shopkeeper: I sell quality vibes. What'll it be?"],
-    },
-    {
-      id: "pasta_chef", x: 18, y: 5, color: "#ffe070", facing: "down", defeated: false, type: "trainer",
-      dialog: ["Luigi: Mamma mia! You smell of fresh meme energy.", "Luigi: My pasta-monsters demand a battle!"],
-      trainerKey: "TRAINER_1",
-    },
-    {
-      id: "sigma_bro", x: 22, y: 14, color: "#9aa5ff", facing: "down", defeated: false, type: "trainer",
-      dialog: ["Kai: I don't say hi. I just stare.", "Kai: ...you still here? Fine. Battle me."],
-      trainerKey: "TRAINER_2",
-    },
-    {
-      id: "bird_lady", x: 12, y: 6, color: "#a08a5a", facing: "down", defeated: false, type: "trainer",
-      dialog: ["Bird Lady: Coooo! The pigeons whisper of you.", "Bird Lady: Fight my flock!"],
-      trainerKey: "BIRD_LADY",
-    },
-    {
-      id: "fisher", x: 38, y: 20, color: "#3a78dc", facing: "down", defeated: false, type: "trainer",
-      dialog: ["Fisher Tony: I caught a tralalero this big once!", "Fisher Tony: Watch me hook your team."],
-      trainerKey: "FISHER",
-    },
-    {
-      id: "beach_bum", x: 35, y: 24, color: "#ffaa66", facing: "down", defeated: false, type: "trainer",
-      dialog: ["Beach Bum: Yo, surf's up. Wanna battle?"],
-      trainerKey: "BEACH_BUM",
-    },
-    {
-      id: "rival_2", x: 28, y: 28, color: "#ff5e5e", facing: "down", defeated: false, type: "trainer",
-      dialog: ["Marco: I've been training! No more freebies.", "Marco: This time my team is built different."],
-      trainerKey: "RIVAL_2",
-    },
-    {
-      id: "ramp_chef", x: 20, y: 24, color: "#a3361f", facing: "down", defeated: false, type: "trainer",
-      dialog: ["Pizza Chef Greg: My margheritron is 800 degrees!", "Pizza Chef Greg: You will be charred."],
-      trainerKey: "PIZZA_CHEF",
-    },
-    {
-      id: "elite_1", x: 14, y: 33, color: "#5a3818", facing: "down", defeated: false, type: "trainer",
-      dialog: ["Elite Cappuccino: I am the first of the Espresso Four.", "Elite Cappuccino: Steam yourself ready."],
-      trainerKey: "ELITE_1",
-    },
-    {
-      id: "queen", x: 18, y: 33, color: "#c93dff", facing: "down", defeated: false, type: "trainer",
-      dialog: ["Brainrot Queen: You've climbed far, challenger.", "Brainrot Queen: But the deepest lore is mine.", "Brainrot Queen: Tralalero tralala... your final test begins."],
-      trainerKey: "GYM_LEADER",
-    },
-    // signs
-    { id: "sign1", x: 9, y: 5, color: null, type: "sign", dialog: ["[ROUTE 1]\nWild brain rot lurks in tall grass.\nSay 'tralalero' to befriend them."] },
-    { id: "sign2", x: 22, y: 9, color: null, type: "sign", dialog: ["[ROUTE 2]\nDanger Level: VERY 2026.\nLore knowledge required."] },
-    { id: "sign3", x: 13, y: 16, color: null, type: "sign", dialog: ["☕ CAPPUCCINO BAR ☕\nFully restores your team.\nFree espresso. We promise."] },
-    { id: "sign4", x: 13, y: 23, color: null, type: "sign", dialog: ["▶ SOUTH: Gym Town\n▼ Continue training!"] },
-    { id: "sign5", x: 30, y: 30, color: null, type: "sign", dialog: ["[BEACH ROUTE]\nWatch out for swimmers.\nThe sand is suspiciously hot."] },
-    { id: "sign6", x: 12, y: 4, color: null, type: "sign", dialog: ["[FOREST]\nThe trees here whisper 'patapim'.\nDo not respond."] },
-    // NPCs (non-trainer chatter)
-    {
-      id: "kid", x: 11, y: 14, color: "#5fa84a", facing: "down", type: "npc",
-      dialog: ["Kid: Did you know Tralalero used to wear flip-flops?", "Kid: Now it's strictly Nikes. Times change!"],
-    },
-    {
-      id: "old_man", x: 7, y: 23, color: "#aabbcc", facing: "down", type: "npc",
-      dialog: ["Old Man: In my day, we only had ONE skibidi toilet.", "Old Man: ...kids these days have like 80."],
-    },
-    {
-      id: "lore_master", x: 25, y: 5, color: "#9b6b9b", facing: "down", type: "npc",
-      dialog: ["Lore Master: The deepest brainrot truth?", "Lore Master: ...is that we are all skibidi inside."],
-    },
-    {
-      id: "merchant", x: 36, y: 16, color: "#ffd700", facing: "down", type: "item",
-      dialog: ["Treasure! You found a Pasta Elixir!"],
-      itemKey: "ELIXIR",
-      consumed: false,
-    },
-    {
-      id: "treasure_1", x: 11, y: 11, color: "#ff8aff", facing: "down", type: "item",
-      dialog: ["Treasure! You found a Doppio Espresso!"],
-      itemKey: "ESPRESSO_DBL",
-      consumed: false,
-    },
-    {
-      id: "treasure_2", x: 41, y: 4, color: "#ff8aff", facing: "down", type: "item",
-      dialog: ["Treasure! You found a Great Cell!"],
-      itemKey: "GREATCELL",
-      consumed: false,
-    },
-    {
-      id: "treasure_3", x: 38, y: 30, color: "#ff8aff", facing: "down", type: "item",
-      dialog: ["Treasure! You found an Ultra Cell!"],
-      itemKey: "ULTRACELL",
-      consumed: false,
-    },
+      trainerKey: "RIVAL_1" },
+    { id: "nurse", x: 5, y: 17, color: "#ff8aa8", facing: "down", type: "healer",
+      dialog: ["Barista: Welcome to the Cappuccino Bar!", "Barista: Your monsters look exhausted... Let me top them up.", "(*HSSSS* — espresso machine sounds)", "Barista: All restored. Ciao!"] },
+    { id: "shopkeeper", x: 16, y: 19, color: "#ffd700", facing: "down", type: "shop",
+      dialog: ["Shopkeeper: Welcome to the Brain Cell Mart!", "Shopkeeper: Quality vibes for sale. What'll it be?"] },
+    // Beach town healer (2nd Cappuccino Bar)
+    { id: "nurse_beach", x: 39, y: 24, color: "#ff8aa8", facing: "down", type: "healer",
+      dialog: ["Beach Barista: Surf's up! Need some refresh?", "(*HSSSS* — beachside espresso machine sounds)", "Beach Barista: Fully restored! Hang ten!"] },
+
+    // Gym Leaders (5)
+    { id: "gym_pasta", x: 18, y: 5, color: "#ffe070", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Pasta Gym Leader Luigi: Ah, finally a challenger!", "Luigi: Ready your team. Mamma mia!"],
+      trainerKey: "GYM_PASTA" },
+    { id: "gym_bird", x: 12, y: 6, color: "#a08a5a", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Aviary Gym Leader Pia: Coooo! The pigeons whisper of you.", "Pia: Earn the GUSINI BADGE!"],
+      trainerKey: "GYM_BIRD" },
+    { id: "gym_sigma", x: 22, y: 14, color: "#9aa5ff", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Sigma Gym Leader Kai: I don't say hi. I just stare.", "Kai: Earn the SIGMA BADGE if you have what it takes."],
+      trainerKey: "GYM_SIGMA" },
+    { id: "gym_beach", x: 38, y: 20, color: "#3a78dc", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Sea Gym Leader Tony: I caught a tralalero THIS big.", "Tony: TRALALERO BADGE awaits."],
+      trainerKey: "GYM_BEACH" },
+    { id: "gym_fire", x: 28, y: 24, color: "#a3361f", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Fire Gym Leader Greg: 800 degrees!", "Greg: Earn the BOMBARDINO BADGE."],
+      trainerKey: "GYM_FIRE" },
+
+    // Espresso Four
+    { id: "elite_1", x: 12, y: 33, color: "#5a3818", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Espresso Four #1: I am steam.", "Cappuccino: Show me your decaf."],
+      trainerKey: "ELITE_1" },
+    { id: "elite_2", x: 14, y: 33, color: "#9aa5ff", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Espresso Four #2: My aura is sigma.", "Stella: Let's go."],
+      trainerKey: "ELITE_2" },
+    { id: "elite_3", x: 16, y: 33, color: "#c93dff", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Espresso Four #3: I have studied the deepest brainrot.", "Don: Have you?"],
+      trainerKey: "ELITE_3" },
+    { id: "elite_4", x: 18, y: 33, color: "#d44a2a", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Espresso Four #4: It's-a me!", "Mario: I will-a cook you!"],
+      trainerKey: "ELITE_4" },
+    { id: "champion", x: 20, y: 33, color: "#c93dff", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Champion Brainrot Queen: You've climbed far.", "Queen: Tralalero tralala... your final test begins."],
+      trainerKey: "CHAMPION" },
+
+    // Other trainers
+    { id: "rival_2", x: 28, y: 28, color: "#ff5e5e", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Marco: I've been training. I've got 3 badges already.", "Marco: This time you're cooked."],
+      trainerKey: "RIVAL_2" },
+    { id: "beach_bum", x: 35, y: 24, color: "#ffaa66", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Beach Bum Brad: Bruh, wanna battle?"],
+      trainerKey: "BEACH_BUM" },
+    { id: "hiker", x: 38, y: 6, color: "#7a5a3a", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Hiker Beppe: Salve! I climb mountains in espadrilles!"],
+      trainerKey: "HIKER" },
+    { id: "youngster", x: 11, y: 12, color: "#3aa83a", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Youngster Tito: I challenge you with my SHORTS!"],
+      trainerKey: "YOUNGSTER" },
+    { id: "lass", x: 26, y: 11, color: "#ff8aa8", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Lass Bianca: My memes are the cutest!"],
+      trainerKey: "LASS" },
+    { id: "cultist", x: 42, y: 11, color: "#5a1a8a", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Cultist Velvelo: GLORBO! GLORBO!"],
+      trainerKey: "CULTIST" },
+
+    // Signs
+    { id: "sign_route1", x: 9, y: 5, color: null, type: "sign", dialog: ["[ROUTE 1]\nWild brain rot lurks in tall grass.\nFresh challengers, head north!"] },
+    { id: "sign_route2", x: 22, y: 9, color: null, type: "sign", dialog: ["[ROUTE 2]\nDanger Level: VERY 2026.\nLore knowledge required."] },
+    { id: "sign_bar", x: 6, y: 16, color: null, type: "sign", dialog: ["★ CAPPUCCINO BAR ★\n\nFully restores your team.\nWalk through the door!"] },
+    { id: "sign_gym2", x: 23, y: 23, color: null, type: "sign", dialog: ["★ FIRE GYM ★\nLeader: Greg the 800° Pizzaiolo\nBadge 5 — requires 4 prior badges."] },
+    { id: "sign_gym4", x: 39, y: 23, color: null, type: "sign", dialog: ["★ BEACH HEAL SPOT ★\nFully restores your team!\nWalk through the door!"] },
+    { id: "sign_south", x: 13, y: 23, color: null, type: "sign", dialog: ["▶ SOUTH: Espresso Four & Champion\nNeed 5 gym badges to enter!"] },
+    { id: "sign_beach", x: 30, y: 30, color: null, type: "sign", dialog: ["[BEACH ROUTE]\nThe sand is suspiciously hot.\nGym 4 is east of here."] },
+    { id: "sign_forest", x: 12, y: 4, color: null, type: "sign", dialog: ["[FOREST]\nThe trees here whisper 'patapim'.\nDo not respond."] },
+
+    // NPCs (chatter / hint)
+    { id: "kid", x: 11, y: 14, color: "#5fa84a", facing: "down", type: "npc",
+      dialog: ["Kid: Did you know Tralalero used to wear flip-flops?", "Kid: Now it's strictly Nikes. Times change!"] },
+    { id: "old_man", x: 7, y: 23, color: "#aabbcc", facing: "down", type: "npc",
+      dialog: ["Old Man: In my day, we had only ONE skibidi toilet.", "Old Man: ...kids these days have like 80."] },
+    { id: "lore_master", x: 25, y: 5, color: "#9b6b9b", facing: "down", type: "npc",
+      dialog: ["Lore Master: The deepest brainrot truth?", "Lore Master: ...is that we are all skibidi inside.",
+               "Lore Master: Press X to open the menu. Check your MEMEDEX!"] },
+    { id: "guide_npc", x: 11, y: 22, color: "#ffd700", facing: "down", type: "npc",
+      dialog: ["Guide: Welcome, traveler!", "Guide: ★ Cappuccino Bar (heal) is just NORTHWEST of here.",
+               "Guide: ★ The 5 GYM LEADERS are scattered around — earn 5 badges to face the Champion.",
+               "Guide: ★ Press X for menu, Z to interact, arrows to move."] },
+
+    // Hidden treasure pickups
+    { id: "treasure_1", x: 11, y: 11, color: "#ff8aff", facing: "down", type: "item",
+      dialog: ["Treasure! You found a Doppio Espresso!"], itemKey: "ESPRESSO_DBL", consumed: false },
+    { id: "treasure_2", x: 41, y: 4, color: "#ff8aff", facing: "down", type: "item",
+      dialog: ["Treasure! You found a Great Cell!"], itemKey: "GREATCELL", consumed: false },
+    { id: "treasure_3", x: 38, y: 30, color: "#ff8aff", facing: "down", type: "item",
+      dialog: ["Treasure! You found an Ultra Cell!"], itemKey: "ULTRACELL", consumed: false },
+    { id: "treasure_4", x: 47, y: 6, color: "#ff8aff", facing: "down", type: "item",
+      dialog: ["Treasure! You found a Pasta Elixir!"], itemKey: "ELIXIR", consumed: false },
   ];
 
-  // Encounter zones based on which "biome" the tile sits in
   function encounterTableAt(tx, ty) {
-    if (ty <= 5) return "FOREST_NORTH"; // forest area top
-    if (ty <= 13 && tx >= 30) return "FOREST_EAST"; // east forest patch
-    if (ty >= 25 && tx <= 12) return "GYM_GRASS"; // grass near gym
+    if (ty <= 5) return "FOREST_NORTH";
+    if (ty <= 13 && tx >= 30) return "FOREST_EAST";
+    if (ty >= 25 && tx <= 12) return "GYM_GRASS";
     if (tx >= 30) return "BEACH";
     if (ty >= 8 && ty <= 14 && tx >= 12 && tx <= 22) return "ROUTE_2";
     return "ROUTE_1";
@@ -2258,7 +2370,7 @@ const World = (() => {
 
   function isWalkable(x, y) {
     const t = tileAt(x, y);
-    if (t === T.W || t === T.R || t === T.B || t === T.S) return false;
+    if (t === T.W || t === T.R || t === T.B || t === T.S || t === T.HEAL_SIGN) return false;
     for (const n of npcs) {
       if (n.consumed) continue;
       if (n.x === x && n.y === y) return false;
@@ -3093,7 +3205,7 @@ const Battle = (() => {
       facing: "down",
       moving: false,
       moveProgress: 0,
-      moveSpeed: 6,
+      moveSpeed: 2,
       animFrame: 0,
       stepCounter: 0,
     },
@@ -3101,6 +3213,7 @@ const Battle = (() => {
     box: [],
     bag: { BRAINCELL: 8, GREATCELL: 1, CAPPUCCINO: 3 },
     money: 500,
+    dex: { seen: {}, caught: {} },
     cam: { x: 0, y: 0 },
     dialog: null,
     dialogTyping: { active: false, text: "", target: "", t: 0 },
@@ -3202,6 +3315,12 @@ const Battle = (() => {
       else if (key === "ArrowUp") { Audio.play("select"); shopMove(-1); }
       else if (key === "ArrowDown") { Audio.play("select"); shopMove(1); }
       else if (key === "Enter" || k === "z") shopBuy();
+      return;
+    }
+    if (game.mode === "dex") {
+      if (k === "x" || key === "Escape") { Audio.play("cancel"); closeDex(); }
+      else if (key === "ArrowUp") { Audio.play("select"); dexMove(-1); }
+      else if (key === "ArrowDown") { Audio.play("select"); dexMove(1); }
       return;
     }
     if (game.mode === "overworld") {
@@ -3323,7 +3442,7 @@ const Battle = (() => {
   let menuState = null;
   function openMenu() {
     Audio.play("open");
-    menuState = { items: ["TEAM", "BAG", "SAVE", "MUTE", "CLOSE"], idx: 0 };
+    menuState = { items: ["MEMEDEX", "TEAM", "BAG", "SAVE", "MUTE", "CLOSE"], idx: 0 };
     game.mode = "menu";
     renderMenu();
     document.getElementById("menu").classList.remove("hidden");
@@ -3363,6 +3482,62 @@ const Battle = (() => {
     }
     if (choice === "TEAM") { closeMenu(); openTeamMenu(false); return; }
     if (choice === "BAG") { closeMenu(); openBagMenu(false); return; }
+    if (choice === "MEMEDEX") { closeMenu(); openDex(); return; }
+  }
+
+  // ----- Memedex -----
+  let dexState = null;
+  function openDex() {
+    Audio.play("open");
+    const ids = Object.keys(SPECIES);
+    dexState = { idx: 0, ids };
+    game.mode = "dex";
+    renderDex();
+    document.getElementById("menu").classList.remove("hidden");
+  }
+  function closeDex() {
+    document.getElementById("menu").classList.add("hidden");
+    dexState = null;
+    game.mode = "overworld";
+  }
+  function dexMove(d) {
+    if (!dexState) return;
+    dexState.idx = (dexState.idx + d + dexState.ids.length) % dexState.ids.length;
+    renderDex();
+  }
+  function renderDex() {
+    const ul = document.getElementById("menu-list");
+    const ids = dexState.ids;
+    const seenCount = ids.filter(id => game.dex.seen[id]).length;
+    const caughtCount = ids.filter(id => game.dex.caught[id]).length;
+    const start = Math.max(0, Math.min(ids.length - 8, dexState.idx - 3));
+    const visible = ids.slice(start, start + 8);
+    let html = `<li class="header">MEMEDEX · Seen ${seenCount}/${ids.length} · Caught ${caughtCount}</li>`;
+    visible.forEach((id, off) => {
+      const i = start + off;
+      const sp = SPECIES[id];
+      const seen = game.dex.seen[id];
+      const caught = game.dex.caught[id];
+      const num = String(i + 1).padStart(3, "0");
+      const name = seen ? sp.name : "??????";
+      const status = caught ? "✦" : seen ? "·" : " ";
+      html += `<li class="${i === dexState.idx ? "selected" : ""}">
+        <b>#${num}</b> ${status} <span>${name}</span>
+        ${seen ? `<small style="opacity:.7"> · ${sp.types.join("/")}</small>` : ""}
+      </li>`;
+    });
+    // detail panel for selected
+    const sel = ids[dexState.idx];
+    const selSp = SPECIES[sel];
+    if (game.dex.seen[sel]) {
+      html += `<li class="dex-detail"><b>${selSp.name}</b> — ${selSp.types.join(" / ")}<br>
+        <small>${game.dex.caught[sel] ? selSp.flavor : "(caught one to read full lore)"}</small><br>
+        <small>HP:${selSp.base.hp}  ATK:${selSp.base.atk}  DEF:${selSp.base.def}  SPD:${selSp.base.spd}</small></li>`;
+    } else {
+      html += `<li class="dex-detail"><small>Not yet encountered.</small></li>`;
+    }
+    html += `<li class="footer"><small>↑↓ scroll · X = back</small></li>`;
+    ul.innerHTML = html;
   }
 
   // ----- TEAM Menu -----
@@ -3611,6 +3786,12 @@ const Battle = (() => {
           showDialog([`${npc.dialog[0].split(":")[0]}: I have been bested. Move along.`], () => {});
           return;
         }
+        const block = trainerBlocksAccess(npc);
+        if (block) {
+          Audio.play("cancel");
+          showDialog([`${npc.dialog[0].split(":")[0]}: ...not yet.`, block], () => {});
+          return;
+        }
         Audio.play("encounter");
         showDialog(npc.dialog, () => {
           startTrainerBattle(npc);
@@ -3643,7 +3824,10 @@ const Battle = (() => {
   function startTrainerBattle(npc) {
     Audio.play("encounter");
     const data = TRAINERS[npc.trainerKey];
-    const team = data.team.map(({id, lvl}) => makeMon(id, lvl));
+    const team = data.team.map(({id, lvl}) => {
+      markDexSeen(id);
+      return makeMon(id, lvl);
+    });
     game.mode = "battle";
     Battle.start(game.team, team, {
       isTrainer: true,
@@ -3652,26 +3836,33 @@ const Battle = (() => {
       onEnd: (result) => {
         if (result.defeatedTrainer) {
           npc.defeated = true;
-          if (data.reward) {
-            game.money += data.reward;
+          if (data.reward) game.money += data.reward;
+          const lines = [];
+          if (data.reward) lines.push(`You earned ${data.reward}!`);
+          if (data.badge) {
+            game.badges = Math.max(game.badges, data.badge);
+            lines.push(`You earned the ${data.badgeName}!  (Badge ${data.badge})`);
           }
-          if (npc.trainerKey === "GYM_LEADER") {
-            game.badges++;
-            showDialog([
-              "You defeated the Brainrot Queen!",
-              `Earned ${data.reward} prize money.`,
-              "You receive the BRAINROT BADGE.",
-              "...The credits would roll, but the lore continues.",
-              "Hidden legendaries lurk in the deep grass. Hunt them!",
-            ], () => {});
-          } else if (data.reward) {
-            showDialog([`You earned ${data.reward}!`], () => {});
+          if (data.isChampion) {
+            game.beatenChampion = true;
+            lines.push("You defeated the BRAINROT QUEEN!");
+            lines.push("You are the Brainrot Champion!");
+            lines.push("...The credits would roll, but the lore continues.");
+            lines.push("Legendaries (Tralatitan, Braincore, Ohio) appear in deep grass now. Hunt them!");
           }
+          if (lines.length) showDialog(lines, () => {});
         }
         game.mode = "overworld";
         saveGame();
       },
     });
+  }
+
+  function trainerBlocksAccess(npc) {
+    const data = TRAINERS[npc.trainerKey];
+    if (!data || !data.requiresBadge) return null;
+    if (game.badges >= data.requiresBadge) return null;
+    return `You need at least ${data.requiresBadge} badge${data.requiresBadge>1?'s':''} to challenge here.`;
   }
 
   function startWildBattle() {
@@ -3684,12 +3875,14 @@ const Battle = (() => {
     for (const e of table) { r -= e.weight; if (r <= 0) { chosen = e; break; } }
     const lvl = chosen.minLvl + Math.floor(Math.random() * (chosen.maxLvl - chosen.minLvl + 1));
     const enemy = makeMon(chosen.id, lvl);
+    markDexSeen(enemy.species);
     game.mode = "battle";
     game.flashTime = 12;
     Battle.start(game.team, enemy, {
       isTrainer: false,
       onEnd: (result) => {
         if (result.caught) {
+          markDexCaught(result.enemyMon.species);
           if (game.team.length < 6) game.team.push(result.enemyMon);
           else game.box.push(result.enemyMon);
         }
@@ -3697,6 +3890,16 @@ const Battle = (() => {
         saveGame();
       },
     });
+  }
+
+  function markDexSeen(speciesId) {
+    if (!game.dex.seen[speciesId]) {
+      game.dex.seen[speciesId] = true;
+    }
+  }
+  function markDexCaught(speciesId) {
+    game.dex.seen[speciesId] = true;
+    game.dex.caught[speciesId] = true;
   }
 
   // ----- Movement -----
@@ -3768,14 +3971,16 @@ const Battle = (() => {
       money: game.money,
       player: { tileX: game.player.tileX, tileY: game.player.tileY, facing: game.player.facing },
       badges: game.badges,
+      dex: game.dex,
+      beatenChampion: !!game.beatenChampion,
       defeated: World.npcs.filter(n => n.defeated).map(n => n.id),
       consumed: World.npcs.filter(n => n.consumed).map(n => n.id),
     };
-    try { localStorage.setItem("brainrot_save_v2", JSON.stringify(data)); } catch(e) {}
+    try { localStorage.setItem("brainrot_save_v3", JSON.stringify(data)); } catch(e) {}
   }
   function loadSave() {
     try {
-      const raw = localStorage.getItem("brainrot_save_v2");
+      const raw = localStorage.getItem("brainrot_save_v3") || localStorage.getItem("brainrot_save_v2");
       if (!raw) return false;
       const data = JSON.parse(raw);
       if (!data.team || data.team.length === 0) return false;
@@ -3789,6 +3994,15 @@ const Battle = (() => {
       game.player.pixelY = game.player.tileY * 16;
       game.player.facing = data.player.facing || "down";
       game.badges = data.badges || 0;
+      game.dex = data.dex || { seen: {}, caught: {} };
+      if (!game.dex.seen) game.dex.seen = {};
+      if (!game.dex.caught) game.dex.caught = {};
+      // backfill: seen team/box species
+      for (const m of [...game.team, ...game.box]) {
+        markDexSeen(m.species);
+        markDexCaught(m.species);
+      }
+      game.beatenChampion = !!data.beatenChampion;
       const defeatedIds = data.defeated || [];
       const consumedIds = data.consumed || [];
       for (const n of World.npcs) {

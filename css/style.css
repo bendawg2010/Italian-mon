@@ -118,6 +118,15 @@ html, body {
 }
 #menu-list li.selected small { color: #222; }
 #menu-list small { opacity: 0.8; }
+#menu-list li.dex-detail {
+  background: #251235;
+  border: 1px solid var(--accent2);
+  color: #f4d8ff;
+  font-size: 0.95em;
+  cursor: default;
+  margin-top: 6px;
+}
+#menu-list li.dex-detail b { color: var(--accent); }
 
 .hidden { display: none !important; }
 

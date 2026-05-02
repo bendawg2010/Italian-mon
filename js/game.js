@@ -15,7 +15,7 @@
       facing: "down",
       moving: false,
       moveProgress: 0,
-      moveSpeed: 6,
+      moveSpeed: 2,
       animFrame: 0,
       stepCounter: 0,
     },
@@ -23,6 +23,7 @@
     box: [],
     bag: { BRAINCELL: 8, GREATCELL: 1, CAPPUCCINO: 3 },
     money: 500,
+    dex: { seen: {}, caught: {} },
     cam: { x: 0, y: 0 },
     dialog: null,
     dialogTyping: { active: false, text: "", target: "", t: 0 },
@@ -124,6 +125,12 @@
       else if (key === "ArrowUp") { Audio.play("select"); shopMove(-1); }
       else if (key === "ArrowDown") { Audio.play("select"); shopMove(1); }
       else if (key === "Enter" || k === "z") shopBuy();
+      return;
+    }
+    if (game.mode === "dex") {
+      if (k === "x" || key === "Escape") { Audio.play("cancel"); closeDex(); }
+      else if (key === "ArrowUp") { Audio.play("select"); dexMove(-1); }
+      else if (key === "ArrowDown") { Audio.play("select"); dexMove(1); }
       return;
     }
     if (game.mode === "overworld") {
@@ -245,7 +252,7 @@
   let menuState = null;
   function openMenu() {
     Audio.play("open");
-    menuState = { items: ["TEAM", "BAG", "SAVE", "MUTE", "CLOSE"], idx: 0 };
+    menuState = { items: ["MEMEDEX", "TEAM", "BAG", "SAVE", "MUTE", "CLOSE"], idx: 0 };
     game.mode = "menu";
     renderMenu();
     document.getElementById("menu").classList.remove("hidden");
@@ -285,6 +292,62 @@
     }
     if (choice === "TEAM") { closeMenu(); openTeamMenu(false); return; }
     if (choice === "BAG") { closeMenu(); openBagMenu(false); return; }
+    if (choice === "MEMEDEX") { closeMenu(); openDex(); return; }
+  }
+
+  // ----- Memedex -----
+  let dexState = null;
+  function openDex() {
+    Audio.play("open");
+    const ids = Object.keys(SPECIES);
+    dexState = { idx: 0, ids };
+    game.mode = "dex";
+    renderDex();
+    document.getElementById("menu").classList.remove("hidden");
+  }
+  function closeDex() {
+    document.getElementById("menu").classList.add("hidden");
+    dexState = null;
+    game.mode = "overworld";
+  }
+  function dexMove(d) {
+    if (!dexState) return;
+    dexState.idx = (dexState.idx + d + dexState.ids.length) % dexState.ids.length;
+    renderDex();
+  }
+  function renderDex() {
+    const ul = document.getElementById("menu-list");
+    const ids = dexState.ids;
+    const seenCount = ids.filter(id => game.dex.seen[id]).length;
+    const caughtCount = ids.filter(id => game.dex.caught[id]).length;
+    const start = Math.max(0, Math.min(ids.length - 8, dexState.idx - 3));
+    const visible = ids.slice(start, start + 8);
+    let html = `<li class="header">MEMEDEX · Seen ${seenCount}/${ids.length} · Caught ${caughtCount}</li>`;
+    visible.forEach((id, off) => {
+      const i = start + off;
+      const sp = SPECIES[id];
+      const seen = game.dex.seen[id];
+      const caught = game.dex.caught[id];
+      const num = String(i + 1).padStart(3, "0");
+      const name = seen ? sp.name : "??????";
+      const status = caught ? "✦" : seen ? "·" : " ";
+      html += `<li class="${i === dexState.idx ? "selected" : ""}">
+        <b>#${num}</b> ${status} <span>${name}</span>
+        ${seen ? `<small style="opacity:.7"> · ${sp.types.join("/")}</small>` : ""}
+      </li>`;
+    });
+    // detail panel for selected
+    const sel = ids[dexState.idx];
+    const selSp = SPECIES[sel];
+    if (game.dex.seen[sel]) {
+      html += `<li class="dex-detail"><b>${selSp.name}</b> — ${selSp.types.join(" / ")}<br>
+        <small>${game.dex.caught[sel] ? selSp.flavor : "(caught one to read full lore)"}</small><br>
+        <small>HP:${selSp.base.hp}  ATK:${selSp.base.atk}  DEF:${selSp.base.def}  SPD:${selSp.base.spd}</small></li>`;
+    } else {
+      html += `<li class="dex-detail"><small>Not yet encountered.</small></li>`;
+    }
+    html += `<li class="footer"><small>↑↓ scroll · X = back</small></li>`;
+    ul.innerHTML = html;
   }
 
   // ----- TEAM Menu -----
@@ -533,6 +596,12 @@
           showDialog([`${npc.dialog[0].split(":")[0]}: I have been bested. Move along.`], () => {});
           return;
         }
+        const block = trainerBlocksAccess(npc);
+        if (block) {
+          Audio.play("cancel");
+          showDialog([`${npc.dialog[0].split(":")[0]}: ...not yet.`, block], () => {});
+          return;
+        }
         Audio.play("encounter");
         showDialog(npc.dialog, () => {
           startTrainerBattle(npc);
@@ -565,7 +634,10 @@
   function startTrainerBattle(npc) {
     Audio.play("encounter");
     const data = TRAINERS[npc.trainerKey];
-    const team = data.team.map(({id, lvl}) => makeMon(id, lvl));
+    const team = data.team.map(({id, lvl}) => {
+      markDexSeen(id);
+      return makeMon(id, lvl);
+    });
     game.mode = "battle";
     Battle.start(game.team, team, {
       isTrainer: true,
@@ -574,26 +646,33 @@
       onEnd: (result) => {
         if (result.defeatedTrainer) {
           npc.defeated = true;
-          if (data.reward) {
-            game.money += data.reward;
+          if (data.reward) game.money += data.reward;
+          const lines = [];
+          if (data.reward) lines.push(`You earned $${data.reward}!`);
+          if (data.badge) {
+            game.badges = Math.max(game.badges, data.badge);
+            lines.push(`You earned the ${data.badgeName}!  (Badge ${data.badge})`);
           }
-          if (npc.trainerKey === "GYM_LEADER") {
-            game.badges++;
-            showDialog([
-              "You defeated the Brainrot Queen!",
-              `Earned $${data.reward} prize money.`,
-              "You receive the BRAINROT BADGE.",
-              "...The credits would roll, but the lore continues.",
-              "Hidden legendaries lurk in the deep grass. Hunt them!",
-            ], () => {});
-          } else if (data.reward) {
-            showDialog([`You earned $${data.reward}!`], () => {});
+          if (data.isChampion) {
+            game.beatenChampion = true;
+            lines.push("You defeated the BRAINROT QUEEN!");
+            lines.push("You are the Brainrot Champion!");
+            lines.push("...The credits would roll, but the lore continues.");
+            lines.push("Legendaries (Tralatitan, Braincore, Ohio) appear in deep grass now. Hunt them!");
           }
+          if (lines.length) showDialog(lines, () => {});
         }
         game.mode = "overworld";
         saveGame();
       },
     });
+  }
+
+  function trainerBlocksAccess(npc) {
+    const data = TRAINERS[npc.trainerKey];
+    if (!data || !data.requiresBadge) return null;
+    if (game.badges >= data.requiresBadge) return null;
+    return `You need at least ${data.requiresBadge} badge${data.requiresBadge>1?'s':''} to challenge here.`;
   }
 
   function startWildBattle() {
@@ -606,12 +685,14 @@
     for (const e of table) { r -= e.weight; if (r <= 0) { chosen = e; break; } }
     const lvl = chosen.minLvl + Math.floor(Math.random() * (chosen.maxLvl - chosen.minLvl + 1));
     const enemy = makeMon(chosen.id, lvl);
+    markDexSeen(enemy.species);
     game.mode = "battle";
     game.flashTime = 12;
     Battle.start(game.team, enemy, {
       isTrainer: false,
       onEnd: (result) => {
         if (result.caught) {
+          markDexCaught(result.enemyMon.species);
           if (game.team.length < 6) game.team.push(result.enemyMon);
           else game.box.push(result.enemyMon);
         }
@@ -619,6 +700,16 @@
         saveGame();
       },
     });
+  }
+
+  function markDexSeen(speciesId) {
+    if (!game.dex.seen[speciesId]) {
+      game.dex.seen[speciesId] = true;
+    }
+  }
+  function markDexCaught(speciesId) {
+    game.dex.seen[speciesId] = true;
+    game.dex.caught[speciesId] = true;
   }
 
   // ----- Movement -----
@@ -690,14 +781,16 @@
       money: game.money,
       player: { tileX: game.player.tileX, tileY: game.player.tileY, facing: game.player.facing },
       badges: game.badges,
+      dex: game.dex,
+      beatenChampion: !!game.beatenChampion,
       defeated: World.npcs.filter(n => n.defeated).map(n => n.id),
       consumed: World.npcs.filter(n => n.consumed).map(n => n.id),
     };
-    try { localStorage.setItem("brainrot_save_v2", JSON.stringify(data)); } catch(e) {}
+    try { localStorage.setItem("brainrot_save_v3", JSON.stringify(data)); } catch(e) {}
   }
   function loadSave() {
     try {
-      const raw = localStorage.getItem("brainrot_save_v2");
+      const raw = localStorage.getItem("brainrot_save_v3") || localStorage.getItem("brainrot_save_v2");
       if (!raw) return false;
       const data = JSON.parse(raw);
       if (!data.team || data.team.length === 0) return false;
@@ -711,6 +804,15 @@
       game.player.pixelY = game.player.tileY * 16;
       game.player.facing = data.player.facing || "down";
       game.badges = data.badges || 0;
+      game.dex = data.dex || { seen: {}, caught: {} };
+      if (!game.dex.seen) game.dex.seen = {};
+      if (!game.dex.caught) game.dex.caught = {};
+      // backfill: seen team/box species
+      for (const m of [...game.team, ...game.box]) {
+        markDexSeen(m.species);
+        markDexCaught(m.species);
+      }
+      game.beatenChampion = !!data.beatenChampion;
       const defeatedIds = data.defeated || [];
       const consumedIds = data.consumed || [];
       for (const n of World.npcs) {

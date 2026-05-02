@@ -678,6 +678,38 @@ const SpriteRenderer = (() => {
         ctx.fillStyle = "#ffe070";
         ctx.fillRect(x+7, y+7, 2, 2);
         break;
+      case 14: // SHOP_FLOOR
+        ctx.fillStyle = "#ffe070";
+        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = "#a07040";
+        ctx.fillRect(x+1, y+1, 14, 1);
+        ctx.fillRect(x+1, y+14, 14, 1);
+        ctx.fillStyle = "#5a3818";
+        ctx.fillText && (ctx.fillText("$", x+5, y+13));
+        break;
+      case 15: // HEAL_SIGN (red cross sign on building exterior)
+        ctx.fillStyle = "#7a5a4a";
+        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        // big bright cross
+        ctx.fillStyle = "#ff3d3d";
+        ctx.fillRect(x+5, y+2, 6, 12);
+        ctx.fillRect(x+2, y+5, 12, 6);
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(x+6, y+3, 4, 10);
+        ctx.fillRect(x+3, y+6, 10, 4);
+        ctx.fillStyle = "#ff3d3d";
+        ctx.fillRect(x+7, y+4, 2, 8);
+        ctx.fillRect(x+4, y+7, 8, 2);
+        break;
+      case 16: // GYM_FLOOR (purple gym floor)
+        ctx.fillStyle = "#5a1a8a";
+        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = "#7a3aaa";
+        ctx.fillRect(x+1, y+1, 14, 1);
+        ctx.fillRect(x+1, y+14, 14, 1);
+        ctx.fillStyle = "#c93dff";
+        ctx.fillRect(x+6, y+6, 4, 4);
+        break;
       default:
         ctx.fillStyle = "#000";
         ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
