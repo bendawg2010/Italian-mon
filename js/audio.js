@@ -1,0 +1,94 @@
+// =====================================================
+// Chiptune audio - simple Web Audio API wrappers
+// =====================================================
+
+const Audio = (() => {
+  let ctx = null;
+  let masterGain = null;
+  let muted = false;
+  let unlocked = false;
+
+  function ensure() {
+    if (ctx) return;
+    try {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = ctx.createGain();
+      masterGain.gain.value = 0.18;
+      masterGain.connect(ctx.destination);
+    } catch(e) { ctx = null; }
+  }
+
+  function unlock() {
+    ensure();
+    if (!ctx) return;
+    if (ctx.state === "suspended") ctx.resume();
+    unlocked = true;
+  }
+
+  function tone({ freq = 440, duration = 0.08, type = "square", vol = 0.3, attack = 0.005, release = 0.04, slide = 0 } = {}) {
+    if (!unlocked || muted || !ctx) return;
+    const t0 = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (slide) osc.frequency.linearRampToValueAtTime(freq + slide, t0 + duration);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + attack);
+    g.gain.linearRampToValueAtTime(0, t0 + duration + release);
+    osc.connect(g);
+    g.connect(masterGain);
+    osc.start(t0);
+    osc.stop(t0 + duration + release + 0.02);
+  }
+
+  function noise({ duration = 0.1, vol = 0.3, freq = 1000 } = {}) {
+    if (!unlocked || muted || !ctx) return;
+    const t0 = ctx.currentTime;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * Math.exp(-i/d.length * 4);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const f = ctx.createBiquadFilter();
+    f.type = "bandpass";
+    f.frequency.value = freq;
+    const g = ctx.createGain();
+    g.gain.value = vol;
+    src.connect(f); f.connect(g); g.connect(masterGain);
+    src.start(t0);
+  }
+
+  // sound presets
+  const SFX = {
+    select: () => tone({ freq: 880, duration: 0.04, vol: 0.25 }),
+    cancel: () => tone({ freq: 220, duration: 0.06, vol: 0.25 }),
+    confirm: () => { tone({ freq: 660, duration: 0.05, vol: 0.3 }); setTimeout(()=>tone({ freq: 880, duration: 0.06, vol: 0.3 }), 60); },
+    text: () => tone({ freq: 1200, duration: 0.012, vol: 0.08, type: "square" }),
+    step: () => tone({ freq: 200 + Math.random()*40, duration: 0.03, vol: 0.1, type: "triangle" }),
+    hit: () => { tone({ freq: 220, duration: 0.06, vol: 0.4, type: "sawtooth", slide: -100 }); noise({ duration: 0.08, vol: 0.2, freq: 800 }); },
+    superHit: () => { for (let i = 0; i < 3; i++) setTimeout(()=>tone({ freq: 180-i*30, duration: 0.07, vol: 0.4, type: "sawtooth", slide: -80 }), i*40); },
+    weakHit: () => tone({ freq: 300, duration: 0.05, vol: 0.2, type: "triangle" }),
+    miss: () => tone({ freq: 440, duration: 0.1, vol: 0.2, type: "sine", slide: -200 }),
+    faint: () => { for (let i = 0; i < 5; i++) setTimeout(()=>tone({ freq: 400-i*60, duration: 0.1, vol: 0.3, type: "square" }), i*80); },
+    levelUp: () => { [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone({ freq: f, duration: 0.1, vol: 0.3, type: "square" }), i*80)); },
+    catch: () => { [440,550,660].forEach((f,i)=>setTimeout(()=>tone({ freq: f, duration: 0.06, vol: 0.3 }), i*60)); },
+    captured: () => { [523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>tone({ freq: f, duration: 0.12, vol: 0.3, type: "square" }), i*100)); },
+    breakOut: () => { tone({ freq: 200, duration: 0.15, vol: 0.3, type: "sawtooth", slide: -100 }); },
+    encounter: () => {
+      [200, 280, 360, 480, 640].forEach((f,i)=>setTimeout(()=>tone({ freq: f, duration: 0.1, vol: 0.35, type: "square", slide: 80 }), i*60));
+    },
+    heal: () => { [659,784,988].forEach((f,i)=>setTimeout(()=>tone({ freq: f, duration: 0.12, vol: 0.3 }), i*100)); },
+    evolve: () => { for (let i = 0; i < 8; i++) setTimeout(()=>tone({ freq: 400 + i*60, duration: 0.06, vol: 0.3, type: "square" }), i*50); },
+    victory: () => { [523, 659, 784, 1046, 784, 1046, 1318].forEach((f,i)=>setTimeout(()=>tone({ freq: f, duration: 0.15, vol: 0.3, type: "square" }), i*150)); },
+    bump: () => tone({ freq: 100, duration: 0.06, vol: 0.2, type: "square" }),
+    open: () => { tone({ freq: 660, duration: 0.04, vol: 0.2 }); setTimeout(()=>tone({ freq: 880, duration: 0.04, vol: 0.2 }), 30); },
+  };
+
+  return {
+    unlock,
+    play: (k) => { if (SFX[k]) SFX[k](); },
+    setMuted: (m) => { muted = m; },
+    isMuted: () => muted,
+  };
+})();

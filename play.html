@@ -92,18 +92,39 @@ html, body {
 #menu {
   top: 4%;
   right: 4%;
-  min-width: 35%;
+  min-width: 50%;
+  max-width: 70%;
+  max-height: 90%;
+  overflow-y: auto;
 }
 #menu-list { list-style: none; }
 #menu-list li {
-  padding: 4px 8px;
+  padding: 6px 10px;
   cursor: pointer;
+  border-radius: 4px;
+  margin: 2px 0;
+}
+#menu-list li.header {
+  background: var(--accent2);
+  color: #fff;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 1px;
+}
+#menu-list li.footer {
+  background: transparent;
+  color: #aab;
+  text-align: center;
+  border-top: 1px solid #333;
+  margin-top: 6px;
+  cursor: default;
 }
 #menu-list li.selected {
   background: var(--accent);
   color: #000;
-  border-radius: 4px;
 }
+#menu-list li.selected small { color: #222; }
+#menu-list small { opacity: 0.8; }
 
 .hidden { display: none !important; }
 
@@ -361,6 +382,103 @@ html, body {
     </div>
   </div>
   <script>
+// ===== js/audio.js =====
+// =====================================================
+// Chiptune audio - simple Web Audio API wrappers
+// =====================================================
+
+const Audio = (() => {
+  let ctx = null;
+  let masterGain = null;
+  let muted = false;
+  let unlocked = false;
+
+  function ensure() {
+    if (ctx) return;
+    try {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = ctx.createGain();
+      masterGain.gain.value = 0.18;
+      masterGain.connect(ctx.destination);
+    } catch(e) { ctx = null; }
+  }
+
+  function unlock() {
+    ensure();
+    if (!ctx) return;
+    if (ctx.state === "suspended") ctx.resume();
+    unlocked = true;
+  }
+
+  function tone({ freq = 440, duration = 0.08, type = "square", vol = 0.3, attack = 0.005, release = 0.04, slide = 0 } = {}) {
+    if (!unlocked || muted || !ctx) return;
+    const t0 = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (slide) osc.frequency.linearRampToValueAtTime(freq + slide, t0 + duration);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + attack);
+    g.gain.linearRampToValueAtTime(0, t0 + duration + release);
+    osc.connect(g);
+    g.connect(masterGain);
+    osc.start(t0);
+    osc.stop(t0 + duration + release + 0.02);
+  }
+
+  function noise({ duration = 0.1, vol = 0.3, freq = 1000 } = {}) {
+    if (!unlocked || muted || !ctx) return;
+    const t0 = ctx.currentTime;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * Math.exp(-i/d.length * 4);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const f = ctx.createBiquadFilter();
+    f.type = "bandpass";
+    f.frequency.value = freq;
+    const g = ctx.createGain();
+    g.gain.value = vol;
+    src.connect(f); f.connect(g); g.connect(masterGain);
+    src.start(t0);
+  }
+
+  // sound presets
+  const SFX = {
+    select: () => tone({ freq: 880, duration: 0.04, vol: 0.25 }),
+    cancel: () => tone({ freq: 220, duration: 0.06, vol: 0.25 }),
+    confirm: () => { tone({ freq: 660, duration: 0.05, vol: 0.3 }); setTimeout(()=>tone({ freq: 880, duration: 0.06, vol: 0.3 }), 60); },
+    text: () => tone({ freq: 1200, duration: 0.012, vol: 0.08, type: "square" }),
+    step: () => tone({ freq: 200 + Math.random()*40, duration: 0.03, vol: 0.1, type: "triangle" }),
+    hit: () => { tone({ freq: 220, duration: 0.06, vol: 0.4, type: "sawtooth", slide: -100 }); noise({ duration: 0.08, vol: 0.2, freq: 800 }); },
+    superHit: () => { for (let i = 0; i < 3; i++) setTimeout(()=>tone({ freq: 180-i*30, duration: 0.07, vol: 0.4, type: "sawtooth", slide: -80 }), i*40); },
+    weakHit: () => tone({ freq: 300, duration: 0.05, vol: 0.2, type: "triangle" }),
+    miss: () => tone({ freq: 440, duration: 0.1, vol: 0.2, type: "sine", slide: -200 }),
+    faint: () => { for (let i = 0; i < 5; i++) setTimeout(()=>tone({ freq: 400-i*60, duration: 0.1, vol: 0.3, type: "square" }), i*80); },
+    levelUp: () => { [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone({ freq: f, duration: 0.1, vol: 0.3, type: "square" }), i*80)); },
+    catch: () => { [440,550,660].forEach((f,i)=>setTimeout(()=>tone({ freq: f, duration: 0.06, vol: 0.3 }), i*60)); },
+    captured: () => { [523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>tone({ freq: f, duration: 0.12, vol: 0.3, type: "square" }), i*100)); },
+    breakOut: () => { tone({ freq: 200, duration: 0.15, vol: 0.3, type: "sawtooth", slide: -100 }); },
+    encounter: () => {
+      [200, 280, 360, 480, 640].forEach((f,i)=>setTimeout(()=>tone({ freq: f, duration: 0.1, vol: 0.35, type: "square", slide: 80 }), i*60));
+    },
+    heal: () => { [659,784,988].forEach((f,i)=>setTimeout(()=>tone({ freq: f, duration: 0.12, vol: 0.3 }), i*100)); },
+    evolve: () => { for (let i = 0; i < 8; i++) setTimeout(()=>tone({ freq: 400 + i*60, duration: 0.06, vol: 0.3, type: "square" }), i*50); },
+    victory: () => { [523, 659, 784, 1046, 784, 1046, 1318].forEach((f,i)=>setTimeout(()=>tone({ freq: f, duration: 0.15, vol: 0.3, type: "square" }), i*150)); },
+    bump: () => tone({ freq: 100, duration: 0.06, vol: 0.2, type: "square" }),
+    open: () => { tone({ freq: 660, duration: 0.04, vol: 0.2 }); setTimeout(()=>tone({ freq: 880, duration: 0.04, vol: 0.2 }), 30); },
+  };
+
+  return {
+    unlock,
+    play: (k) => { if (SFX[k]) SFX[k](); },
+    setMuted: (m) => { muted = m; },
+    isMuted: () => muted,
+  };
+})();
+
+
 // ===== js/data.js =====
 // =====================================================
 // BRAINROT MONSTERS - Data Module
@@ -696,29 +814,379 @@ const SPECIES = {
     catchRate: 80,
     xpYield: 60,
     learn: [[1, "AL_DENTE"], [1, "CARBONARA"], [12, "CAPPU_HEAL"], [20, "RIGATONI_RUSH"]],
+    evolvesTo: "LASAGNONE",
+    evolvesAt: 24,
     color1: "#f5b143", color2: "#ffe0a0", color3: "#9b3a1a",
+  },
+
+  // ---- EXPANDED ROSTER ----
+  LASAGNONE: {
+    id: "LASAGNONE",
+    name: "Lasagnone Magno",
+    flavor: "Now with extra ricotta and a top hat. Imposing yet hungry.",
+    types: ["Pasta", "Earth"],
+    base: { hp: 95, atk: 70, def: 85, spd: 40 },
+    catchRate: 30, xpYield: 130,
+    learn: [[1, "AL_DENTE"], [1, "CARBONARA"], [26, "FRIDGE_SLAM"], [34, "CAPPU_HEAL"]],
+    color1: "#d49533", color2: "#ffd58a", color3: "#5b1a0a",
+  },
+
+  GELATO: {
+    id: "GELATO", name: "Gelatissimo",
+    flavor: "An ice-cream cone that yells 'GELATO' at strangers.",
+    types: ["Water", "Air"],
+    base: { hp: 50, atk: 60, def: 50, spd: 70 },
+    catchRate: 75, xpYield: 60,
+    learn: [[1, "TRALA_WAVE"], [1, "SCREECH"], [10, "WHIRLWIND"], [18, "TOILET_FLUSH"]],
+    color1: "#fce4f0", color2: "#7a4a2a", color3: "#ffaad0",
+  },
+
+  PIZZADIRO: {
+    id: "PIZZADIRO", name: "Pizzadiro Pepperoni",
+    flavor: "A pizza with eight pepperoni eyes. Watches you eat. Always.",
+    types: ["Fire", "Pasta"],
+    base: { hp: 65, atk: 70, def: 55, spd: 50 },
+    catchRate: 60, xpYield: 70,
+    learn: [[1, "EMBER"], [1, "AL_DENTE"], [12, "CARBONARA"], [20, "BOMBARDINO"]],
+    evolvesTo: "MARGHERITRON", evolvesAt: 22,
+    color1: "#d44a2a", color2: "#ffe0a0", color3: "#8a1a0a",
+  },
+
+  MARGHERITRON: {
+    id: "MARGHERITRON", name: "Margheritron Supreme",
+    flavor: "A pizza with sentience and basil. Demands you say 'mamma mia'.",
+    types: ["Fire", "Pasta"],
+    base: { hp: 90, atk: 95, def: 75, spd: 65 },
+    catchRate: 30, xpYield: 145,
+    learn: [[1, "BOMBARDINO"], [1, "CARBONARA"], [28, "OHIO_BOMB"], [36, "ALPHA_PUNCH"]],
+    color1: "#a3361f", color2: "#3aa83a", color3: "#fff5b3",
+  },
+
+  GNOCCHO: {
+    id: "GNOCCHO", name: "Gnoccho Tomato",
+    flavor: "A round potato dumpling who claims to be Caesar reborn.",
+    types: ["Earth", "Pasta"],
+    base: { hp: 75, atk: 55, def: 70, spd: 30 },
+    catchRate: 80, xpYield: 60,
+    learn: [[1, "TACKLE"], [1, "AL_DENTE"], [12, "CACTUS_PUNCH"], [20, "FRIDGE_SLAM"]],
+    color1: "#f5d690", color2: "#d44a2a", color3: "#3aa83a",
+  },
+
+  MOSSARELLA: {
+    id: "MOSSARELLA", name: "Mozzarella Mafiosa",
+    flavor: "A cheese ball in a fedora. Will offer you a deal you can't refuse.",
+    types: ["Sigma", "Pasta"],
+    base: { hp: 60, atk: 70, def: 50, spd: 70 },
+    catchRate: 55, xpYield: 80,
+    learn: [[1, "TACKLE"], [1, "SIGMA_STARE"], [14, "ALPHA_PUNCH"], [22, "RIZZ_CHARM"]],
+    color1: "#fcfcd0", color2: "#3a2218", color3: "#a3361f",
+  },
+
+  SHRIMPELO: {
+    id: "SHRIMPELO", name: "Shrimpelo Frito",
+    flavor: "A fried shrimp that defies death and gravity.",
+    types: ["Water", "Fire"],
+    base: { hp: 55, atk: 70, def: 45, spd: 75 },
+    catchRate: 70, xpYield: 65,
+    learn: [[1, "TRALA_WAVE"], [1, "EMBER"], [12, "SHARK_BITE"], [20, "BOMBARDINO"]],
+    color1: "#ff8a4a", color2: "#ffd590", color3: "#a3361f",
+  },
+
+  TIRAMISU: {
+    id: "TIRAMISU", name: "Tiramisu Magico",
+    flavor: "A floating slice of tiramisu. Heals friends with espresso magic.",
+    types: ["Brainrot", "Pasta"],
+    base: { hp: 70, atk: 50, def: 65, spd: 55 },
+    catchRate: 60, xpYield: 75,
+    learn: [[1, "CAPPU_HEAL"], [1, "CONFUSE_RAY"], [14, "CAPPUCCINO"], [22, "GLORBO_BEAM"]],
+    color1: "#5a3818", color2: "#fff5b3", color3: "#3a2218",
+  },
+
+  PASTANELLO: {
+    id: "PASTANELLO", name: "Pastanello Volante",
+    flavor: "A flying spaghetti with goggles and bomber jacket. WW1 vet.",
+    types: ["Pasta", "Air"],
+    base: { hp: 60, atk: 60, def: 55, spd: 80 },
+    catchRate: 70, xpYield: 70,
+    learn: [[1, "RIGATONI_RUSH"], [1, "WHIRLWIND"], [12, "AL_DENTE"], [22, "GUSINI_DIVE"]],
+    color1: "#ffe070", color2: "#5a3a2a", color3: "#9aa5ff",
+  },
+
+  RAVIOLINO: {
+    id: "RAVIOLINO", name: "Raviolino Ripieno",
+    flavor: "A small ravioli with a face. Complains about its filling.",
+    types: ["Pasta"],
+    base: { hp: 60, atk: 45, def: 60, spd: 55 },
+    catchRate: 90, xpYield: 50,
+    learn: [[1, "TACKLE"], [1, "AL_DENTE"], [10, "RIGATONI_RUSH"]],
+    evolvesTo: "RAVIOLINONE", evolvesAt: 16,
+    color1: "#ffd49a", color2: "#a07040", color3: "#3aa83a",
+  },
+
+  RAVIOLINONE: {
+    id: "RAVIOLINONE", name: "Raviolinone Stuffato",
+    flavor: "Five times the ravioli, five times the filling. Heavy.",
+    types: ["Pasta", "Earth"],
+    base: { hp: 90, atk: 70, def: 85, spd: 40 },
+    catchRate: 40, xpYield: 120,
+    learn: [[1, "AL_DENTE"], [1, "CARBONARA"], [22, "FRIDGE_SLAM"], [30, "ALPHA_PUNCH"]],
+    color1: "#d49b4b", color2: "#5a3818", color3: "#3aa83a",
+  },
+
+  ESPRESSITO: {
+    id: "ESPRESSITO", name: "Espressito Bolt",
+    flavor: "A tiny espresso shot bouncing at 200mph. Highly caffeinated.",
+    types: ["Fire", "Sigma"],
+    base: { hp: 40, atk: 55, def: 35, spd: 95 },
+    catchRate: 80, xpYield: 60,
+    learn: [[1, "EMBER"], [1, "CAPPUCCINO"], [12, "ALPHA_PUNCH"], [20, "OHIO_BOMB"]],
+    evolvesTo: "ESPRESSEUR", evolvesAt: 22,
+    color1: "#3a2218", color2: "#ffe0a0", color3: "#ff6b3d",
+  },
+
+  ESPRESSEUR: {
+    id: "ESPRESSEUR", name: "Espresseur Royale",
+    flavor: "Wears a tiny crown. Looks down on instant coffee. Justly.",
+    types: ["Fire", "Sigma"],
+    base: { hp: 70, atk: 90, def: 60, spd: 110 },
+    catchRate: 25, xpYield: 145,
+    learn: [[1, "ALPHA_PUNCH"], [1, "OHIO_BOMB"], [28, "RIZZ_CHARM"], [36, "GLORBO_BEAM"]],
+    color1: "#1a1008", color2: "#ffd700", color3: "#ff3d3d",
+  },
+
+  POMODORO: {
+    id: "POMODORO", name: "Pomodoro Bandito",
+    flavor: "A tomato in a bandana. Wields salami daggers.",
+    types: ["Earth", "Sigma"],
+    base: { hp: 55, atk: 65, def: 50, spd: 60 },
+    catchRate: 75, xpYield: 65,
+    learn: [[1, "TACKLE"], [1, "SIGMA_STARE"], [12, "CACTUS_PUNCH"], [20, "ALPHA_PUNCH"]],
+    color1: "#d44a2a", color2: "#3aa83a", color3: "#5a3818",
+  },
+
+  ZUCCHINI: {
+    id: "ZUCCHINI", name: "Zucchini Spaccone",
+    flavor: "A muscular zucchini who flexes. Refuses to be eaten.",
+    types: ["Earth", "Beast"],
+    base: { hp: 70, atk: 80, def: 60, spd: 50 },
+    catchRate: 65, xpYield: 75,
+    learn: [[1, "TACKLE"], [1, "CACTUS_PUNCH"], [14, "ALPHA_PUNCH"], [22, "FRIDGE_SLAM"]],
+    color1: "#3aa83a", color2: "#1e6a30", color3: "#fff5b3",
+  },
+
+  PARMIGIANO: {
+    id: "PARMIGIANO", name: "Parmigiano Reggiano",
+    flavor: "A wheel of cheese. Rolls at high speed. Crushes everything.",
+    types: ["Steel", "Pasta"],
+    base: { hp: 95, atk: 75, def: 90, spd: 30 },
+    catchRate: 35, xpYield: 130,
+    learn: [[1, "TACKLE"], [1, "FRIDGE_SLAM"], [16, "CAMEL_KICK"], [28, "TOILET_HEAD"]],
+    color1: "#f5d690", color2: "#d49533", color3: "#5a3818",
+  },
+
+  PROSCIUTTO: {
+    id: "PROSCIUTTO", name: "Prosciutto Sniper",
+    flavor: "A leg of cured ham with a rifle. Don't ask why.",
+    types: ["Sigma", "Steel"],
+    base: { hp: 60, atk: 90, def: 50, spd: 75 },
+    catchRate: 35, xpYield: 100,
+    learn: [[1, "SIGMA_STARE"], [1, "ALPHA_PUNCH"], [16, "OHIO_BOMB"], [26, "RIZZ_CHARM"]],
+    color1: "#ff8a8a", color2: "#5a1a0a", color3: "#fce4d0",
+  },
+
+  GROCCO: {
+    id: "GROCCO", name: "Grocco di Roma",
+    flavor: "A crocodile in a Roman toga. Speaks Latin. Demands tribute.",
+    types: ["Beast", "Sigma"],
+    base: { hp: 80, atk: 75, def: 70, spd: 55 },
+    catchRate: 55, xpYield: 90,
+    learn: [[1, "TACKLE"], [1, "SHARK_BITE"], [16, "SIGMA_STARE"], [26, "ALPHA_PUNCH"]],
+    color1: "#5a8a3a", color2: "#fff5b3", color3: "#d4a043",
+  },
+
+  CHEESETOPUS: {
+    id: "CHEESETOPUS", name: "Cheesetopus",
+    flavor: "An octopus made entirely of mozzarella. Stretches indefinitely.",
+    types: ["Water", "Pasta"],
+    base: { hp: 70, atk: 60, def: 60, spd: 60 },
+    catchRate: 65, xpYield: 70,
+    learn: [[1, "TRALA_WAVE"], [1, "AL_DENTE"], [14, "TOILET_FLUSH"], [22, "CARBONARA"]],
+    color1: "#fffac8", color2: "#ffd58a", color3: "#3a78dc",
+  },
+
+  RIZZARDO: {
+    id: "RIZZARDO", name: "Rizzardo da Vinci",
+    flavor: "A renaissance-painter monster with infinite charisma.",
+    types: ["Chaos", "Brainrot"],
+    base: { hp: 65, atk: 65, def: 65, spd: 75 },
+    catchRate: 35, xpYield: 110,
+    learn: [[1, "RIZZ_CHARM"], [1, "GLORBO_BEAM"], [18, "CONFUSE_RAY"], [28, "OHIO_BOMB"]],
+    color1: "#d4a043", color2: "#5a3818", color3: "#fff5b3",
+  },
+
+  CRINGEFLY: {
+    id: "CRINGEFLY", name: "Cringefly",
+    flavor: "A moth made of cringe energy. Attracted to vibes.",
+    types: ["Brainrot", "Air"],
+    base: { hp: 45, atk: 55, def: 45, spd: 80 },
+    catchRate: 90, xpYield: 50,
+    learn: [[1, "SCREECH"], [1, "CONFUSE_RAY"], [10, "WHIRLWIND"]],
+    evolvesTo: "CRINGELORD", evolvesAt: 18,
+    color1: "#9b6b9b", color2: "#5a1a8a", color3: "#ffaaff",
+  },
+
+  CRINGELORD: {
+    id: "CRINGELORD", name: "Cringelord Patrician",
+    flavor: "Has fully embraced the cringe. Now indistinguishable from based.",
+    types: ["Brainrot", "Sigma"],
+    base: { hp: 70, atk: 85, def: 60, spd: 100 },
+    catchRate: 25, xpYield: 145,
+    learn: [[1, "GLORBO_BEAM"], [1, "RIZZ_CHARM"], [26, "OHIO_BOMB"], [36, "ALPHA_PUNCH"]],
+    color1: "#5a1a8a", color2: "#ffd700", color3: "#1a1a2a",
+  },
+
+  GIGACHEF: {
+    id: "GIGACHEF", name: "Gigachef Mario",
+    flavor: "A jacked chef monster. Punches dough. Out-rizzes Gordon Ramsay.",
+    types: ["Sigma", "Fire"],
+    base: { hp: 80, atk: 100, def: 70, spd: 65 },
+    catchRate: 25, xpYield: 150,
+    learn: [[1, "ALPHA_PUNCH"], [1, "BOMBARDINO"], [22, "OHIO_BOMB"], [34, "SIGMA_STARE"]],
+    color1: "#ffd9a0", color2: "#3a2218", color3: "#d44a2a",
+  },
+
+  PIGEONORE: {
+    id: "PIGEONORE", name: "Pigeonore di Venezia",
+    flavor: "A pigeon that has seen things. Demands biscotti or it bites.",
+    types: ["Air", "Brainrot"],
+    base: { hp: 50, atk: 50, def: 45, spd: 85 },
+    catchRate: 90, xpYield: 50,
+    learn: [[1, "TACKLE"], [1, "WHIRLWIND"], [10, "GUSINI_DIVE"], [18, "SCREECH"]],
+    color1: "#a0a0a0", color2: "#3a3a3a", color3: "#ffaa00",
+  },
+
+  TURBOFROGGO: {
+    id: "TURBOFROGGO", name: "Turbofroggo",
+    flavor: "A frog with a jetpack. Says ribbit at speeds breaking sound.",
+    types: ["Beast", "Air"],
+    base: { hp: 60, atk: 65, def: 50, spd: 95 },
+    catchRate: 60, xpYield: 75,
+    learn: [[1, "TACKLE"], [1, "GUSINI_DIVE"], [14, "TUNG_BAT"], [22, "ALPHA_PUNCH"]],
+    color1: "#3aa83a", color2: "#8a4a2a", color3: "#ff6b3d",
+  },
+
+  SOGGYNINI: {
+    id: "SOGGYNINI", name: "Soggynini Toast",
+    flavor: "A perpetually wet piece of toast. Sad. Powerful.",
+    types: ["Water", "Earth"],
+    base: { hp: 75, atk: 50, def: 75, spd: 35 },
+    catchRate: 75, xpYield: 65,
+    learn: [[1, "TRALA_WAVE"], [1, "TOILET_FLUSH"], [14, "FRIDGE_SLAM"], [22, "CACTUS_PUNCH"]],
+    color1: "#d4a043", color2: "#3a78dc", color3: "#fff5b3",
+  },
+
+  ZESTYBOI: {
+    id: "ZESTYBOI", name: "Zestyboi Limone",
+    flavor: "A muscular lemon that compliments your aura before fighting.",
+    types: ["Earth", "Chaos"],
+    base: { hp: 60, atk: 75, def: 55, spd: 65 },
+    catchRate: 60, xpYield: 75,
+    learn: [[1, "TACKLE"], [1, "RIZZ_CHARM"], [12, "CACTUS_PUNCH"], [22, "ALPHA_PUNCH"]],
+    color1: "#ffe070", color2: "#fff5b3", color3: "#5a8a3a",
+  },
+
+  // PSEUDO-LEGENDARIES
+  TRALATITAN: {
+    id: "TRALATITAN", name: "Tralatitan",
+    flavor: "An ancient sea-shark titan. Wears Air Force 1s the size of cars.",
+    types: ["Water", "Sigma"],
+    base: { hp: 100, atk: 105, def: 90, spd: 90 },
+    catchRate: 10, xpYield: 200,
+    learn: [[1, "SHARK_BITE"], [1, "TRALA_WAVE"], [1, "ALPHA_PUNCH"], [40, "OHIO_BOMB"]],
+    legendary: true,
+    color1: "#0d2c4a", color2: "#ffe070", color3: "#ff3d3d",
+  },
+
+  BRAINCORE: {
+    id: "BRAINCORE", name: "Braincore Prime",
+    flavor: "A pulsing brain encased in chrome. The source of all brainrot.",
+    types: ["Brainrot", "Steel"],
+    base: { hp: 95, atk: 100, def: 95, spd: 80 },
+    catchRate: 10, xpYield: 200,
+    learn: [[1, "GLORBO_BEAM"], [1, "OHIO_BOMB"], [1, "CONFUSE_RAY"], [1, "RIZZ_CHARM"]],
+    legendary: true,
+    color1: "#ff8aff", color2: "#9ea6b3", color3: "#5a1a8a",
   },
 };
 
 // Encounter tables per zone
 const ENCOUNTERS = {
-  GRASS_ROUTE_1: [
-    { id: "LIRILI", weight: 30, minLvl: 2, maxLvl: 4 },
-    { id: "PATAPIM", weight: 25, minLvl: 2, maxLvl: 4 },
-    { id: "CHIMPANZ", weight: 20, minLvl: 3, maxLvl: 5 },
-    { id: "BALLERINA", weight: 10, minLvl: 3, maxLvl: 5 },
-    { id: "BONECA", weight: 10, minLvl: 2, maxLvl: 4 },
-    { id: "TRIPPI", weight: 5, minLvl: 4, maxLvl: 6 },
+  ROUTE_1: [
+    { id: "LIRILI", weight: 25, minLvl: 2, maxLvl: 5 },
+    { id: "PATAPIM", weight: 20, minLvl: 2, maxLvl: 5 },
+    { id: "CHIMPANZ", weight: 15, minLvl: 3, maxLvl: 6 },
+    { id: "BALLERINA", weight: 10, minLvl: 3, maxLvl: 6 },
+    { id: "BONECA", weight: 10, minLvl: 2, maxLvl: 5 },
+    { id: "TRIPPI", weight: 5, minLvl: 4, maxLvl: 7 },
+    { id: "RAVIOLINO", weight: 10, minLvl: 2, maxLvl: 5 },
+    { id: "POMODORO", weight: 5, minLvl: 4, maxLvl: 7 },
   ],
-  GRASS_ROUTE_2: [
-    { id: "GUSINI", weight: 25, minLvl: 5, maxLvl: 8 },
-    { id: "FRIGO", weight: 20, minLvl: 6, maxLvl: 9 },
-    { id: "CAPPUASS", weight: 15, minLvl: 7, maxLvl: 10 },
-    { id: "LASAGNINI", weight: 15, minLvl: 5, maxLvl: 8 },
-    { id: "SKIBIDI", weight: 10, minLvl: 7, maxLvl: 10 },
-    { id: "SIGMAWOLF", weight: 10, minLvl: 8, maxLvl: 11 },
-    { id: "GLORBO", weight: 4, minLvl: 9, maxLvl: 12 },
-    { id: "RIZZLER", weight: 1, minLvl: 12, maxLvl: 15 },
+  ROUTE_2: [
+    { id: "GUSINI", weight: 18, minLvl: 6, maxLvl: 10 },
+    { id: "FRIGO", weight: 15, minLvl: 7, maxLvl: 11 },
+    { id: "CAPPUASS", weight: 12, minLvl: 8, maxLvl: 12 },
+    { id: "LASAGNINI", weight: 12, minLvl: 6, maxLvl: 10 },
+    { id: "SKIBIDI", weight: 10, minLvl: 8, maxLvl: 12 },
+    { id: "SIGMAWOLF", weight: 10, minLvl: 9, maxLvl: 13 },
+    { id: "GLORBO", weight: 5, minLvl: 10, maxLvl: 14 },
+    { id: "RIZZLER", weight: 3, minLvl: 13, maxLvl: 16 },
+    { id: "ESPRESSITO", weight: 8, minLvl: 7, maxLvl: 11 },
+    { id: "MOSSARELLA", weight: 7, minLvl: 8, maxLvl: 12 },
+  ],
+  FOREST_NORTH: [
+    { id: "PATAPIM", weight: 20, minLvl: 6, maxLvl: 10 },
+    { id: "CHIMPANZ", weight: 15, minLvl: 6, maxLvl: 10 },
+    { id: "ZUCCHINI", weight: 15, minLvl: 7, maxLvl: 11 },
+    { id: "TURBOFROGGO", weight: 10, minLvl: 8, maxLvl: 12 },
+    { id: "PIGEONORE", weight: 15, minLvl: 5, maxLvl: 9 },
+    { id: "CRINGEFLY", weight: 10, minLvl: 5, maxLvl: 9 },
+    { id: "GROCCO", weight: 10, minLvl: 9, maxLvl: 13 },
+    { id: "ZESTYBOI", weight: 5, minLvl: 8, maxLvl: 12 },
+  ],
+  FOREST_EAST: [
+    { id: "ZUCCHINI", weight: 18, minLvl: 8, maxLvl: 13 },
+    { id: "TURBOFROGGO", weight: 18, minLvl: 8, maxLvl: 13 },
+    { id: "PIGEONORE", weight: 15, minLvl: 7, maxLvl: 12 },
+    { id: "CRINGEFLY", weight: 12, minLvl: 8, maxLvl: 12 },
+    { id: "GROCCO", weight: 10, minLvl: 11, maxLvl: 15 },
+    { id: "RIZZARDO", weight: 8, minLvl: 12, maxLvl: 16 },
+    { id: "PASTANELLO", weight: 12, minLvl: 9, maxLvl: 13 },
+    { id: "GIGACHEF", weight: 2, minLvl: 16, maxLvl: 20 },
+    { id: "BRAINCORE", weight: 1, minLvl: 28, maxLvl: 32 },
+  ],
+  BEACH: [
+    { id: "GELATO", weight: 18, minLvl: 10, maxLvl: 14 },
+    { id: "SHRIMPELO", weight: 15, minLvl: 11, maxLvl: 15 },
+    { id: "CHEESETOPUS", weight: 12, minLvl: 12, maxLvl: 16 },
+    { id: "TRIPPI", weight: 10, minLvl: 10, maxLvl: 14 },
+    { id: "SOGGYNINI", weight: 12, minLvl: 11, maxLvl: 15 },
+    { id: "TRALALERO", weight: 8, minLvl: 13, maxLvl: 17 },
+    { id: "SKIBIDI", weight: 10, minLvl: 12, maxLvl: 16 },
+    { id: "PIGEONORE", weight: 8, minLvl: 10, maxLvl: 14 },
+    { id: "TRALATITAN", weight: 1, minLvl: 30, maxLvl: 35 },
+    { id: "TRALALERONE", weight: 6, minLvl: 18, maxLvl: 22 },
+  ],
+  GYM_GRASS: [
+    { id: "RIZZARDO", weight: 15, minLvl: 14, maxLvl: 18 },
+    { id: "CRINGELORD", weight: 8, minLvl: 17, maxLvl: 21 },
+    { id: "PROSCIUTTO", weight: 12, minLvl: 14, maxLvl: 18 },
+    { id: "PARMIGIANO", weight: 12, minLvl: 16, maxLvl: 20 },
+    { id: "ESPRESSEUR", weight: 5, minLvl: 22, maxLvl: 26 },
+    { id: "SIGMAWOLF", weight: 12, minLvl: 14, maxLvl: 18 },
+    { id: "OHIO", weight: 3, minLvl: 18, maxLvl: 22 },
+    { id: "GIGACHEF", weight: 5, minLvl: 20, maxLvl: 24 },
+    { id: "GLORBO", weight: 12, minLvl: 14, maxLvl: 18 },
+    { id: "RIZZLER", weight: 16, minLvl: 16, maxLvl: 20 },
   ],
 };
 
@@ -728,27 +1196,83 @@ const TRAINERS = {
     name: "Rival Marco",
     intro: "Marco: Yo! You picked your meme? Mine'll absolutely cook yours.",
     defeat: "Marco: WHAT?! That's so brainrot of you. I'll be back!",
-    team: [{ id: "BONECA", lvl: 5 }],
+    team: [{ id: "BONECA", lvl: 6 }, { id: "GUSINI", lvl: 7 }],
+    reward: 100,
   },
   TRAINER_1: {
     name: "Pasta Chef Luigi",
     intro: "Luigi: Mamma mia! Taste the al dente!",
     defeat: "Luigi: My pasta... she is overcooked...",
-    team: [{ id: "LASAGNINI", lvl: 6 }, { id: "CHIMPANZ", lvl: 7 }],
+    team: [{ id: "LASAGNINI", lvl: 8 }, { id: "RAVIOLINO", lvl: 9 }, { id: "CHIMPANZ", lvl: 10 }],
+    reward: 200,
   },
   TRAINER_2: {
     name: "Sigma Bro Kai",
     intro: "Kai: I don't lose. Sigma rule #1.",
     defeat: "Kai: Bro... that wasn't very alpha of you.",
-    team: [{ id: "SIGMAWOLF", lvl: 9 }, { id: "CAPPUASS", lvl: 10 }],
+    team: [{ id: "SIGMAWOLF", lvl: 11 }, { id: "CAPPUASS", lvl: 12 }, { id: "MOSSARELLA", lvl: 12 }],
+    reward: 250,
+  },
+  BIRD_LADY: {
+    name: "Bird Lady Pia",
+    intro: "Pia: Coo coo! My babies will peck your eyes out!",
+    defeat: "Pia: My babies... they need cookies now...",
+    team: [{ id: "PIGEONORE", lvl: 9 }, { id: "GUSINI", lvl: 10 }, { id: "PASTANELLO", lvl: 11 }],
+    reward: 220,
+  },
+  FISHER: {
+    name: "Fisher Tony",
+    intro: "Tony: I'll reel ya in good, kid!",
+    defeat: "Tony: Bait... taken... by the BAITED.",
+    team: [{ id: "SHRIMPELO", lvl: 12 }, { id: "TRIPPI", lvl: 13 }, { id: "CHEESETOPUS", lvl: 14 }],
+    reward: 300,
+  },
+  BEACH_BUM: {
+    name: "Beach Bum Brad",
+    intro: "Brad: Bruh you're harshing my vibe.",
+    defeat: "Brad: That was, like, totally not chill of you.",
+    team: [{ id: "SOGGYNINI", lvl: 13 }, { id: "GELATO", lvl: 13 }, { id: "TRALALERO", lvl: 14 }],
+    reward: 320,
+  },
+  RIVAL_2: {
+    name: "Rival Marco (Round 2)",
+    intro: "Marco: I've been training in the cave. I'm built different.",
+    defeat: "Marco: I... I'll go meditate in the forest.",
+    team: [{ id: "BONECA", lvl: 14 }, { id: "GUSINI", lvl: 15 }, { id: "BOMBARDINO", lvl: 16 }, { id: "OHIO", lvl: 17 }],
+    reward: 600,
+  },
+  PIZZA_CHEF: {
+    name: "Pizza Chef Greg",
+    intro: "Greg: 800 degrees! Wood fired! YOU WILL BE CHARRED!",
+    defeat: "Greg: I... need to lower the heat...",
+    team: [{ id: "PIZZADIRO", lvl: 16 }, { id: "MARGHERITRON", lvl: 17 }],
+    reward: 500,
+  },
+  ELITE_1: {
+    name: "Elite Cappuccino Marco",
+    intro: "Cappuccino: I am steam. I am crema. I am inevitable.",
+    defeat: "Cappuccino: I have been... decaffed.",
+    team: [{ id: "CAPPUASS", lvl: 22 }, { id: "BALLERINA", lvl: 22 }, { id: "ESPRESSEUR", lvl: 24 }],
+    reward: 1500,
   },
   GYM_LEADER: {
-    name: "Gym Leader Brainrot Queen",
+    name: "Brainrot Queen Tralala",
     intro: "Queen: Welcome, challenger. I am the embodiment of TikTok 2026.",
     defeat: "Queen: Impossible! You... you understand the lore?!",
-    team: [{ id: "GLORBO", lvl: 12 }, { id: "RIZZLER", lvl: 14 }, { id: "OHIO", lvl: 16 }],
+    team: [{ id: "GLORBO", lvl: 22 }, { id: "RIZZLER", lvl: 24 }, { id: "CRINGELORD", lvl: 26 }, { id: "OHIO", lvl: 28 }],
+    reward: 3000,
   },
 };
+
+// Items now sold by shopkeeper
+const SHOP_ITEMS = [
+  { key: "BRAINCELL", price: 50 },
+  { key: "GREATCELL", price: 200 },
+  { key: "ULTRACELL", price: 600 },
+  { key: "CAPPUCCINO", price: 100 },
+  { key: "ESPRESSO_DBL", price: 300 },
+  { key: "ELIXIR", price: 1500 },
+];
 
 // Items
 const ITEMS = {
@@ -1242,6 +1766,130 @@ const SpriteRenderer = (() => {
     },
   };
 
+  function genericMon(ctx, sp, x, y, s, t) {
+    // procedurally distinct mon based on species id hash
+    const h = hash(sp.id);
+    const shape = h % 6; // body shape
+    const eyeKind = (h >> 3) % 4;
+    const limbKind = (h >> 6) % 4;
+    const accessoryKind = (h >> 9) % 5;
+    const bobSpeed = 0.003 + ((h >> 12) % 5) * 0.001;
+    const bob = Math.sin(t * bobSpeed) * 1.5;
+    shadow(ctx, x + s/2, y + s - 4, s*0.35, 4);
+
+    // body shape
+    if (shape === 0) {
+      // round blob
+      px(ctx, x+s*0.25, y+s*0.30+bob, s*0.50, s*0.45, sp.color1);
+      px(ctx, x+s*0.20, y+s*0.40+bob, s*0.60, s*0.30, sp.color1);
+      px(ctx, x+s*0.30, y+s*0.50+bob, s*0.40, s*0.15, sp.color2);
+    } else if (shape === 1) {
+      // tall body
+      px(ctx, x+s*0.30, y+s*0.20+bob, s*0.40, s*0.55, sp.color1);
+      px(ctx, x+s*0.25, y+s*0.35+bob, s*0.50, s*0.30, sp.color1);
+      px(ctx, x+s*0.32, y+s*0.50+bob, s*0.36, s*0.15, sp.color2);
+    } else if (shape === 2) {
+      // wide body
+      px(ctx, x+s*0.15, y+s*0.40+bob, s*0.70, s*0.30, sp.color1);
+      px(ctx, x+s*0.20, y+s*0.30+bob, s*0.60, s*0.20, sp.color1);
+      px(ctx, x+s*0.25, y+s*0.55+bob, s*0.50, s*0.10, sp.color2);
+    } else if (shape === 3) {
+      // diamond
+      px(ctx, x+s*0.40, y+s*0.20+bob, s*0.20, s*0.10, sp.color1);
+      px(ctx, x+s*0.30, y+s*0.30+bob, s*0.40, s*0.10, sp.color1);
+      px(ctx, x+s*0.20, y+s*0.40+bob, s*0.60, s*0.20, sp.color1);
+      px(ctx, x+s*0.30, y+s*0.60+bob, s*0.40, s*0.10, sp.color1);
+      px(ctx, x+s*0.40, y+s*0.70+bob, s*0.20, s*0.05, sp.color1);
+      px(ctx, x+s*0.30, y+s*0.45+bob, s*0.40, s*0.10, sp.color2);
+    } else if (shape === 4) {
+      // segmented (stack of two)
+      px(ctx, x+s*0.30, y+s*0.20+bob, s*0.40, s*0.25, sp.color1);
+      px(ctx, x+s*0.25, y+s*0.45+bob, s*0.50, s*0.30, sp.color2);
+      px(ctx, x+s*0.32, y+s*0.55+bob, s*0.36, s*0.15, sp.color3);
+    } else {
+      // spiky
+      px(ctx, x+s*0.25, y+s*0.30+bob, s*0.50, s*0.45, sp.color1);
+      for (let i = 0; i < 5; i++) {
+        const sx = x + s*(0.20 + i * 0.15);
+        px(ctx, sx, y+s*0.20+bob, s*0.05, s*0.10, sp.color3);
+      }
+      px(ctx, x+s*0.30, y+s*0.45+bob, s*0.40, s*0.20, sp.color2);
+    }
+
+    // eyes
+    if (eyeKind === 0) {
+      // big anime eyes
+      px(ctx, x+s*0.32, y+s*0.36+bob, s*0.12, s*0.10, "#fff");
+      px(ctx, x+s*0.56, y+s*0.36+bob, s*0.12, s*0.10, "#fff");
+      px(ctx, x+s*0.36, y+s*0.40+bob, s*0.05, s*0.05, "#000");
+      px(ctx, x+s*0.60, y+s*0.40+bob, s*0.05, s*0.05, "#000");
+    } else if (eyeKind === 1) {
+      // angry slits
+      px(ctx, x+s*0.32, y+s*0.40+bob, s*0.12, s*0.04, "#000");
+      px(ctx, x+s*0.56, y+s*0.40+bob, s*0.12, s*0.04, "#000");
+    } else if (eyeKind === 2) {
+      // sleepy
+      px(ctx, x+s*0.34, y+s*0.42+bob, s*0.10, s*0.02, "#000");
+      px(ctx, x+s*0.56, y+s*0.42+bob, s*0.10, s*0.02, "#000");
+      px(ctx, x+s*0.34, y+s*0.40+bob, s*0.10, s*0.02, sp.color3);
+      px(ctx, x+s*0.56, y+s*0.40+bob, s*0.10, s*0.02, sp.color3);
+    } else {
+      // glowing
+      px(ctx, x+s*0.32, y+s*0.38+bob, s*0.10, s*0.08, sp.color3);
+      px(ctx, x+s*0.58, y+s*0.38+bob, s*0.10, s*0.08, sp.color3);
+      px(ctx, x+s*0.36, y+s*0.42+bob, s*0.04, s*0.04, "#fff");
+      px(ctx, x+s*0.62, y+s*0.42+bob, s*0.04, s*0.04, "#fff");
+    }
+
+    // mouth
+    px(ctx, x+s*0.40, y+s*0.55+bob, s*0.20, s*0.03, "#000");
+
+    // limbs
+    if (limbKind === 0) {
+      // legs
+      px(ctx, x+s*0.30, y+s*0.75+bob, s*0.10, s*0.15, sp.color1);
+      px(ctx, x+s*0.60, y+s*0.75+bob, s*0.10, s*0.15, sp.color1);
+    } else if (limbKind === 1) {
+      // 4 legs
+      px(ctx, x+s*0.20, y+s*0.65+bob, s*0.08, s*0.20, sp.color1);
+      px(ctx, x+s*0.36, y+s*0.65+bob, s*0.08, s*0.20, sp.color1);
+      px(ctx, x+s*0.56, y+s*0.65+bob, s*0.08, s*0.20, sp.color1);
+      px(ctx, x+s*0.72, y+s*0.65+bob, s*0.08, s*0.20, sp.color1);
+    } else if (limbKind === 2) {
+      // arms + legs
+      px(ctx, x+s*0.10, y+s*0.40+bob, s*0.15, s*0.08, sp.color1);
+      px(ctx, x+s*0.75, y+s*0.40+bob, s*0.15, s*0.08, sp.color1);
+      px(ctx, x+s*0.30, y+s*0.75+bob, s*0.10, s*0.15, sp.color1);
+      px(ctx, x+s*0.60, y+s*0.75+bob, s*0.10, s*0.15, sp.color1);
+    } else {
+      // tentacles
+      for (let i = 0; i < 4; i++) {
+        const wave = Math.sin(t * 0.005 + i) * 2;
+        px(ctx, x+s*(0.20 + i*0.20), y+s*0.70+bob, s*0.06, s*0.20 + wave, sp.color1);
+      }
+    }
+
+    // accessory
+    if (accessoryKind === 0) {
+      // hat
+      px(ctx, x+s*0.30, y+s*0.18+bob, s*0.40, s*0.06, sp.color3);
+      px(ctx, x+s*0.36, y+s*0.10+bob, s*0.28, s*0.10, sp.color3);
+    } else if (accessoryKind === 1) {
+      // bow
+      px(ctx, x+s*0.45, y+s*0.20+bob, s*0.10, s*0.06, sp.color3);
+    } else if (accessoryKind === 2) {
+      // sunglasses
+      px(ctx, x+s*0.28, y+s*0.36+bob, s*0.18, s*0.06, "#000");
+      px(ctx, x+s*0.54, y+s*0.36+bob, s*0.18, s*0.06, "#000");
+      px(ctx, x+s*0.45, y+s*0.38+bob, s*0.10, s*0.02, "#000");
+    } else if (accessoryKind === 3) {
+      // antenna
+      px(ctx, x+s*0.49, y+s*0.05+bob, s*0.02, s*0.15, sp.color3);
+      px(ctx, x+s*0.45, y+s*0.04+bob, s*0.10, s*0.04, sp.color3);
+    }
+    // 4 = no accessory
+  }
+
   function drawMon(ctx, speciesId, x, y, size, time) {
     const sp = SPECIES[speciesId];
     if (!sp) return;
@@ -1249,15 +1897,7 @@ const SpriteRenderer = (() => {
     if (fn) {
       fn(ctx, sp, x, y, size, time);
     } else {
-      // generic blob fallback
-      const bob = Math.sin(time * 0.005) * 1;
-      shadow(ctx, x + size/2, y + size - 4, size*0.3, 4);
-      px(ctx, x+size*0.25, y+size*0.30+bob, size*0.50, size*0.45, sp.color1);
-      px(ctx, x+size*0.30, y+size*0.40+bob, size*0.40, size*0.20, sp.color2);
-      px(ctx, x+size*0.34, y+size*0.36+bob, size*0.10, size*0.06, "#fff");
-      px(ctx, x+size*0.56, y+size*0.36+bob, size*0.10, size*0.06, "#fff");
-      px(ctx, x+size*0.38, y+size*0.38+bob, size*0.04, size*0.04, "#000");
-      px(ctx, x+size*0.60, y+size*0.38+bob, size*0.04, size*0.04, "#000");
+      genericMon(ctx, sp, x, y, size, time);
     }
   }
 
@@ -1423,54 +2063,69 @@ const SpriteRenderer = (() => {
 
 // ===== js/world.js =====
 // =====================================================
-// Overworld map, NPCs, encounter zones
+// Overworld map, NPCs, encounter zones - bigger world
 // =====================================================
 
 const World = (() => {
   const T = {
-    G: 0, // grass
-    H: 1, // tall grass (encounter)
-    P: 2, // path
-    W: 3, // wall (tree)
-    R: 4, // water
-    B: 5, // building wall
-    D: 6, // door
-    S: 7, // sign
-    F: 8, // healing floor
-    L: 9, // flower
+    G: 0, H: 1, P: 2, W: 3, R: 4, B: 5, D: 6, S: 7, F: 8, L: 9,
+    SAND: 10, SNOW: 11, ROCK: 12, BRIDGE: 13, SHOP_FLOOR: 14,
   };
 
-  // Map: 30 wide x 22 tall
-  // Use chars to make readable
+  // 50 wide x 40 tall
+  // Regions:
+  // North: Forest (rows 1-12)
+  // Middle: Hometown / Pasta Town (rows 13-25)
+  // East: Beach / Coast (cols 30-49, rows 13-30)
+  // South: Gym Town (rows 26-38)
   const RAW_MAP = [
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WGGGGGGGGGGGGGWWWWWWWWWWWWWWWW",
-    "WGLGLGGGGGGGGGWWGGGGGGGGGGGGGW",
-    "WGGGGGGGSGGGGGWGGHHHHHHHHHGGGW",
-    "WGGGGGGGPGGGGGGGHHHHHHHHHGGGGW",
-    "WGGBBBBBPGGGGGGGGGGGGGGGGGGGGW",
-    "WGGBFFFBPGGGGGGGGGGGGGGGGGGGGW",
-    "WGGBFFFBPGGGGGGGSGGGHHHHHHHGGW",
-    "WGGBFFFDPPPPPPPPPGGGHHHHHHHGGW",
-    "WGGBBBBBGGGGGGGGGGGGGGGGGGGGGW",
-    "WGGGGGGGPGGGGGGGGGRRRRRGGGGGGW",
-    "WGGGGGGGPGHHHHHGGRRRRRRRRGGGGW",
-    "WGGGGGGGPGHHHHHGGRRRRRRRRGGGGW",
-    "WGGGGGGGPGHHHHHGGGGRRRRRGGGGGW",
-    "WGGGGGGGPGGSGGGGGGGGGGGGGGGGGW",
-    "WGGGGGGGPGGGGGGGGGGGGGGGGGGGGW",
-    "WGGGGGGGPGGGGGGGGGGGGGGGGGGGGW",
-    "WGGGGGBBPBBGGGGGGGGGGGGGGGGGGW",
-    "WGGGGGBFFFBGGGGGGGGGGGGGGGGGGW",
-    "WGGGGGBFFFBGGGGGGGGGGGGGGGGGGW",
-    "WGGGGGBBBBBGGGGGGGGGGGGGGGGGGW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WGGWWWWWWWGGGGGGGGGGGGGGGGGGGWWWWWWWWWWWGGGGGGGGGW",
+    "WGGWWWWWGGGHHHHHHHHHHGGGGGGGGGGWWWWWWGGGGHHHHHHGGW",
+    "WGGGGGGGGGGHHHHHHHHHHGGGGGGGGGGGGGGGGGGGGHHHHHHGGW",
+    "WGGGGLGGGGGHHHHHHHHHHGGGGGGGGGGGGGGGGGGGGHHHHHHGGW",
+    "WGGGGGGGGSGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGGPGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGGPGGWWWWWWGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGGPGGWWWWWWGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGGPGGGGGGGGGGGGSGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGGPGGHHHHHHHHGGGGGGGGGGGGGGHHHHHHHHHHGGGGGW",
+    "WGGGGGGGGPGGHHHHHHHHGGGGGGGGGGGGGGHHHHHHHHHHGGGGGW",
+    "WGGGGGGGGPGGHHHHHHHHGGGGGGGGGGGGGGHHHHHHHHHHGGGGGW",
+    "WGGGGGGGGPGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WWGGGLGGGPPPPPPPPPPPPPPPPPPPPPPGGGGGGGGGGGGGGGGGGW",
+    "WGGGBBBBBPGGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGGW",
+    "WGGGBFFFBPGGGGGGGGGGSGGGGGGGGGPGGGGGGGGGGGGGGGGGGW",
+    "WGGGBFFFDPGGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGGW",
+    "WGGGBFFFBPGGGBBBBBGGGGGGGGGGGGPGGGGGRRRRRRRRRRGGGW",
+    "WGGGBBBBBPGGGB$$BGGGGGGGGGGGGPPPPPPGGRRRRRRRRGGGW",
+    "WGGGGGGGGPGGGB$$DGGGGGGGGGGGGGGGGGGGGGRRRRRRGGGGW",
+    "WGGGGGGGGPGGGBBBBBGGGGGGGGGGGGGGGGGGGGGGRRRRGGGGGW",
+    "WGGGGGGGGPGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGGPGGGSGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGGPGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGGPGGHHHHHGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGGPGGHHHHHGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGGPPPPPPPPPPPPPPPGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGGGGGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGBBBBPBBBBBBBBBBPGGGGGSGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGBFFFFFFFFFFFFFBPGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGBFFFFFFFFFFFFFBPGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGBFFFFFFFFFFFFFBPGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGBFFFFFFFFFFFFFBPGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGBBBBBDBBBBBBBBBPGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGGGGGGGGGPGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WGGGGLLLGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGLLLGGGGGGGGW",
+    "WGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
   ];
 
   function charToTile(c) {
     return ({
       G: T.G, H: T.H, P: T.P, W: T.W, R: T.R,
       B: T.B, D: T.D, S: T.S, F: T.F, L: T.L,
+      $: T.SHOP_FLOOR,
     })[c] ?? T.G;
   }
 
@@ -1482,81 +2137,118 @@ const World = (() => {
   // NPCs
   const npcs = [
     {
-      id: "rival",
-      x: 14, y: 5,
-      color: "#ff5e5e",
-      facing: "down",
-      defeated: false,
+      id: "rival_1", x: 14, y: 13, color: "#ff5e5e", facing: "down", defeated: false,
+      type: "trainer",
       dialog: ["Marco: Hey! You finally have a meme of your own?", "Marco: Let's see if you've got the rizz to back it up!"],
       trainerKey: "RIVAL_1",
-      type: "trainer",
     },
     {
-      id: "nurse",
-      x: 5, y: 7,
-      color: "#ff8aa8",
-      facing: "down",
-      type: "healer",
+      id: "nurse", x: 5, y: 17, color: "#ff8aa8", facing: "down", type: "healer",
       dialog: ["Barista: Welcome to the Cappuccino Bar!", "Barista: Your monsters look exhausted... Let me top them up.", "(*HSSSS* — espresso machine sounds)", "Barista: All restored. Ciao!"],
     },
     {
-      id: "pasta_chef",
-      x: 16, y: 14,
-      color: "#ffe070",
-      facing: "down",
-      defeated: false,
+      id: "shopkeeper", x: 16, y: 19, color: "#ffd700", facing: "down", type: "shop",
+      dialog: ["Shopkeeper: Welcome to the Brain Cell Mart!", "Shopkeeper: I sell quality vibes. What'll it be?"],
+    },
+    {
+      id: "pasta_chef", x: 18, y: 5, color: "#ffe070", facing: "down", defeated: false, type: "trainer",
       dialog: ["Luigi: Mamma mia! You smell of fresh meme energy.", "Luigi: My pasta-monsters demand a battle!"],
       trainerKey: "TRAINER_1",
-      type: "trainer",
     },
     {
-      id: "sigma_bro",
-      x: 18, y: 8,
-      color: "#9aa5ff",
-      facing: "down",
-      defeated: false,
+      id: "sigma_bro", x: 22, y: 14, color: "#9aa5ff", facing: "down", defeated: false, type: "trainer",
       dialog: ["Kai: I don't say hi. I just stare.", "Kai: ...you still here? Fine. Battle me."],
       trainerKey: "TRAINER_2",
-      type: "trainer",
     },
     {
-      id: "queen",
-      x: 8, y: 19,
-      color: "#c93dff",
-      facing: "down",
-      defeated: false,
+      id: "bird_lady", x: 12, y: 6, color: "#a08a5a", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Bird Lady: Coooo! The pigeons whisper of you.", "Bird Lady: Fight my flock!"],
+      trainerKey: "BIRD_LADY",
+    },
+    {
+      id: "fisher", x: 38, y: 20, color: "#3a78dc", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Fisher Tony: I caught a tralalero this big once!", "Fisher Tony: Watch me hook your team."],
+      trainerKey: "FISHER",
+    },
+    {
+      id: "beach_bum", x: 35, y: 24, color: "#ffaa66", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Beach Bum: Yo, surf's up. Wanna battle?"],
+      trainerKey: "BEACH_BUM",
+    },
+    {
+      id: "rival_2", x: 28, y: 28, color: "#ff5e5e", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Marco: I've been training! No more freebies.", "Marco: This time my team is built different."],
+      trainerKey: "RIVAL_2",
+    },
+    {
+      id: "ramp_chef", x: 20, y: 24, color: "#a3361f", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Pizza Chef Greg: My margheritron is 800 degrees!", "Pizza Chef Greg: You will be charred."],
+      trainerKey: "PIZZA_CHEF",
+    },
+    {
+      id: "elite_1", x: 14, y: 33, color: "#5a3818", facing: "down", defeated: false, type: "trainer",
+      dialog: ["Elite Cappuccino: I am the first of the Espresso Four.", "Elite Cappuccino: Steam yourself ready."],
+      trainerKey: "ELITE_1",
+    },
+    {
+      id: "queen", x: 18, y: 33, color: "#c93dff", facing: "down", defeated: false, type: "trainer",
       dialog: ["Brainrot Queen: You've climbed far, challenger.", "Brainrot Queen: But the deepest lore is mine.", "Brainrot Queen: Tralalero tralala... your final test begins."],
       trainerKey: "GYM_LEADER",
-      type: "trainer",
+    },
+    // signs
+    { id: "sign1", x: 9, y: 5, color: null, type: "sign", dialog: ["[ROUTE 1]\nWild brain rot lurks in tall grass.\nSay 'tralalero' to befriend them."] },
+    { id: "sign2", x: 22, y: 9, color: null, type: "sign", dialog: ["[ROUTE 2]\nDanger Level: VERY 2026.\nLore knowledge required."] },
+    { id: "sign3", x: 13, y: 16, color: null, type: "sign", dialog: ["☕ CAPPUCCINO BAR ☕\nFully restores your team.\nFree espresso. We promise."] },
+    { id: "sign4", x: 13, y: 23, color: null, type: "sign", dialog: ["▶ SOUTH: Gym Town\n▼ Continue training!"] },
+    { id: "sign5", x: 30, y: 30, color: null, type: "sign", dialog: ["[BEACH ROUTE]\nWatch out for swimmers.\nThe sand is suspiciously hot."] },
+    { id: "sign6", x: 12, y: 4, color: null, type: "sign", dialog: ["[FOREST]\nThe trees here whisper 'patapim'.\nDo not respond."] },
+    // NPCs (non-trainer chatter)
+    {
+      id: "kid", x: 11, y: 14, color: "#5fa84a", facing: "down", type: "npc",
+      dialog: ["Kid: Did you know Tralalero used to wear flip-flops?", "Kid: Now it's strictly Nikes. Times change!"],
     },
     {
-      id: "sign1",
-      x: 8, y: 3,
-      color: null,
-      type: "sign",
-      dialog: ["[ROUTE 1]\nWild brain rot lurks in tall grass.\nSay 'tralalero' to befriend them."],
+      id: "old_man", x: 7, y: 23, color: "#aabbcc", facing: "down", type: "npc",
+      dialog: ["Old Man: In my day, we only had ONE skibidi toilet.", "Old Man: ...kids these days have like 80."],
     },
     {
-      id: "sign2",
-      x: 16, y: 7,
-      color: null,
-      type: "sign",
-      dialog: ["[ROUTE 2]\nDanger Level: VERY 2026.\nLore knowledge required."],
+      id: "lore_master", x: 25, y: 5, color: "#9b6b9b", facing: "down", type: "npc",
+      dialog: ["Lore Master: The deepest brainrot truth?", "Lore Master: ...is that we are all skibidi inside."],
     },
     {
-      id: "sign3",
-      x: 11, y: 14,
-      color: null,
-      type: "sign",
-      dialog: ["☕ CAPPUCCINO BAR ☕\nFully restores your team.\nFree espresso. We promise."],
+      id: "merchant", x: 36, y: 16, color: "#ffd700", facing: "down", type: "item",
+      dialog: ["Treasure! You found a Pasta Elixir!"],
+      itemKey: "ELIXIR",
+      consumed: false,
+    },
+    {
+      id: "treasure_1", x: 11, y: 11, color: "#ff8aff", facing: "down", type: "item",
+      dialog: ["Treasure! You found a Doppio Espresso!"],
+      itemKey: "ESPRESSO_DBL",
+      consumed: false,
+    },
+    {
+      id: "treasure_2", x: 41, y: 4, color: "#ff8aff", facing: "down", type: "item",
+      dialog: ["Treasure! You found a Great Cell!"],
+      itemKey: "GREATCELL",
+      consumed: false,
+    },
+    {
+      id: "treasure_3", x: 38, y: 30, color: "#ff8aff", facing: "down", type: "item",
+      dialog: ["Treasure! You found an Ultra Cell!"],
+      itemKey: "ULTRACELL",
+      consumed: false,
     },
   ];
 
-  // Encounter zones: which ENCOUNTER table per region
+  // Encounter zones based on which "biome" the tile sits in
   function encounterTableAt(tx, ty) {
-    if (tx >= 16 && tx <= 24 && ty >= 3 && ty <= 4) return "GRASS_ROUTE_2";
-    if (tx >= 16 && tx <= 22 && ty >= 7 && ty <= 8) return "GRASS_ROUTE_2";
-    return "GRASS_ROUTE_1";
+    if (ty <= 5) return "FOREST_NORTH"; // forest area top
+    if (ty <= 13 && tx >= 30) return "FOREST_EAST"; // east forest patch
+    if (ty >= 25 && tx <= 12) return "GYM_GRASS"; // grass near gym
+    if (tx >= 30) return "BEACH";
+    if (ty >= 8 && ty <= 14 && tx >= 12 && tx <= 22) return "ROUTE_2";
+    return "ROUTE_1";
   }
 
   function tileAt(x, y) {
@@ -1567,31 +2259,26 @@ const World = (() => {
   function isWalkable(x, y) {
     const t = tileAt(x, y);
     if (t === T.W || t === T.R || t === T.B || t === T.S) return false;
-    // check NPC collision
     for (const n of npcs) {
+      if (n.consumed) continue;
       if (n.x === x && n.y === y) return false;
     }
     return true;
   }
 
   function npcAt(x, y) {
-    return npcs.find(n => n.x === x && n.y === y);
+    return npcs.find(n => !n.consumed && n.x === x && n.y === y);
   }
 
   function isEncounterTile(x, y) {
     return tileAt(x, y) === T.H;
   }
 
-  function isHealerTile(x, y) {
-    return tileAt(x, y) === T.F;
-  }
-
-  // Camera-based draw
   function draw(ctx, cam, time) {
-    const startX = Math.max(0, Math.floor(cam.x / TILE));
-    const startY = Math.max(0, Math.floor(cam.y / TILE));
-    const endX = Math.min(WIDTH, Math.ceil((cam.x + ctx.canvas.width) / TILE));
-    const endY = Math.min(HEIGHT, Math.ceil((cam.y + ctx.canvas.height) / TILE));
+    const startX = Math.max(0, Math.floor(cam.x / TILE) - 1);
+    const startY = Math.max(0, Math.floor(cam.y / TILE) - 1);
+    const endX = Math.min(WIDTH, Math.ceil((cam.x + ctx.canvas.width) / TILE) + 1);
+    const endY = Math.min(HEIGHT, Math.ceil((cam.y + ctx.canvas.height) / TILE) + 1);
     for (let y = startY; y < endY; y++) {
       for (let x = startX; x < endX; x++) {
         const sx = x*TILE - cam.x;
@@ -1599,10 +2286,10 @@ const World = (() => {
         SpriteRenderer.drawTile(ctx, map[y][x], sx, sy, time);
       }
     }
-    // npcs
     const frame = Math.floor(time / 350);
     for (const n of npcs) {
-      if (n.color === null) continue; // signs render as tiles
+      if (n.consumed) continue;
+      if (n.color === null) continue;
       const sx = n.x*TILE - cam.x;
       const sy = n.y*TILE - cam.y;
       if (sx < -TILE || sx > ctx.canvas.width || sy < -TILE || sy > ctx.canvas.height) continue;
@@ -1612,7 +2299,7 @@ const World = (() => {
 
   return {
     map, WIDTH, HEIGHT, TILE,
-    tileAt, isWalkable, npcAt, isEncounterTile, isHealerTile,
+    tileAt, isWalkable, npcAt, isEncounterTile,
     encounterTableAt, draw, npcs, T,
   };
 })();
@@ -1620,7 +2307,7 @@ const World = (() => {
 
 // ===== js/battle.js =====
 // =====================================================
-// Battle system - turn based
+// Battle system - turn based, animated
 // =====================================================
 
 const Battle = (() => {
@@ -1632,6 +2319,32 @@ const Battle = (() => {
   const elBattleUi = () => document.getElementById("battle-ui");
   const elEnemyInfo = () => document.getElementById("enemy-info");
   const elPlayerInfo = () => document.getElementById("player-info");
+
+  // tween animation system
+  function makeTween() {
+    return { active: false, from: 0, to: 0, t0: 0, dur: 0, value: 0, onDone: null };
+  }
+  function startTween(tw, from, to, dur, onDone) {
+    tw.active = true;
+    tw.from = from;
+    tw.to = to;
+    tw.value = from;
+    tw.t0 = performance.now();
+    tw.dur = dur;
+    tw.onDone = onDone || null;
+  }
+  function updateTween(tw, now) {
+    if (!tw.active) return;
+    const t = Math.min(1, (now - tw.t0) / tw.dur);
+    tw.value = tw.from + (tw.to - tw.from) * t;
+    if (t >= 1) {
+      tw.active = false;
+      tw.value = tw.to;
+      const cb = tw.onDone;
+      tw.onDone = null;
+      if (cb) cb();
+    }
+  }
 
   function start(playerTeam, opponent, opts = {}) {
     state = {
@@ -1646,6 +2359,10 @@ const Battle = (() => {
       phase: "intro",
       messageQueue: [],
       message: "",
+      typedText: "",
+      typeIdx: 0,
+      typeTimer: 0,
+      typing: false,
       onEnd: opts.onEnd || (() => {}),
       caught: false,
       ranAway: false,
@@ -1655,20 +2372,51 @@ const Battle = (() => {
       turnIdx: 0,
       enemyShake: 0,
       playerShake: 0,
+      enemyFlash: 0,
+      playerFlash: 0,
+      enemyOffsetX: 200, // slide-in from right
+      playerOffsetX: -240, // slide-in from left
+      enemyOffsetY: 0,
+      playerOffsetY: 0,
+      enemyFainted: false,
+      playerFainted: false,
+      enemyHpTween: makeTween(),
+      playerHpTween: makeTween(),
+      visualEnemyHp: 0,
+      visualPlayerHp: 0,
+      uiBlocked: false, // true while animation running
+      attackAnimT: 0, // attacker forward bounce
+      attackAnimWho: null,
+      shakeMagX: 0,
+      catchShakes: 0,
+      catchAnimT: 0,
     };
+    state.visualEnemyHp = state.enemyMon.hp;
+    state.visualPlayerHp = playerMon().hp;
     elBattleUi().classList.remove("hidden");
     elActions().classList.add("hidden");
     elMoveList().classList.add("hidden");
-    if (state.isTrainer && state.trainerData) {
-      enqueue(state.trainerData.intro);
-      enqueue(`${state.trainerData.name} sent out ${SPECIES[state.enemyMon.species].name}!`);
-    } else {
-      enqueue(`A wild ${SPECIES[state.enemyMon.species].name} appeared!`);
-    }
-    enqueue(`Go, ${SPECIES[playerMon().species].name}!`);
-    state.phase = "intro";
-    nextMessage();
-    refreshInfo();
+
+    Audio.play("encounter");
+    // slide in
+    state.uiBlocked = true;
+    setTimeout(() => {
+      state.enemyOffsetX = 0;
+      state.playerOffsetX = 0;
+      setTimeout(() => {
+        state.uiBlocked = false;
+        if (state.isTrainer && state.trainerData) {
+          enqueue(state.trainerData.intro);
+          enqueue(`${state.trainerData.name} sent out ${SPECIES[state.enemyMon.species].name}!`);
+        } else {
+          enqueue(`A wild ${SPECIES[state.enemyMon.species].name} appeared!`);
+        }
+        enqueue(`Go, ${SPECIES[playerMon().species].name}!`);
+        nextMessage();
+      }, 50);
+    }, 600);
+
+    refreshInfo(true);
   }
 
   function playerMon() { return state.playerTeam[state.playerIdx]; }
@@ -1679,14 +2427,44 @@ const Battle = (() => {
     if (!state) return;
     if (state.messageQueue.length === 0) {
       state.message = "";
+      state.typedText = "";
+      state.typing = false;
       onMessageEnd();
       return;
     }
     state.message = state.messageQueue.shift();
-    elText().innerHTML = state.message;
+    state.typedText = "";
+    state.typeIdx = 0;
+    state.typeTimer = 0;
+    state.typing = true;
+    elText().textContent = "";
     elActions().classList.add("hidden");
     elMoveList().classList.add("hidden");
-    refreshInfo();
+  }
+
+  function tickTypewriter(now, dt) {
+    if (!state || !state.typing) return;
+    state.typeTimer += dt;
+    const speed = 22; // chars per second... bumped to 30
+    const charsPerMs = 0.030;
+    const want = Math.floor(state.typeTimer * charsPerMs);
+    while (state.typeIdx < state.message.length && state.typeIdx < want) {
+      const c = state.message[state.typeIdx];
+      state.typedText += c;
+      state.typeIdx++;
+      if (state.typeIdx % 2 === 0 && c !== " " && c !== "\n") Audio.play("text");
+    }
+    if (state.typeIdx >= state.message.length) state.typing = false;
+    elText().textContent = state.typedText;
+  }
+
+  function fastForwardTypewriter() {
+    if (!state || !state.typing) return false;
+    state.typedText = state.message;
+    state.typeIdx = state.message.length;
+    state.typing = false;
+    elText().textContent = state.typedText;
+    return true;
   }
 
   function onMessageEnd() {
@@ -1698,20 +2476,12 @@ const Battle = (() => {
         showActions();
         break;
       case "midTurn":
-        // check faints
         if (state.enemyMon.hp <= 0) { handleEnemyFaint(); return; }
         if (playerMon().hp <= 0) { handlePlayerFaint(); return; }
-        // continue turn order
         doNextTurnAction();
         break;
       case "endTurn":
-        state.phase = "menu";
-        showActions();
-        break;
       case "trainerSwap":
-        state.phase = "menu";
-        showActions();
-        break;
       case "playerSwap":
         state.phase = "menu";
         showActions();
@@ -1735,6 +2505,7 @@ const Battle = (() => {
   }
 
   function showMoves() {
+    Audio.play("select");
     const html = playerMon().moves.map((m, i) => {
       const mv = MOVES[m.id];
       return `<button data-move="${i}">${mv.name}<br><small>${mv.type} · ${m.pp}/${m.maxPp}</small></button>`;
@@ -1745,31 +2516,33 @@ const Battle = (() => {
   }
 
   function handleAction(action) {
-    if (!state || state.phase !== "menu") return;
+    if (!state || state.phase !== "menu" || state.uiBlocked) return;
     if (action === "fight") showMoves();
-    else if (action === "bag") throwBraincell();
-    else if (action === "team") swapTeam();
+    else if (action === "bag") openBagFromBattle();
+    else if (action === "team") openTeamFromBattle();
     else if (action === "run") attemptRun();
   }
 
   function handleMove(idx) {
     if (!state) return;
-    if (idx === "back") { showActions(); return; }
+    if (state.uiBlocked || state.phase !== "menu" || state.typing) return;
+    if (idx === "back") { Audio.play("cancel"); showActions(); return; }
     const slot = playerMon().moves[+idx];
     if (!slot) return;
     if (slot.pp <= 0) {
+      Audio.play("cancel");
       enqueue("No PP left for that move!");
       state.phase = "endTurn";
       nextMessage();
       return;
     }
+    Audio.play("confirm");
     state.pendingPlayerMove = slot;
     state.pendingEnemyMove = pickEnemyMove();
     const playerSpd = getStat(playerMon(), "spd");
     const enemySpd = getStat(state.enemyMon, "spd");
-    const playerFirst = playerSpd >= enemySpd
-      ? true
-      : (playerSpd === enemySpd ? Math.random() < 0.5 : false);
+    const playerFirst = playerSpd > enemySpd ||
+      (playerSpd === enemySpd && Math.random() < 0.5);
     state.turnOrder = playerFirst ? ["player", "enemy"] : ["enemy", "player"];
     state.turnIdx = 0;
     elActions().classList.add("hidden");
@@ -1800,8 +2573,12 @@ const Battle = (() => {
     moveSlot.pp = Math.max(0, moveSlot.pp - 1);
     const move = MOVES[moveSlot.id];
     enqueue(`${SPECIES[attacker.species].name} used ${move.name}!`);
+    // attack lunge animation
+    state.attackAnimWho = isPlayer ? "player" : "enemy";
+    state.attackAnimT = 1;
     if (Math.random() > move.acc / 100) {
       enqueue("...but it missed!");
+      Audio.play("miss");
       return;
     }
     if (move.cat === "status") {
@@ -1809,26 +2586,50 @@ const Battle = (() => {
       return;
     }
     const dmg = computeDamage(attacker, defender, move);
+    const before = defender.hp;
     defender.hp = Math.max(0, defender.hp - dmg.amount);
-    if (isPlayer) state.enemyShake = 8;
-    else state.playerShake = 8;
-    if (dmg.crit) enqueue("Critical rizz!");
-    if (dmg.eff > 1) enqueue("It's super 2026 effective!");
-    else if (dmg.eff < 1 && dmg.eff > 0) enqueue("It's not very brainrot...");
-    else if (dmg.eff === 0) enqueue(`It doesn't affect ${SPECIES[defender.species].name}...`);
+    // schedule HP tween + flash + shake
+    const tween = isPlayer ? state.enemyHpTween : state.playerHpTween;
+    startTween(tween, before, defender.hp, 700);
+    if (isPlayer) state.visualEnemyHp = before;
+    else state.visualPlayerHp = before;
+    if (isPlayer) { state.enemyShake = 12; state.enemyFlash = 12; }
+    else { state.playerShake = 12; state.playerFlash = 12; }
+    if (dmg.amount === 0) {
+      Audio.play("miss");
+    } else if (dmg.eff > 1) {
+      Audio.play("superHit");
+      enqueue("It's super 2026 effective!");
+    } else if (dmg.eff < 1 && dmg.eff > 0) {
+      Audio.play("weakHit");
+      enqueue("It's not very brainrot...");
+    } else {
+      Audio.play("hit");
+    }
+    if (dmg.eff === 0) enqueue(`It doesn't affect ${SPECIES[defender.species].name}...`);
+    if (dmg.crit && dmg.amount > 0) enqueue("Critical rizz!");
   }
 
   function applyStatus(attacker, defender, move) {
     if (move.status === "atk_down") {
       defender.statBoosts.atk = Math.max(-6, (defender.statBoosts.atk || 0) - 1);
       enqueue(`${SPECIES[defender.species].name}'s attack fell!`);
+      Audio.play("weakHit");
     } else if (move.status === "confuse") {
       defender.statusEffect = "confused";
       enqueue(`${SPECIES[defender.species].name} became confused!`);
+      Audio.play("weakHit");
     } else if (move.status === "heal") {
       const healed = Math.min(attacker.maxHp - attacker.hp, Math.floor(attacker.maxHp / 2));
+      const before = attacker.hp;
       attacker.hp += healed;
+      const isPlayer = attacker === playerMon();
+      const tween = isPlayer ? state.playerHpTween : state.enemyHpTween;
+      startTween(tween, before, attacker.hp, 700);
+      if (isPlayer) state.visualPlayerHp = before;
+      else state.visualEnemyHp = before;
       enqueue(`${SPECIES[attacker.species].name} sipped cappuccino. Restored ${healed} HP!`);
+      Audio.play("heal");
     }
   }
 
@@ -1854,6 +2655,8 @@ const Battle = (() => {
   }
 
   function handleEnemyFaint() {
+    Audio.play("faint");
+    state.enemyFainted = true;
     enqueue(`${SPECIES[state.enemyMon.species].name} fainted!`);
     const expGain = computeExp(state.enemyMon);
     enqueue(`${SPECIES[playerMon().species].name} gained ${expGain} XP!`);
@@ -1863,20 +2666,28 @@ const Battle = (() => {
       if (next >= 0) {
         state.enemyIdx = next;
         state.enemyMon = state.enemyTeam[next];
+        state.enemyFainted = false;
+        state.enemyOffsetX = 200;
+        state.visualEnemyHp = state.enemyMon.hp;
+        setTimeout(() => { state.enemyOffsetX = 0; }, 100);
         enqueue(`${state.trainerData.name} sent out ${SPECIES[state.enemyMon.species].name}!`);
         state.phase = "trainerSwap";
       } else {
         enqueue(state.trainerData.defeat);
         enqueue(`You defeated ${state.trainerData.name}!`);
+        Audio.play("victory");
         state.phase = "wonBattle";
       }
     } else {
+      Audio.play("victory");
       state.phase = "wonBattle";
     }
     nextMessage();
   }
 
   function handlePlayerFaint() {
+    Audio.play("faint");
+    state.playerFainted = true;
     enqueue(`${SPECIES[playerMon().species].name} fainted!`);
     const next = state.playerTeam.findIndex(m => m.hp > 0);
     if (next < 0) {
@@ -1885,6 +2696,10 @@ const Battle = (() => {
       state.phase = "lostBattle";
     } else {
       state.playerIdx = next;
+      state.playerFainted = false;
+      state.playerOffsetX = -240;
+      state.visualPlayerHp = playerMon().hp;
+      setTimeout(() => { state.playerOffsetX = 0; }, 100);
       enqueue(`Go, ${SPECIES[playerMon().species].name}!`);
       state.phase = "playerSwap";
     }
@@ -1911,6 +2726,7 @@ const Battle = (() => {
     mon.level++;
     mon.maxHp = maxHp(sp, mon.level);
     mon.hp += (mon.maxHp - oldMax);
+    Audio.play("levelUp");
     enqueue(`${SPECIES[mon.species].name} grew to Lv. ${mon.level}!`);
     for (const moveId of movesLearnedAt(sp, mon.level)) {
       if (mon.moves.find(m => m.id === moveId)) continue;
@@ -1925,6 +2741,7 @@ const Battle = (() => {
     }
     if (sp.evolvesAt && mon.level >= sp.evolvesAt && sp.evolvesTo) {
       const newSp = SPECIES[sp.evolvesTo];
+      Audio.play("evolve");
       enqueue(`What?! ${SPECIES[mon.species].name} is evolving!`);
       mon.species = sp.evolvesTo;
       mon.maxHp = maxHp(newSp, mon.level);
@@ -1943,17 +2760,18 @@ const Battle = (() => {
     const es = getStat(state.enemyMon, "spd");
     const odds = (ps * 32) / Math.max(1, Math.floor(es / 4)) + 30;
     if (Math.random() * 256 < odds) {
+      Audio.play("cancel");
       enqueue("Got away safely!");
       state.ranAway = true;
       state.phase = "ranAway";
       nextMessage();
     } else {
+      Audio.play("bump");
       enqueue("Couldn't escape!");
       enemyFreeTurn();
     }
   }
 
-  // Player did something non-combat (item, swap, failed run); enemy gets free turn.
   function enemyFreeTurn() {
     state.pendingPlayerMove = null;
     state.pendingEnemyMove = pickEnemyMove();
@@ -1962,38 +2780,43 @@ const Battle = (() => {
     doNextTurnAction();
   }
 
-  function throwBraincell() {
+  function throwBraincell(itemKey = "BRAINCELL") {
     if (state.isTrainer) {
       enqueue("That trainer would block your brain cells!");
       state.phase = "endTurn";
       nextMessage();
       return;
     }
-    if (!game_bag_consume("BRAINCELL")) {
-      enqueue("You're out of Brain Cells!");
+    if (!game_bag_consume(itemKey)) {
+      enqueue(`You're out of ${ITEMS[itemKey].name}!`);
       state.phase = "endTurn";
       nextMessage();
       return;
     }
-    enqueue(`You hurled a Brain Cell!`);
+    Audio.play("catch");
     const sp = SPECIES[state.enemyMon.species];
     const catchRate = sp.catchRate || 50;
-    const a = ((3 * state.enemyMon.maxHp - 2 * state.enemyMon.hp) * catchRate) / (3 * state.enemyMon.maxHp);
+    const mod = ITEMS[itemKey]?.catchMod || 1;
+    const a = ((3 * state.enemyMon.maxHp - 2 * state.enemyMon.hp) * catchRate * mod) / (3 * state.enemyMon.maxHp);
     let success = Math.random() * 255 < a;
-    if (sp.legendary && Math.random() < 0.7) success = false;
+    if (sp.legendary && Math.random() < 0.6) success = false;
+    enqueue(`You hurled a ${ITEMS[itemKey].name}!`);
     if (success) {
+      state.catchShakes = 3;
       enqueue(`Gotcha! ${sp.name} was caught!`);
+      Audio.play("captured");
       state.caught = true;
       state.phase = "caughtMon";
       nextMessage();
     } else {
       const shakes = Math.max(1, Math.min(3, Math.floor((a / 255) * 4)));
+      state.catchShakes = shakes;
       enqueue(`(*${"shake ".repeat(shakes).trim()}*) ${sp.name} broke free!`);
+      Audio.play("breakOut");
       enemyFreeTurn();
     }
   }
 
-  // bag is owned by game.js — this is a hook the game can override
   function game_bag_consume(itemKey) {
     if (typeof window.__brainrotBagConsume === "function") {
       return window.__brainrotBagConsume(itemKey);
@@ -2001,34 +2824,78 @@ const Battle = (() => {
     return true;
   }
 
-  function swapTeam() {
-    const team = state.playerTeam;
-    let idx = -1;
-    for (let i = 1; i < team.length; i++) {
-      const k = (state.playerIdx + i) % team.length;
-      if (team[k].hp > 0 && k !== state.playerIdx) { idx = k; break; }
+  function useHealItemInBattle(itemKey) {
+    const item = ITEMS[itemKey];
+    if (!item || !item.heal) return false;
+    if (!game_bag_consume(itemKey)) {
+      enqueue(`You're out of ${item.name}!`);
+      state.phase = "endTurn";
+      nextMessage();
+      return true;
     }
-    if (idx < 0) {
-      enqueue("No other monsters can fight!");
+    Audio.play("heal");
+    const mon = playerMon();
+    if (mon.hp >= mon.maxHp) {
+      enqueue(`${SPECIES[mon.species].name} is already at full HP.`);
+      state.phase = "endTurn";
+      nextMessage();
+      return true;
+    }
+    const before = mon.hp;
+    mon.hp = Math.min(mon.maxHp, mon.hp + item.heal);
+    state.visualPlayerHp = before;
+    startTween(state.playerHpTween, before, mon.hp, 700);
+    enqueue(`Used ${item.name}! Restored ${mon.hp - before} HP.`);
+    enemyFreeTurn();
+    return true;
+  }
+
+  function openBagFromBattle() {
+    if (typeof window.__brainrotOpenBag === "function") {
+      window.__brainrotOpenBag(true);
+    }
+  }
+
+  function openTeamFromBattle() {
+    if (typeof window.__brainrotOpenTeam === "function") {
+      window.__brainrotOpenTeam(true);
+    }
+  }
+
+  function switchActiveMon(idx) {
+    if (idx === state.playerIdx) {
+      Audio.play("cancel");
+      enqueue("Already in battle!");
       state.phase = "endTurn";
       nextMessage();
       return;
     }
+    if (state.playerTeam[idx].hp <= 0) {
+      enqueue("That monster has fainted!");
+      state.phase = "endTurn";
+      nextMessage();
+      return;
+    }
+    Audio.play("confirm");
     enqueue(`Come back, ${SPECIES[playerMon().species].name}!`);
     state.playerIdx = idx;
+    state.playerOffsetX = -240;
+    state.visualPlayerHp = playerMon().hp;
+    setTimeout(() => { state.playerOffsetX = 0; }, 100);
     enqueue(`Go, ${SPECIES[playerMon().species].name}!`);
     enemyFreeTurn();
   }
 
-  function refreshInfo() {
+  function refreshInfo(forceVisual) {
     if (!state) return;
     const e = state.enemyMon;
     const eSp = SPECIES[e.species];
     elEnemyInfo().querySelector(".mon-name").textContent = eSp.name;
     elEnemyInfo().querySelector(".mon-lvl").textContent = "Lv. " + e.level;
-    const eRatio = e.hp / e.maxHp;
+    const eShown = forceVisual ? e.hp : state.visualEnemyHp;
+    const eRatio = eShown / e.maxHp;
     const eFill = elEnemyInfo().querySelector(".hp-fill");
-    eFill.style.width = (eRatio * 100) + "%";
+    eFill.style.width = (Math.max(0, eRatio) * 100) + "%";
     eFill.classList.toggle("med", eRatio < 0.5 && eRatio >= 0.2);
     eFill.classList.toggle("low", eRatio < 0.2);
 
@@ -2036,12 +2903,13 @@ const Battle = (() => {
     const pSp = SPECIES[p.species];
     elPlayerInfo().querySelector(".mon-name").textContent = pSp.name;
     elPlayerInfo().querySelector(".mon-lvl").textContent = "Lv. " + p.level;
-    const pRatio = p.hp / p.maxHp;
+    const pShown = forceVisual ? p.hp : state.visualPlayerHp;
+    const pRatio = pShown / p.maxHp;
     const pFill = elPlayerInfo().querySelector(".hp-fill");
-    pFill.style.width = (pRatio * 100) + "%";
+    pFill.style.width = (Math.max(0, pRatio) * 100) + "%";
     pFill.classList.toggle("med", pRatio < 0.5 && pRatio >= 0.2);
     pFill.classList.toggle("low", pRatio < 0.2);
-    elPlayerInfo().querySelector(".hp-text").textContent = `${p.hp} / ${p.maxHp}`;
+    elPlayerInfo().querySelector(".hp-text").textContent = `${Math.max(0, Math.round(pShown))} / ${p.maxHp}`;
 
     const xpBase = xpForLevel(p.level);
     const xpNext = xpForLevel(p.level + 1);
@@ -2064,17 +2932,60 @@ const Battle = (() => {
     cb(result);
   }
 
+  function update(now, dt) {
+    if (!state) return;
+    tickTypewriter(now, dt);
+    // hp tweens
+    updateTween(state.enemyHpTween, now);
+    updateTween(state.playerHpTween, now);
+    if (state.enemyHpTween.active) state.visualEnemyHp = state.enemyHpTween.value;
+    if (state.playerHpTween.active) state.visualPlayerHp = state.playerHpTween.value;
+    // shake
+    if (state.enemyShake > 0) state.enemyShake--;
+    if (state.playerShake > 0) state.playerShake--;
+    if (state.enemyFlash > 0) state.enemyFlash--;
+    if (state.playerFlash > 0) state.playerFlash--;
+    // attack lunge animation
+    if (state.attackAnimT > 0) {
+      state.attackAnimT = Math.max(0, state.attackAnimT - dt / 220);
+    }
+    // sliding offsets approach 0
+    state.enemyOffsetX = approach(state.enemyOffsetX, 0, dt * 0.6);
+    state.playerOffsetX = approach(state.playerOffsetX, 0, dt * 0.6);
+    // faint slide-down
+    if (state.enemyFainted) state.enemyOffsetY = approach(state.enemyOffsetY, 60, dt * 0.3);
+    if (state.playerFainted) state.playerOffsetY = approach(state.playerOffsetY, 80, dt * 0.3);
+    // visible hp text
+    refreshInfo();
+  }
+
+  function approach(v, target, max) {
+    const d = target - v;
+    if (Math.abs(d) <= max) return target;
+    return v + Math.sign(d) * max;
+  }
+
   function draw(ctx, time) {
     if (!state) return;
     const W = ctx.canvas.width, H = ctx.canvas.height;
     const grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, "#5b2d8c");
-    grad.addColorStop(0.7, "#2a8c4a");
-    grad.addColorStop(1, "#4a3a2a");
+    grad.addColorStop(0, "#3a1a5c");
+    grad.addColorStop(0.5, "#5b2d8c");
+    grad.addColorStop(1, "#2a8c4a");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
+    // grid floor
+    ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 12; i++) {
+      const yy = H * 0.55 + i * 8;
+      ctx.beginPath();
+      ctx.moveTo(0, yy);
+      ctx.lineTo(W, yy);
+      ctx.stroke();
+    }
     // platforms
-    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
     ctx.beginPath();
     ctx.ellipse(W*0.25, H*0.78, 80, 12, 0, 0, Math.PI*2);
     ctx.fill();
@@ -2082,23 +2993,71 @@ const Battle = (() => {
     ctx.ellipse(W*0.78, H*0.40, 65, 10, 0, 0, Math.PI*2);
     ctx.fill();
 
-    const eShakeX = state.enemyShake > 0 ? (Math.random()*4-2) : 0;
-    if (state.enemyShake > 0) state.enemyShake--;
-    SpriteRenderer.drawMon(ctx, state.enemyMon.species, W*0.78 - 48 + eShakeX, H*0.18, 96, time);
+    // attack lunges
+    let enemyLungeX = 0, playerLungeX = 0;
+    if (state.attackAnimT > 0) {
+      const t = state.attackAnimT;
+      const lunge = Math.sin((1 - t) * Math.PI) * 18;
+      if (state.attackAnimWho === "enemy") enemyLungeX = -lunge;
+      else playerLungeX = lunge;
+    }
+    const eShakeX = state.enemyShake > 0 ? (Math.random()*6-3) : 0;
+    const pShakeX = state.playerShake > 0 ? (Math.random()*6-3) : 0;
 
-    const pShakeX = state.playerShake > 0 ? (Math.random()*4-2) : 0;
-    if (state.playerShake > 0) state.playerShake--;
-    SpriteRenderer.drawMon(ctx, playerMon().species, W*0.25 - 64 + pShakeX, H*0.55, 128, time);
+    // enemy mon
+    const ex = W*0.78 - 48 + state.enemyOffsetX + eShakeX + enemyLungeX;
+    const ey = H*0.18 + state.enemyOffsetY;
+    if (!state.enemyFainted || state.enemyOffsetY < 50) {
+      drawMonWithFlash(ctx, state.enemyMon.species, ex, ey, 96, time, state.enemyFlash);
+    }
+    // player mon
+    const px = W*0.25 - 64 + state.playerOffsetX + pShakeX + playerLungeX;
+    const py = H*0.55 + state.playerOffsetY;
+    if (!state.playerFainted || state.playerOffsetY < 70) {
+      drawMonWithFlash(ctx, playerMon().species, px, py, 128, time, state.playerFlash);
+    }
+
+    // typing arrow indicator
+    if (state.message && !state.typing && state.messageQueue.length >= 0) {
+      const cy = H - 30;
+      const cx = W - 28;
+      ctx.fillStyle = "#ffcb05";
+      const bob = Math.sin(time * 0.008) * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + bob);
+      ctx.lineTo(cx + 8, cy + bob);
+      ctx.lineTo(cx + 4, cy + 4 + bob);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  function drawMonWithFlash(ctx, species, x, y, size, time, flash) {
+    SpriteRenderer.drawMon(ctx, species, x, y, size, time);
+    if (flash > 0) {
+      ctx.globalCompositeOperation = "lighter";
+      ctx.fillStyle = `rgba(255,255,255,${flash / 24})`;
+      ctx.fillRect(x, y, size, size);
+      ctx.globalCompositeOperation = "source-over";
+    }
   }
 
   function handleKey(key) {
     if (!state) return false;
+    if (state.uiBlocked) return true;
+    // typewriter fast-forward
+    if (state.typing) {
+      if (key === "z" || key === "Enter" || key === " ") {
+        fastForwardTypewriter();
+        return true;
+      }
+      return true;
+    }
     if (state.phase === "menu") {
       if (key === "z" || key === "Enter") { handleAction("fight"); return true; }
       if (key === "x") { handleAction("run"); return true; }
       return true;
     }
-    // any message-driven phase: advance on Z/Enter/space
     if (key === "z" || key === "Enter" || key === " ") {
       nextMessage();
       return true;
@@ -2107,9 +3066,11 @@ const Battle = (() => {
   }
 
   function isActive() { return state !== null; }
+  function isMessageDone() { return state && !state.typing && state.messageQueue.length === 0; }
 
   return {
-    start, draw, handleKey, isActive, handleAction, handleMove, refreshInfo,
+    start, draw, update, handleKey, isActive, handleAction, handleMove, refreshInfo,
+    switchActiveMon, useHealItemInBattle, throwBraincell,
   };
 })();
 
@@ -2124,117 +3085,140 @@ const Battle = (() => {
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
-  // Game state
   const game = {
-    mode: "title", // title | starter | overworld | battle | dialog | menu
+    mode: "title", // title | starter | overworld | battle | dialog | menu | team | bag | shop
     player: {
-      tileX: 8,
-      tileY: 16,
-      pixelX: 8 * 16,
-      pixelY: 16 * 16,
+      tileX: 9, tileY: 22,
+      pixelX: 9 * 16, pixelY: 22 * 16,
       facing: "down",
       moving: false,
       moveProgress: 0,
-      moveSpeed: 6, // pixels per frame
+      moveSpeed: 6,
       animFrame: 0,
       stepCounter: 0,
     },
     team: [],
-    box: [], // overflow caught monsters
-    bag: { BRAINCELL: 8, GREATCELL: 2, CAPPUCCINO: 3 },
+    box: [],
+    bag: { BRAINCELL: 8, GREATCELL: 1, CAPPUCCINO: 3 },
+    money: 500,
     cam: { x: 0, y: 0 },
-    inputs: {},
     dialog: null,
+    dialogTyping: { active: false, text: "", target: "", t: 0 },
     starterIdx: 0,
-    queueAfterDialog: null,
     encounterCooldown: 0,
     flashTime: 0,
     badges: 0,
   };
 
-  // ----- Input -----
   const keys = {};
+  let lastTime = 0;
+  let nowTime = 0;
+
   window.addEventListener("keydown", (e) => {
-    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Enter","z","x","Z","X"].includes(e.key)) {
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Enter","z","x","Z","X","Escape"].includes(e.key)) {
       e.preventDefault();
     }
+    keys[e.key.toLowerCase()] = true;
     keys[e.key] = true;
+    Audio.unlock();
     onKeyDown(e.key);
   });
   window.addEventListener("keyup", (e) => {
+    keys[e.key.toLowerCase()] = false;
     keys[e.key] = false;
   });
 
-  // touch buttons
   document.querySelectorAll("#touch-controls button").forEach(btn => {
     const k = btn.dataset.key;
-    const press = (e) => { e.preventDefault(); keys[k] = true; onKeyDown(k); };
+    const press = (e) => { e.preventDefault(); Audio.unlock(); keys[k] = true; onKeyDown(k); };
     const release = (e) => { e.preventDefault(); keys[k] = false; };
-    btn.addEventListener("touchstart", press);
-    btn.addEventListener("touchend", release);
+    btn.addEventListener("touchstart", press, {passive: false});
+    btn.addEventListener("touchend", release, {passive: false});
     btn.addEventListener("mousedown", press);
     btn.addEventListener("mouseup", release);
     btn.addEventListener("mouseleave", release);
   });
 
-  // battle ui buttons
   document.querySelectorAll("#battle-actions button").forEach(btn => {
-    btn.addEventListener("click", () => Battle.handleAction(btn.dataset.action));
+    btn.addEventListener("click", () => { Audio.unlock(); Battle.handleAction(btn.dataset.action); });
   });
   document.getElementById("move-list").addEventListener("click", (e) => {
-    if (e.target.tagName === "BUTTON") {
-      Battle.handleMove(e.target.dataset.move);
-    }
+    if (e.target.tagName === "BUTTON") { Audio.unlock(); Battle.handleMove(e.target.dataset.move); }
   });
 
-  // tap title
   document.getElementById("title-screen").addEventListener("click", () => {
+    Audio.unlock();
+    if (game.mode === "title") startGame();
+  });
+  document.getElementById("title-screen").addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    Audio.unlock();
     if (game.mode === "title") startGame();
   });
 
   function onKeyDown(key) {
+    const k = key.length === 1 ? key.toLowerCase() : key;
     if (game.mode === "title") {
-      if (key === "Enter" || key === "z" || key === " ") startGame();
+      if (key === "Enter" || k === "z" || key === " ") startGame();
       return;
     }
     if (game.mode === "starter") {
-      if (key === "ArrowLeft") cycleStarter(-1);
-      else if (key === "ArrowRight") cycleStarter(1);
-      else if (key === "Enter" || key === "z") confirmStarter();
+      if (key === "ArrowLeft") { Audio.play("select"); cycleStarter(-1); }
+      else if (key === "ArrowRight") { Audio.play("select"); cycleStarter(1); }
+      else if (key === "Enter" || k === "z") confirmStarter();
       return;
     }
     if (game.mode === "battle") {
-      Battle.handleKey(key);
+      Battle.handleKey(k);
       return;
     }
     if (game.mode === "dialog") {
-      if (key === "z" || key === "Enter" || key === " ") advanceDialog();
+      if (k === "z" || key === "Enter" || key === " ") advanceDialog();
       return;
     }
     if (game.mode === "menu") {
-      if (key === "x" || key === "Escape") closeMenu();
-      else if (key === "ArrowUp") menuMove(-1);
-      else if (key === "ArrowDown") menuMove(1);
-      else if (key === "Enter" || key === "z") menuSelect();
+      if (k === "x" || key === "Escape") { Audio.play("cancel"); closeMenu(); }
+      else if (key === "ArrowUp") { Audio.play("select"); menuMove(-1); }
+      else if (key === "ArrowDown") { Audio.play("select"); menuMove(1); }
+      else if (key === "Enter" || k === "z") menuSelect();
+      return;
+    }
+    if (game.mode === "team") {
+      if (k === "x" || key === "Escape") { Audio.play("cancel"); closeTeamMenu(); }
+      else if (key === "ArrowUp") { Audio.play("select"); teamMenuMove(-1); }
+      else if (key === "ArrowDown") { Audio.play("select"); teamMenuMove(1); }
+      else if (key === "Enter" || k === "z") teamMenuSelect();
+      return;
+    }
+    if (game.mode === "bag") {
+      if (k === "x" || key === "Escape") { Audio.play("cancel"); closeBagMenu(); }
+      else if (key === "ArrowUp") { Audio.play("select"); bagMenuMove(-1); }
+      else if (key === "ArrowDown") { Audio.play("select"); bagMenuMove(1); }
+      else if (key === "Enter" || k === "z") bagMenuSelect();
+      return;
+    }
+    if (game.mode === "shop") {
+      if (k === "x" || key === "Escape") { Audio.play("cancel"); closeShop(); }
+      else if (key === "ArrowUp") { Audio.play("select"); shopMove(-1); }
+      else if (key === "ArrowDown") { Audio.play("select"); shopMove(1); }
+      else if (key === "Enter" || k === "z") shopBuy();
       return;
     }
     if (game.mode === "overworld") {
-      if (key === "x" || key === "Escape") openMenu();
-      else if (key === "z" || key === "Enter") interact();
+      if (k === "x" || key === "Escape") openMenu();
+      else if (k === "z" || key === "Enter") interact();
     }
   }
 
-  // ----- Title / starter -----
   function startGame() {
+    Audio.play("confirm");
     document.getElementById("title-screen").classList.add("hidden");
-    // show touch ctrls if mobile
     const isTouch = matchMedia("(pointer: coarse)").matches;
     if (isTouch) document.getElementById("touch-controls").classList.remove("hidden");
 
-    // load save?
     if (loadSave()) {
       game.mode = "overworld";
-      showDialog([`Welcome back!\nYou have ${game.team.length} monsters in your team.`], () => {});
+      showDialog([`Welcome back!\nYou have ${game.team.length} monster${game.team.length===1?'':'s'} in your team.`], () => {});
       return;
     }
     game.mode = "starter";
@@ -2242,7 +3226,7 @@ const Battle = (() => {
     showDialog([
       "PROFESSOR PARMIGIANO:",
       "Ah! A new challenger! In this world, brain rot creatures roam the lands.",
-      "Capture them. Train them. Defeat the Brainrot Queen.",
+      "Capture them. Train them. Climb the Espresso Four.\nDefeat the Brainrot Queen.",
       "Pick your starter, my dear traveler:",
     ], () => {
       game.mode = "starter";
@@ -2261,6 +3245,7 @@ const Battle = (() => {
   }
 
   function confirmStarter() {
+    Audio.play("confirm");
     const id = STARTERS[game.starterIdx];
     const mon = makeMon(id, 5);
     game.team.push(mon);
@@ -2275,17 +3260,53 @@ const Battle = (() => {
     });
   }
 
-  // ----- Dialog -----
+  // ----- Dialog with typewriter -----
   function showDialog(lines, onEnd) {
     game.mode = "dialog";
     game.dialog = { lines: [...lines], idx: 0, onEnd: onEnd || (() => {}) };
     const el = document.getElementById("dialog");
     el.classList.remove("hidden");
-    document.getElementById("dialog-text").innerHTML = lines[0];
+    startTypewriter(lines[0]);
+  }
+
+  function startTypewriter(text) {
+    game.dialogTyping.active = true;
+    game.dialogTyping.text = "";
+    game.dialogTyping.target = text;
+    game.dialogTyping.t = 0;
+    document.getElementById("dialog-text").textContent = "";
+    document.getElementById("dialog-arrow").style.opacity = 0;
+  }
+
+  function tickDialogTypewriter(dt) {
+    if (!game.dialogTyping.active) return;
+    game.dialogTyping.t += dt;
+    const want = Math.floor(game.dialogTyping.t * 0.030);
+    while (game.dialogTyping.text.length < game.dialogTyping.target.length && game.dialogTyping.text.length < want) {
+      const c = game.dialogTyping.target[game.dialogTyping.text.length];
+      game.dialogTyping.text += c;
+      if (game.dialogTyping.text.length % 2 === 0 && c !== " " && c !== "\n") Audio.play("text");
+    }
+    document.getElementById("dialog-text").textContent = game.dialogTyping.text;
+    if (game.dialogTyping.text.length >= game.dialogTyping.target.length) {
+      game.dialogTyping.active = false;
+      document.getElementById("dialog-arrow").style.opacity = 1;
+    }
+  }
+
+  function fastForwardDialog() {
+    if (!game.dialogTyping.active) return false;
+    game.dialogTyping.text = game.dialogTyping.target;
+    game.dialogTyping.active = false;
+    document.getElementById("dialog-text").textContent = game.dialogTyping.text;
+    document.getElementById("dialog-arrow").style.opacity = 1;
+    return true;
   }
 
   function advanceDialog() {
     if (!game.dialog) return;
+    if (fastForwardDialog()) return;
+    Audio.play("text");
     game.dialog.idx++;
     if (game.dialog.idx >= game.dialog.lines.length) {
       const cb = game.dialog.onEnd;
@@ -2294,17 +3315,15 @@ const Battle = (() => {
       cb();
       if (game.mode === "dialog") game.mode = "overworld";
     } else {
-      document.getElementById("dialog-text").innerHTML = game.dialog.lines[game.dialog.idx];
+      startTypewriter(game.dialog.lines[game.dialog.idx]);
     }
   }
 
-  // ----- Menu -----
+  // ----- Pause Menu -----
   let menuState = null;
   function openMenu() {
-    menuState = {
-      items: ["TEAM", "BAG", "SAVE", "CLOSE"],
-      idx: 0,
-    };
+    Audio.play("open");
+    menuState = { items: ["TEAM", "BAG", "SAVE", "MUTE", "CLOSE"], idx: 0 };
     game.mode = "menu";
     renderMenu();
     document.getElementById("menu").classList.remove("hidden");
@@ -2321,11 +3340,14 @@ const Battle = (() => {
   }
   function renderMenu() {
     const ul = document.getElementById("menu-list");
-    ul.innerHTML = menuState.items.map((it, i) =>
-      `<li class="${i === menuState.idx ? "selected" : ""}">${it}</li>`
-    ).join("");
+    const cash = `${game.money}  Badge:${game.badges}`;
+    ul.innerHTML = `<li class="header">${cash}</li>` + menuState.items.map((it, i) => {
+      const label = it === "MUTE" ? (Audio.isMuted() ? "UNMUTE" : "MUTE") : it;
+      return `<li class="${i === menuState.idx ? "selected" : ""}">${label}</li>`;
+    }).join("");
   }
   function menuSelect() {
+    Audio.play("confirm");
     const choice = menuState.items[menuState.idx];
     if (choice === "CLOSE") { closeMenu(); return; }
     if (choice === "SAVE") {
@@ -2334,27 +3356,246 @@ const Battle = (() => {
       showDialog(["Game saved successfully!"], () => {});
       return;
     }
-    if (choice === "TEAM") {
-      closeMenu();
-      const lines = game.team.length === 0 ? ["You have no monsters."] :
-        game.team.map(m => {
-          const sp = SPECIES[m.species];
-          return `${sp.name} Lv.${m.level} HP:${m.hp}/${m.maxHp}\nMoves: ${m.moves.map(mv => MOVES[mv.id].name).join(", ")}`;
-        });
-      showDialog(lines, () => {});
+    if (choice === "MUTE") {
+      Audio.setMuted(!Audio.isMuted());
+      renderMenu();
       return;
     }
-    if (choice === "BAG") {
-      closeMenu();
-      const lines = Object.entries(game.bag).map(([k, v]) =>
-        `${ITEMS[k].name} x${v}\n${ITEMS[k].desc}`
-      );
-      showDialog(lines.length ? lines : ["Bag is empty."], () => {});
-      return;
-    }
+    if (choice === "TEAM") { closeMenu(); openTeamMenu(false); return; }
+    if (choice === "BAG") { closeMenu(); openBagMenu(false); return; }
   }
 
-  // ----- Overworld interaction -----
+  // ----- TEAM Menu -----
+  let teamMenuState = null;
+  function openTeamMenu(fromBattle) {
+    if (game.team.length === 0) return;
+    Audio.play("open");
+    teamMenuState = { idx: 0, fromBattle, swapMode: fromBattle, useItem: null };
+    game.mode = "team";
+    renderTeamMenu();
+    document.getElementById("menu").classList.remove("hidden");
+  }
+  function closeTeamMenu() {
+    document.getElementById("menu").classList.add("hidden");
+    if (teamMenuState && teamMenuState.fromBattle) {
+      // returning to battle UI
+      game.mode = "battle";
+      teamMenuState = null;
+      return;
+    }
+    teamMenuState = null;
+    game.mode = "overworld";
+  }
+  function teamMenuMove(d) {
+    if (!teamMenuState) return;
+    teamMenuState.idx = (teamMenuState.idx + d + game.team.length) % game.team.length;
+    renderTeamMenu();
+  }
+  function renderTeamMenu() {
+    const ul = document.getElementById("menu-list");
+    const t = game.team;
+    ul.innerHTML = `<li class="header">YOUR TEAM</li>` + t.map((m, i) => {
+      const sp = SPECIES[m.species];
+      const hpRatio = m.hp / m.maxHp;
+      const hpColor = hpRatio < 0.2 ? "#ff5e5e" : hpRatio < 0.5 ? "#ffe070" : "#5cd765";
+      const fainted = m.hp <= 0 ? " ❌" : "";
+      return `<li class="${i === teamMenuState.idx ? "selected" : ""}">
+        <b>${sp.name}</b>${fainted} <small>Lv.${m.level}</small><br>
+        <span style="color:${hpColor}">HP: ${m.hp}/${m.maxHp}</span>
+        <small style="opacity:.7"> · ${sp.types.join("/")}</small>
+      </li>`;
+    }).join("") + `<li class="footer"><small>X = back · Z = ${teamMenuState.swapMode ? "switch" : (teamMenuState.useItem ? "use here" : "details")}</small></li>`;
+  }
+  function teamMenuSelect() {
+    if (!teamMenuState) return;
+    const idx = teamMenuState.idx;
+    Audio.play("confirm");
+    if (teamMenuState.useItem) {
+      // apply item to selected mon
+      const item = ITEMS[teamMenuState.useItem];
+      const mon = game.team[idx];
+      if (!item || !item.heal) {
+        teamMenuState.useItem = null;
+        renderTeamMenu();
+        return;
+      }
+      if (mon.hp >= mon.maxHp) {
+        showDialogOver(["That monster is at full HP."], () => { renderTeamMenu(); });
+        return;
+      }
+      if (mon.hp <= 0 && item.heal < 999) {
+        showDialogOver(["That monster has fainted. Use a stronger heal."], () => { renderTeamMenu(); });
+        return;
+      }
+      // consume
+      if ((game.bag[teamMenuState.useItem] || 0) <= 0) {
+        showDialogOver(["You're out of that item."], () => { renderTeamMenu(); });
+        return;
+      }
+      game.bag[teamMenuState.useItem]--;
+      const before = mon.hp;
+      mon.hp = Math.min(mon.maxHp, mon.hp + item.heal);
+      Audio.play("heal");
+      teamMenuState.useItem = null;
+      saveGame();
+      showDialogOver([`Healed ${SPECIES[mon.species].name} by ${mon.hp - before} HP!`], () => { renderTeamMenu(); });
+      return;
+    }
+    if (teamMenuState.swapMode) {
+      // attempt to switch active mon in battle
+      Battle.switchActiveMon(idx);
+      document.getElementById("menu").classList.add("hidden");
+      teamMenuState = null;
+      game.mode = "battle";
+      return;
+    }
+    // details
+    const m = game.team[idx];
+    const sp = SPECIES[m.species];
+    const lines = [
+      `${sp.name} — Lv.${m.level}`,
+      `Type: ${sp.types.join(" / ")}\n"${sp.flavor}"`,
+      `HP: ${m.hp}/${m.maxHp}\nXP to next: ${Math.max(0, xpForLevel(m.level + 1) - m.xp)}`,
+      `Moves:\n${m.moves.map(mv => `· ${MOVES[mv.id].name} (${mv.pp}/${mv.maxPp})`).join("\n")}`,
+    ];
+    showDialogOver(lines, () => { renderTeamMenu(); });
+  }
+  // dialog while menu is open
+  function showDialogOver(lines, onEnd) {
+    const prevMode = game.mode;
+    game.mode = "dialog";
+    game.dialog = {
+      lines: [...lines], idx: 0,
+      onEnd: () => { game.mode = prevMode; if (onEnd) onEnd(); },
+    };
+    document.getElementById("dialog").classList.remove("hidden");
+    startTypewriter(lines[0]);
+  }
+
+  // ----- BAG Menu -----
+  let bagMenuState = null;
+  function openBagMenu(fromBattle) {
+    Audio.play("open");
+    const items = Object.entries(game.bag).filter(([k, v]) => v > 0);
+    bagMenuState = { idx: 0, fromBattle, items };
+    if (items.length === 0) {
+      bagMenuState = null;
+      showDialog(["Bag is empty."], () => {});
+      return;
+    }
+    game.mode = "bag";
+    renderBagMenu();
+    document.getElementById("menu").classList.remove("hidden");
+  }
+  function closeBagMenu() {
+    document.getElementById("menu").classList.add("hidden");
+    if (bagMenuState && bagMenuState.fromBattle) {
+      game.mode = "battle";
+      bagMenuState = null;
+      return;
+    }
+    bagMenuState = null;
+    game.mode = "overworld";
+  }
+  function bagMenuMove(d) {
+    if (!bagMenuState) return;
+    bagMenuState.idx = (bagMenuState.idx + d + bagMenuState.items.length) % bagMenuState.items.length;
+    renderBagMenu();
+  }
+  function renderBagMenu() {
+    const ul = document.getElementById("menu-list");
+    const items = bagMenuState.items;
+    ul.innerHTML = `<li class="header">BAG · ${game.money}</li>` + items.map(([k, v], i) => {
+      const it = ITEMS[k];
+      return `<li class="${i === bagMenuState.idx ? "selected" : ""}">
+        <b>${it.name}</b> ×${v}<br><small>${it.desc}</small>
+      </li>`;
+    }).join("") + `<li class="footer"><small>X = back · Z = use</small></li>`;
+  }
+  function bagMenuSelect() {
+    if (!bagMenuState) return;
+    Audio.play("confirm");
+    const [key] = bagMenuState.items[bagMenuState.idx];
+    const item = ITEMS[key];
+    if (bagMenuState.fromBattle) {
+      // catch ball or heal
+      if (key === "BRAINCELL" || key === "GREATCELL" || key === "ULTRACELL") {
+        document.getElementById("menu").classList.add("hidden");
+        bagMenuState = null;
+        game.mode = "battle";
+        Battle.throwBraincell(key);
+        return;
+      }
+      if (item && item.heal) {
+        document.getElementById("menu").classList.add("hidden");
+        bagMenuState = null;
+        game.mode = "battle";
+        Battle.useHealItemInBattle(key);
+        return;
+      }
+      return;
+    }
+    // overworld use: heal items
+    if (item && item.heal) {
+      // open team menu with useItem set
+      document.getElementById("menu").classList.add("hidden");
+      const itemKey = key;
+      bagMenuState = null;
+      // open team menu but with item-use mode
+      Audio.play("open");
+      teamMenuState = { idx: 0, fromBattle: false, swapMode: false, useItem: itemKey };
+      game.mode = "team";
+      renderTeamMenu();
+      document.getElementById("menu").classList.remove("hidden");
+      return;
+    }
+    showDialogOver(["You can't use that here."], () => { renderBagMenu(); });
+  }
+
+  // ----- SHOP -----
+  let shopState = null;
+  function openShop() {
+    Audio.play("open");
+    shopState = { idx: 0, items: SHOP_ITEMS };
+    game.mode = "shop";
+    renderShop();
+    document.getElementById("menu").classList.remove("hidden");
+  }
+  function closeShop() {
+    document.getElementById("menu").classList.add("hidden");
+    shopState = null;
+    game.mode = "overworld";
+  }
+  function shopMove(d) {
+    if (!shopState) return;
+    shopState.idx = (shopState.idx + d + shopState.items.length) % shopState.items.length;
+    renderShop();
+  }
+  function renderShop() {
+    const ul = document.getElementById("menu-list");
+    ul.innerHTML = `<li class="header">SHOP · ${game.money}</li>` + shopState.items.map((it, i) => {
+      const item = ITEMS[it.key];
+      return `<li class="${i === shopState.idx ? "selected" : ""}">
+        <b>${item.name}</b> — ${it.price}<br><small>${item.desc}</small>
+      </li>`;
+    }).join("") + `<li class="footer"><small>X = leave · Z = buy</small></li>`;
+  }
+  function shopBuy() {
+    if (!shopState) return;
+    const it = shopState.items[shopState.idx];
+    if (game.money < it.price) {
+      Audio.play("cancel");
+      showDialogOver(["Not enough cash!"], () => { renderShop(); });
+      return;
+    }
+    Audio.play("confirm");
+    game.money -= it.price;
+    game.bag[it.key] = (game.bag[it.key] || 0) + 1;
+    saveGame();
+    renderShop();
+  }
+
+  // ----- Interact -----
   function interact() {
     const p = game.player;
     let tx = p.tileX, ty = p.tileY;
@@ -2366,13 +3607,16 @@ const Battle = (() => {
     if (npc) {
       if (npc.type === "trainer") {
         if (npc.defeated) {
+          Audio.play("cancel");
           showDialog([`${npc.dialog[0].split(":")[0]}: I have been bested. Move along.`], () => {});
           return;
         }
+        Audio.play("encounter");
         showDialog(npc.dialog, () => {
           startTrainerBattle(npc);
         });
       } else if (npc.type === "healer") {
+        Audio.play("heal");
         showDialog(npc.dialog, () => {
           for (const m of game.team) {
             m.hp = m.maxHp;
@@ -2380,15 +3624,24 @@ const Battle = (() => {
           }
           saveGame();
         });
-      } else if (npc.type === "sign") {
-        showDialog(npc.dialog, () => {});
-      } else {
+      } else if (npc.type === "shop") {
+        showDialog(npc.dialog, () => { openShop(); });
+      } else if (npc.type === "item") {
+        if (npc.consumed) return;
+        Audio.play("captured");
+        showDialog(npc.dialog, () => {
+          game.bag[npc.itemKey] = (game.bag[npc.itemKey] || 0) + 1;
+          npc.consumed = true;
+          saveGame();
+        });
+      } else if (npc.type === "sign" || npc.type === "npc") {
         showDialog(npc.dialog || ["..."], () => {});
       }
     }
   }
 
   function startTrainerBattle(npc) {
+    Audio.play("encounter");
     const data = TRAINERS[npc.trainerKey];
     const team = data.team.map(({id, lvl}) => makeMon(id, lvl));
     game.mode = "battle";
@@ -2399,13 +3652,20 @@ const Battle = (() => {
       onEnd: (result) => {
         if (result.defeatedTrainer) {
           npc.defeated = true;
+          if (data.reward) {
+            game.money += data.reward;
+          }
           if (npc.trainerKey === "GYM_LEADER") {
             game.badges++;
             showDialog([
               "You defeated the Brainrot Queen!",
+              `Earned ${data.reward} prize money.`,
               "You receive the BRAINROT BADGE.",
-              "...The credits would roll, but the lore continues. Train more!",
+              "...The credits would roll, but the lore continues.",
+              "Hidden legendaries lurk in the deep grass. Hunt them!",
             ], () => {});
+          } else if (data.reward) {
+            showDialog([`You earned ${data.reward}!`], () => {});
           }
         }
         game.mode = "overworld";
@@ -2415,8 +3675,9 @@ const Battle = (() => {
   }
 
   function startWildBattle() {
+    Audio.play("encounter");
     const tableId = World.encounterTableAt(game.player.tileX, game.player.tileY);
-    const table = ENCOUNTERS[tableId];
+    const table = ENCOUNTERS[tableId] || ENCOUNTERS.ROUTE_1;
     const total = table.reduce((s, e) => s + e.weight, 0);
     let r = Math.random() * total;
     let chosen = table[0];
@@ -2451,7 +3712,7 @@ const Battle = (() => {
     p.facing = facing;
     const nx = p.tileX + dx, ny = p.tileY + dy;
     if (!World.isWalkable(nx, ny)) {
-      // bonk - can still face that way
+      Audio.play("bump");
       return;
     }
     p.targetX = nx;
@@ -2460,6 +3721,7 @@ const Battle = (() => {
     p.moveProgress = 0;
     p.dx = dx;
     p.dy = dy;
+    Audio.play("step");
   }
 
   function updateMovement() {
@@ -2476,7 +3738,6 @@ const Battle = (() => {
       p.moving = false;
       p.stepCounter++;
       p.animFrame = (p.animFrame + 1) % 2;
-      // trigger encounter?
       if (World.isEncounterTile(p.tileX, p.tileY)) {
         if (game.encounterCooldown <= 0 && Math.random() < 0.10) {
           game.encounterCooldown = 4;
@@ -2484,15 +3745,10 @@ const Battle = (() => {
           return;
         }
       }
-      // healing tile
-      if (World.isHealerTile(p.tileX, p.tileY)) {
-        // do nothing; healing happens through nurse interaction
-      }
       if (game.encounterCooldown > 0) game.encounterCooldown--;
     }
   }
 
-  // ----- Camera -----
   function updateCamera() {
     const p = game.player;
     const W = canvas.width, H = canvas.height;
@@ -2504,27 +3760,29 @@ const Battle = (() => {
     game.cam.y = cy;
   }
 
-  // ----- Save / Load -----
   function saveGame() {
     const data = {
       team: game.team,
       box: game.box,
       bag: game.bag,
+      money: game.money,
       player: { tileX: game.player.tileX, tileY: game.player.tileY, facing: game.player.facing },
       badges: game.badges,
       defeated: World.npcs.filter(n => n.defeated).map(n => n.id),
+      consumed: World.npcs.filter(n => n.consumed).map(n => n.id),
     };
-    try { localStorage.setItem("brainrot_save_v1", JSON.stringify(data)); } catch(e) {}
+    try { localStorage.setItem("brainrot_save_v2", JSON.stringify(data)); } catch(e) {}
   }
   function loadSave() {
     try {
-      const raw = localStorage.getItem("brainrot_save_v1");
+      const raw = localStorage.getItem("brainrot_save_v2");
       if (!raw) return false;
       const data = JSON.parse(raw);
       if (!data.team || data.team.length === 0) return false;
       game.team = data.team;
       game.box = data.box || [];
       game.bag = data.bag || { BRAINCELL: 8 };
+      game.money = data.money ?? 500;
       game.player.tileX = data.player.tileX;
       game.player.tileY = data.player.tileY;
       game.player.pixelX = game.player.tileX * 16;
@@ -2532,31 +3790,45 @@ const Battle = (() => {
       game.player.facing = data.player.facing || "down";
       game.badges = data.badges || 0;
       const defeatedIds = data.defeated || [];
-      for (const n of World.npcs) if (defeatedIds.includes(n.id)) n.defeated = true;
+      const consumedIds = data.consumed || [];
+      for (const n of World.npcs) {
+        if (defeatedIds.includes(n.id)) n.defeated = true;
+        if (consumedIds.includes(n.id)) n.consumed = true;
+      }
       return true;
     } catch(e) { return false; }
   }
 
-  // expose for debugging
-  window.__brainrot = { game, saveGame, loadSave, World, SPECIES, makeMon };
+  window.__brainrot = { game, saveGame, loadSave, World, SPECIES, makeMon, Battle, Audio };
 
-  // Hook used by battle to consume items
   window.__brainrotBagConsume = function(itemKey) {
     if ((game.bag[itemKey] || 0) <= 0) return false;
     game.bag[itemKey]--;
     return true;
   };
+  window.__brainrotOpenBag = function(fromBattle) { openBagMenu(fromBattle); };
+  window.__brainrotOpenTeam = function(fromBattle) { openTeamMenu(fromBattle); };
 
-  // ----- Render starter screen -----
+  // ----- Title screen drawing (animated mons) -----
+  function drawTitleAnimation(time) {
+    // animated mons floating across title bg (drawn behind DOM title-screen)
+  }
+
   function drawStarterScreen(time) {
     ctx.fillStyle = "#0d0d18";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // title
+    // animated bg
+    for (let i = 0; i < 30; i++) {
+      const t = time * 0.0005 + i;
+      const x = ((Math.sin(t) * 0.5 + 0.5) * canvas.width);
+      const y = ((Math.cos(t * 1.3 + i) * 0.5 + 0.5) * canvas.height);
+      ctx.fillStyle = `rgba(255,203,5,${0.04 + (i%3)*0.02})`;
+      ctx.fillRect(x, y, 2, 2);
+    }
     ctx.fillStyle = "#ffcb05";
     ctx.font = "bold 14px Courier New";
     ctx.textAlign = "center";
     ctx.fillText("CHOOSE YOUR STARTER", canvas.width/2, 28);
-    // mons
     const slots = [
       { x: canvas.width/2 - 160 },
       { x: canvas.width/2 - 48 },
@@ -2565,6 +3837,7 @@ const Battle = (() => {
     for (let i = 0; i < STARTERS.length; i++) {
       const s = slots[i];
       const isSel = i === game.starterIdx;
+      const bob = isSel ? Math.sin(time * 0.005) * 3 : 0;
       if (isSel) {
         ctx.fillStyle = "rgba(255,203,5,0.2)";
         ctx.fillRect(s.x - 8, 50, 112, 112);
@@ -2572,20 +3845,20 @@ const Battle = (() => {
         ctx.lineWidth = 2;
         ctx.strokeRect(s.x - 8, 50, 112, 112);
       }
-      SpriteRenderer.drawMon(ctx, STARTERS[i], s.x, 60, 96, time);
+      SpriteRenderer.drawMon(ctx, STARTERS[i], s.x, 60 + bob, 96, time);
     }
-    // info
     ctx.fillStyle = "#fff";
-    ctx.font = "10px Courier New";
+    ctx.font = "12px Courier New";
     const sel = STARTERS[game.starterIdx];
     ctx.fillText(SPECIES[sel].name, canvas.width/2, 190);
     ctx.fillStyle = "#ffd";
+    ctx.font = "10px Courier New";
     const flavor = SPECIES[sel].flavor;
     wrapText(ctx, flavor, canvas.width/2, 210, 360, 12);
     ctx.fillStyle = "#cfe9ff";
     wrapText(ctx, STARTER_INFO[sel], canvas.width/2, 250, 360, 12);
     ctx.fillStyle = "#aaa";
-    ctx.fillText("◀ ▶ to choose · Z / Enter to confirm", canvas.width/2, 295);
+    ctx.fillText("◀ ▶ choose · Z / Enter to confirm", canvas.width/2, 295);
   }
 
   function wrapText(ctx, text, x, y, maxW, lh) {
@@ -2603,39 +3876,71 @@ const Battle = (() => {
     ctx.fillText(line, x, yy);
   }
 
-  // ----- Main loop -----
-  let lastTime = 0;
+  // animated title background
+  const titleMons = [];
+  function setupTitleMons() {
+    const ids = Object.keys(SPECIES);
+    for (let i = 0; i < 8; i++) {
+      titleMons.push({
+        id: ids[Math.floor(Math.random() * ids.length)],
+        x: Math.random() * 480,
+        y: Math.random() * 320,
+        vx: (Math.random()-0.5) * 0.4,
+        vy: (Math.random()-0.5) * 0.4,
+        size: 32 + Math.random() * 32,
+        op: 0.2 + Math.random() * 0.3,
+      });
+    }
+  }
+  setupTitleMons();
+  function drawTitleScreen(time) {
+    ctx.fillStyle = "#0d0625";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // mons drifting
+    ctx.globalAlpha = 0.5;
+    for (const m of titleMons) {
+      m.x += m.vx;
+      m.y += m.vy;
+      if (m.x < -64) m.x = 480;
+      if (m.x > 480) m.x = -64;
+      if (m.y < -64) m.y = 320;
+      if (m.y > 320) m.y = -64;
+      ctx.globalAlpha = m.op;
+      SpriteRenderer.drawMon(ctx, m.id, m.x, m.y, m.size, time);
+    }
+    ctx.globalAlpha = 1;
+  }
+
   function loop(t) {
-    const dt = t - lastTime;
+    const dt = Math.min(80, t - lastTime);
     lastTime = t;
-    update(t);
+    nowTime = t;
+    update(t, dt);
     render(t);
     requestAnimationFrame(loop);
   }
 
-  function update(time) {
+  function update(time, dt) {
     if (game.mode === "overworld") {
       tryStartMove();
       updateMovement();
       updateCamera();
     }
+    if (game.mode === "battle") {
+      Battle.update(time, dt);
+    }
+    if (game.mode === "dialog") tickDialogTypewriter(dt);
     if (game.flashTime > 0) game.flashTime--;
   }
 
   function render(time) {
-    if (game.mode === "title") return; // overlay handles it
-    if (game.mode === "starter") {
-      drawStarterScreen(time);
+    if (game.mode === "title") {
+      drawTitleScreen(time);
       return;
     }
-    if (game.mode === "battle") {
-      Battle.draw(ctx, time);
-      Battle.refreshInfo();
-      return;
-    }
-    // overworld / dialog / menu
+    if (game.mode === "starter") { drawStarterScreen(time); return; }
+    if (game.mode === "battle") { Battle.draw(ctx, time); Battle.refreshInfo(); return; }
     World.draw(ctx, game.cam, time);
-    // player
     SpriteRenderer.drawPlayer(
       ctx,
       game.player.pixelX - game.cam.x,
@@ -2647,13 +3952,13 @@ const Battle = (() => {
       ctx.fillStyle = `rgba(255,255,255,${game.flashTime / 12})`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
-    // hud minicorner
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(4, 4, 108, 16);
+    // hud
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    ctx.fillRect(4, 4, 156, 18);
     ctx.fillStyle = "#fff";
     ctx.font = "10px Courier New";
     ctx.textAlign = "left";
-    ctx.fillText(`Team:${game.team.length}/6  Badge:${game.badges}`, 8, 16);
+    ctx.fillText(`Team:${game.team.length}/6  ${game.money}  Bdg:${game.badges}`, 8, 16);
   }
 
   requestAnimationFrame(loop);

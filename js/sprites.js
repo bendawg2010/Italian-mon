@@ -415,6 +415,130 @@ const SpriteRenderer = (() => {
     },
   };
 
+  function genericMon(ctx, sp, x, y, s, t) {
+    // procedurally distinct mon based on species id hash
+    const h = hash(sp.id);
+    const shape = h % 6; // body shape
+    const eyeKind = (h >> 3) % 4;
+    const limbKind = (h >> 6) % 4;
+    const accessoryKind = (h >> 9) % 5;
+    const bobSpeed = 0.003 + ((h >> 12) % 5) * 0.001;
+    const bob = Math.sin(t * bobSpeed) * 1.5;
+    shadow(ctx, x + s/2, y + s - 4, s*0.35, 4);
+
+    // body shape
+    if (shape === 0) {
+      // round blob
+      px(ctx, x+s*0.25, y+s*0.30+bob, s*0.50, s*0.45, sp.color1);
+      px(ctx, x+s*0.20, y+s*0.40+bob, s*0.60, s*0.30, sp.color1);
+      px(ctx, x+s*0.30, y+s*0.50+bob, s*0.40, s*0.15, sp.color2);
+    } else if (shape === 1) {
+      // tall body
+      px(ctx, x+s*0.30, y+s*0.20+bob, s*0.40, s*0.55, sp.color1);
+      px(ctx, x+s*0.25, y+s*0.35+bob, s*0.50, s*0.30, sp.color1);
+      px(ctx, x+s*0.32, y+s*0.50+bob, s*0.36, s*0.15, sp.color2);
+    } else if (shape === 2) {
+      // wide body
+      px(ctx, x+s*0.15, y+s*0.40+bob, s*0.70, s*0.30, sp.color1);
+      px(ctx, x+s*0.20, y+s*0.30+bob, s*0.60, s*0.20, sp.color1);
+      px(ctx, x+s*0.25, y+s*0.55+bob, s*0.50, s*0.10, sp.color2);
+    } else if (shape === 3) {
+      // diamond
+      px(ctx, x+s*0.40, y+s*0.20+bob, s*0.20, s*0.10, sp.color1);
+      px(ctx, x+s*0.30, y+s*0.30+bob, s*0.40, s*0.10, sp.color1);
+      px(ctx, x+s*0.20, y+s*0.40+bob, s*0.60, s*0.20, sp.color1);
+      px(ctx, x+s*0.30, y+s*0.60+bob, s*0.40, s*0.10, sp.color1);
+      px(ctx, x+s*0.40, y+s*0.70+bob, s*0.20, s*0.05, sp.color1);
+      px(ctx, x+s*0.30, y+s*0.45+bob, s*0.40, s*0.10, sp.color2);
+    } else if (shape === 4) {
+      // segmented (stack of two)
+      px(ctx, x+s*0.30, y+s*0.20+bob, s*0.40, s*0.25, sp.color1);
+      px(ctx, x+s*0.25, y+s*0.45+bob, s*0.50, s*0.30, sp.color2);
+      px(ctx, x+s*0.32, y+s*0.55+bob, s*0.36, s*0.15, sp.color3);
+    } else {
+      // spiky
+      px(ctx, x+s*0.25, y+s*0.30+bob, s*0.50, s*0.45, sp.color1);
+      for (let i = 0; i < 5; i++) {
+        const sx = x + s*(0.20 + i * 0.15);
+        px(ctx, sx, y+s*0.20+bob, s*0.05, s*0.10, sp.color3);
+      }
+      px(ctx, x+s*0.30, y+s*0.45+bob, s*0.40, s*0.20, sp.color2);
+    }
+
+    // eyes
+    if (eyeKind === 0) {
+      // big anime eyes
+      px(ctx, x+s*0.32, y+s*0.36+bob, s*0.12, s*0.10, "#fff");
+      px(ctx, x+s*0.56, y+s*0.36+bob, s*0.12, s*0.10, "#fff");
+      px(ctx, x+s*0.36, y+s*0.40+bob, s*0.05, s*0.05, "#000");
+      px(ctx, x+s*0.60, y+s*0.40+bob, s*0.05, s*0.05, "#000");
+    } else if (eyeKind === 1) {
+      // angry slits
+      px(ctx, x+s*0.32, y+s*0.40+bob, s*0.12, s*0.04, "#000");
+      px(ctx, x+s*0.56, y+s*0.40+bob, s*0.12, s*0.04, "#000");
+    } else if (eyeKind === 2) {
+      // sleepy
+      px(ctx, x+s*0.34, y+s*0.42+bob, s*0.10, s*0.02, "#000");
+      px(ctx, x+s*0.56, y+s*0.42+bob, s*0.10, s*0.02, "#000");
+      px(ctx, x+s*0.34, y+s*0.40+bob, s*0.10, s*0.02, sp.color3);
+      px(ctx, x+s*0.56, y+s*0.40+bob, s*0.10, s*0.02, sp.color3);
+    } else {
+      // glowing
+      px(ctx, x+s*0.32, y+s*0.38+bob, s*0.10, s*0.08, sp.color3);
+      px(ctx, x+s*0.58, y+s*0.38+bob, s*0.10, s*0.08, sp.color3);
+      px(ctx, x+s*0.36, y+s*0.42+bob, s*0.04, s*0.04, "#fff");
+      px(ctx, x+s*0.62, y+s*0.42+bob, s*0.04, s*0.04, "#fff");
+    }
+
+    // mouth
+    px(ctx, x+s*0.40, y+s*0.55+bob, s*0.20, s*0.03, "#000");
+
+    // limbs
+    if (limbKind === 0) {
+      // legs
+      px(ctx, x+s*0.30, y+s*0.75+bob, s*0.10, s*0.15, sp.color1);
+      px(ctx, x+s*0.60, y+s*0.75+bob, s*0.10, s*0.15, sp.color1);
+    } else if (limbKind === 1) {
+      // 4 legs
+      px(ctx, x+s*0.20, y+s*0.65+bob, s*0.08, s*0.20, sp.color1);
+      px(ctx, x+s*0.36, y+s*0.65+bob, s*0.08, s*0.20, sp.color1);
+      px(ctx, x+s*0.56, y+s*0.65+bob, s*0.08, s*0.20, sp.color1);
+      px(ctx, x+s*0.72, y+s*0.65+bob, s*0.08, s*0.20, sp.color1);
+    } else if (limbKind === 2) {
+      // arms + legs
+      px(ctx, x+s*0.10, y+s*0.40+bob, s*0.15, s*0.08, sp.color1);
+      px(ctx, x+s*0.75, y+s*0.40+bob, s*0.15, s*0.08, sp.color1);
+      px(ctx, x+s*0.30, y+s*0.75+bob, s*0.10, s*0.15, sp.color1);
+      px(ctx, x+s*0.60, y+s*0.75+bob, s*0.10, s*0.15, sp.color1);
+    } else {
+      // tentacles
+      for (let i = 0; i < 4; i++) {
+        const wave = Math.sin(t * 0.005 + i) * 2;
+        px(ctx, x+s*(0.20 + i*0.20), y+s*0.70+bob, s*0.06, s*0.20 + wave, sp.color1);
+      }
+    }
+
+    // accessory
+    if (accessoryKind === 0) {
+      // hat
+      px(ctx, x+s*0.30, y+s*0.18+bob, s*0.40, s*0.06, sp.color3);
+      px(ctx, x+s*0.36, y+s*0.10+bob, s*0.28, s*0.10, sp.color3);
+    } else if (accessoryKind === 1) {
+      // bow
+      px(ctx, x+s*0.45, y+s*0.20+bob, s*0.10, s*0.06, sp.color3);
+    } else if (accessoryKind === 2) {
+      // sunglasses
+      px(ctx, x+s*0.28, y+s*0.36+bob, s*0.18, s*0.06, "#000");
+      px(ctx, x+s*0.54, y+s*0.36+bob, s*0.18, s*0.06, "#000");
+      px(ctx, x+s*0.45, y+s*0.38+bob, s*0.10, s*0.02, "#000");
+    } else if (accessoryKind === 3) {
+      // antenna
+      px(ctx, x+s*0.49, y+s*0.05+bob, s*0.02, s*0.15, sp.color3);
+      px(ctx, x+s*0.45, y+s*0.04+bob, s*0.10, s*0.04, sp.color3);
+    }
+    // 4 = no accessory
+  }
+
   function drawMon(ctx, speciesId, x, y, size, time) {
     const sp = SPECIES[speciesId];
     if (!sp) return;
@@ -422,15 +546,7 @@ const SpriteRenderer = (() => {
     if (fn) {
       fn(ctx, sp, x, y, size, time);
     } else {
-      // generic blob fallback
-      const bob = Math.sin(time * 0.005) * 1;
-      shadow(ctx, x + size/2, y + size - 4, size*0.3, 4);
-      px(ctx, x+size*0.25, y+size*0.30+bob, size*0.50, size*0.45, sp.color1);
-      px(ctx, x+size*0.30, y+size*0.40+bob, size*0.40, size*0.20, sp.color2);
-      px(ctx, x+size*0.34, y+size*0.36+bob, size*0.10, size*0.06, "#fff");
-      px(ctx, x+size*0.56, y+size*0.36+bob, size*0.10, size*0.06, "#fff");
-      px(ctx, x+size*0.38, y+size*0.38+bob, size*0.04, size*0.04, "#000");
-      px(ctx, x+size*0.60, y+size*0.38+bob, size*0.04, size*0.04, "#000");
+      genericMon(ctx, sp, x, y, size, time);
     }
   }
 

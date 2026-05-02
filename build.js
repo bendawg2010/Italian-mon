@@ -7,7 +7,7 @@ const root = __dirname;
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const css = fs.readFileSync(path.join(root, "css/style.css"), "utf8");
 
-const jsFiles = ["js/data.js", "js/sprites.js", "js/world.js", "js/battle.js", "js/game.js"];
+const jsFiles = ["js/audio.js", "js/data.js", "js/sprites.js", "js/world.js", "js/battle.js", "js/game.js"];
 const js = jsFiles.map(f => `// ===== ${f} =====\n` + fs.readFileSync(path.join(root, f), "utf8")).join("\n\n");
 
 let out = html

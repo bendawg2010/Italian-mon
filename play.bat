@@ -1,27 +1,51 @@
 @echo off
-REM Easy launcher for Windows. Opens the game in your default browser.
+REM Launcher: starts a local server and opens the game in a chromeless
+REM Chrome/Edge "app window" so it feels like a desktop game.
+
 cd /d "%~dp0"
-
 set PORT=8765
+set URL=http://localhost:%PORT%/index.html
 
-where python >nul 2>nul
-if %errorlevel%==0 (
-  echo Starting Python server on http://localhost:%PORT%
-  start "" "http://localhost:%PORT%/index.html"
-  python -m http.server %PORT%
-  goto :end
+REM Find a chromium-based browser
+set "BROWSER="
+for %%C in (
+  "%LocalAppData%\Google\Chrome\Application\chrome.exe"
+  "%ProgramFiles%\Google\Chrome\Application\chrome.exe"
+  "%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"
+  "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"
+  "%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"
+  "%LocalAppData%\BraveSoftware\Brave-Browser\Application\brave.exe"
+) do (
+  if exist %%C set "BROWSER=%%~C"
 )
 
-where node >nul 2>nul
-if %errorlevel%==0 (
-  echo Starting Node server on http://localhost:%PORT%
-  start "" "http://localhost:%PORT%/index.html"
-  node -e "require('http').createServer((q,s)=>{const f=require('fs'),p=require('path');let u=q.url==='/'?'/index.html':q.url;const fp=p.join(__dirname,u);if(!fp.startsWith(__dirname))return s.end();f.readFile(fp,(e,d)=>{if(e){s.writeHead(404);s.end();return;}const ext=p.extname(fp);const m={'.html':'text/html','.js':'application/javascript','.css':'text/css'}[ext]||'application/octet-stream';s.writeHead(200,{'Content-Type':m});s.end(d);});}).listen(%PORT%)"
-  goto :end
+REM Pick a server runtime
+set "SRVCMD="
+where python >nul 2>nul && set "SRVCMD=python -m http.server %PORT%"
+if not defined SRVCMD where node >nul 2>nul && set "SRVCMD=node -e require('http').createServer((q,s)=>{const f=require('fs'),p=require('path');let u=q.url==='/'?'/index.html':q.url;const fp=p.join(process.cwd(),u);f.readFile(fp,(e,d)=>{if(e){s.writeHead(404);s.end();return;}const ext=p.extname(fp);const m={'.html':'text/html','.js':'application/javascript','.css':'text/css'}[ext]||'application/octet-stream';s.writeHead(200,{'Content-Type':m});s.end(d);});}).listen(%PORT%)"
+
+if not defined SRVCMD goto :nopython
+
+echo Starting server on http://localhost:%PORT%
+start "Brainrot Server" /MIN cmd /c %SRVCMD%
+timeout /t 1 /nobreak >nul
+
+if defined BROWSER (
+  echo Opening as desktop app via "%BROWSER%"
+  start "" "%BROWSER%" --app=%URL% --window-size=1024,720 --user-data-dir="%TEMP%\brainrot-monsters-app"
+) else (
+  echo Browser not found; opening default browser
+  start "" %URL%
 )
 
-echo No Python or Node found. Opening play.html directly...
+echo.
+echo Close the game window when finished.
+echo Press any key here to stop the server...
+pause >nul
+taskkill /FI "WINDOWTITLE eq Brainrot Server*" /F >nul 2>nul
+goto :eof
+
+:nopython
+echo No Python or Node found. Opening play.html directly.
 start "" "play.html"
-
-:end
 pause

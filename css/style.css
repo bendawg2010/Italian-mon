@@ -85,18 +85,39 @@ html, body {
 #menu {
   top: 4%;
   right: 4%;
-  min-width: 35%;
+  min-width: 50%;
+  max-width: 70%;
+  max-height: 90%;
+  overflow-y: auto;
 }
 #menu-list { list-style: none; }
 #menu-list li {
-  padding: 4px 8px;
+  padding: 6px 10px;
   cursor: pointer;
+  border-radius: 4px;
+  margin: 2px 0;
+}
+#menu-list li.header {
+  background: var(--accent2);
+  color: #fff;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 1px;
+}
+#menu-list li.footer {
+  background: transparent;
+  color: #aab;
+  text-align: center;
+  border-top: 1px solid #333;
+  margin-top: 6px;
+  cursor: default;
 }
 #menu-list li.selected {
   background: var(--accent);
   color: #000;
-  border-radius: 4px;
 }
+#menu-list li.selected small { color: #222; }
+#menu-list small { opacity: 0.8; }
 
 .hidden { display: none !important; }
 
