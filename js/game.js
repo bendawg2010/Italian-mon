@@ -10,8 +10,8 @@
   const game = {
     mode: "title", // title | starter | overworld | battle | dialog | menu | team | bag | shop
     player: {
-      tileX: 9, tileY: 22,
-      pixelX: 9 * 16, pixelY: 22 * 16,
+      tileX: 8, tileY: 14,
+      pixelX: 8 * 16, pixelY: 14 * 16,
       facing: "down",
       moving: false,
       moveProgress: 0,
@@ -19,6 +19,8 @@
       animFrame: 0,
       stepCounter: 0,
     },
+    currentMap: "pallet",
+    mapBanner: { text: "", t: 0 },
     team: [],
     box: [],
     bag: { BRAINCELL: 8, GREATCELL: 1, CAPPUCCINO: 3 },
@@ -38,14 +40,24 @@
   let nowTime = 0;
 
   window.addEventListener("keydown", (e) => {
-    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Enter","z","x","Z","X","Escape"].includes(e.key)) {
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Enter","z","x","Z","X","Escape","f","F"].includes(e.key)) {
       e.preventDefault();
     }
+    if (e.key === "f" || e.key === "F") { toggleFullscreen(); return; }
     keys[e.key.toLowerCase()] = true;
     keys[e.key] = true;
     Audio.unlock();
     onKeyDown(e.key);
   });
+
+  function toggleFullscreen() {
+    const el = document.documentElement;
+    if (!document.fullscreenElement) {
+      (el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen).call(el);
+    } else {
+      (document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen).call(document);
+    }
+  }
   window.addEventListener("keyup", (e) => {
     keys[e.key.toLowerCase()] = false;
     keys[e.key] = false;
@@ -691,7 +703,7 @@
       return;
     }
     Audio.play("encounter");
-    const tableId = World.encounterTableAt(game.player.tileX, game.player.tileY);
+    const tableId = World.encounterTable() || "ROUTE_1";
     const table = ENCOUNTERS[tableId] || ENCOUNTERS.ROUTE_1;
     const total = table.reduce((s, e) => s + e.weight, 0);
     let r = Math.random() * total;
@@ -721,18 +733,18 @@
   }
 
   function whiteOut() {
-    // Pokemon-style: heal team fully, teleport to nearest Cappuccino Bar, lose half cash.
     const lost = Math.floor(game.money / 2);
     game.money -= lost;
     for (const m of game.team) {
       m.hp = m.maxHp;
       for (const mv of m.moves) mv.pp = mv.maxPp;
     }
-    // teleport to spawn (in front of original Cappuccino Bar)
-    game.player.tileX = 9;
-    game.player.tileY = 22;
-    game.player.pixelX = 9 * 16;
-    game.player.pixelY = 22 * 16;
+    World.setCurrentMap("pallet");
+    game.currentMap = "pallet";
+    game.player.tileX = 8;
+    game.player.tileY = 14;
+    game.player.pixelX = 8 * 16;
+    game.player.pixelY = 14 * 16;
     game.player.facing = "down";
     game.player.moving = false;
     game.encounterCooldown = 8;
@@ -796,6 +808,12 @@
       p.moving = false;
       p.stepCounter++;
       p.animFrame = (p.animFrame + 1) % 2;
+      // map transition?
+      const portal = World.portalAt(p.tileX, p.tileY);
+      if (portal) {
+        doMapTransition(portal.to);
+        return;
+      }
       if (World.isEncounterTile(p.tileX, p.tileY)) {
         if (game.encounterCooldown <= 0 && Math.random() < 0.10) {
           game.encounterCooldown = 4;
@@ -807,35 +825,61 @@
     }
   }
 
+  function doMapTransition(dest) {
+    Audio.play("step");
+    World.setCurrentMap(dest.map);
+    game.currentMap = dest.map;
+    const p = game.player;
+    p.tileX = dest.x;
+    p.tileY = dest.y;
+    p.pixelX = p.tileX * 16;
+    p.pixelY = p.tileY * 16;
+    p.moving = false;
+    game.mapBanner = { text: World.getMapName(), t: 90 };
+    game.flashTime = 6;
+    saveGame();
+  }
+
   function updateCamera() {
     const p = game.player;
     const W = canvas.width, H = canvas.height;
     let cx = p.pixelX + 8 - W / 2;
     let cy = p.pixelY + 8 - H / 2;
-    cx = Math.max(0, Math.min(World.WIDTH * 16 - W, cx));
-    cy = Math.max(0, Math.min(World.HEIGHT * 16 - H, cy));
+    const mw = World.getMapWidth() * 16;
+    const mh = World.getMapHeight() * 16;
+    cx = Math.max(0, Math.min(Math.max(0, mw - W), cx));
+    cy = Math.max(0, Math.min(Math.max(0, mh - H), cy));
     game.cam.x = cx;
     game.cam.y = cy;
   }
 
   function saveGame() {
+    // collect all defeated/consumed NPCs across all maps
+    const defeated = [];
+    const consumed = [];
+    for (const m of World.allMaps()) {
+      for (const n of m.npcs || []) {
+        if (n.defeated) defeated.push({ map: m.id, id: n.id });
+        if (n.consumed) consumed.push({ map: m.id, id: n.id });
+      }
+    }
     const data = {
       team: game.team,
       box: game.box,
       bag: game.bag,
       money: game.money,
+      currentMap: game.currentMap,
       player: { tileX: game.player.tileX, tileY: game.player.tileY, facing: game.player.facing },
       badges: game.badges,
       dex: game.dex,
       beatenChampion: !!game.beatenChampion,
-      defeated: World.npcs.filter(n => n.defeated).map(n => n.id),
-      consumed: World.npcs.filter(n => n.consumed).map(n => n.id),
+      defeated, consumed,
     };
-    try { localStorage.setItem("brainrot_save_v3", JSON.stringify(data)); } catch(e) {}
+    try { localStorage.setItem("brainrot_save_v4", JSON.stringify(data)); } catch(e) {}
   }
   function loadSave() {
     try {
-      const raw = localStorage.getItem("brainrot_save_v3") || localStorage.getItem("brainrot_save_v2");
+      const raw = localStorage.getItem("brainrot_save_v4");
       if (!raw) return false;
       const data = JSON.parse(raw);
       if (!data.team || data.team.length === 0) return false;
@@ -843,6 +887,8 @@
       game.box = data.box || [];
       game.bag = data.bag || { BRAINCELL: 8 };
       game.money = data.money ?? 500;
+      game.currentMap = data.currentMap || "pallet";
+      World.setCurrentMap(game.currentMap);
       game.player.tileX = data.player.tileX;
       game.player.tileY = data.player.tileY;
       game.player.pixelX = game.player.tileX * 16;
@@ -852,17 +898,18 @@
       game.dex = data.dex || { seen: {}, caught: {} };
       if (!game.dex.seen) game.dex.seen = {};
       if (!game.dex.caught) game.dex.caught = {};
-      // backfill: seen team/box species
       for (const m of [...game.team, ...game.box]) {
         markDexSeen(m.species);
         markDexCaught(m.species);
       }
       game.beatenChampion = !!data.beatenChampion;
-      const defeatedIds = data.defeated || [];
-      const consumedIds = data.consumed || [];
-      for (const n of World.npcs) {
-        if (defeatedIds.includes(n.id)) n.defeated = true;
-        if (consumedIds.includes(n.id)) n.consumed = true;
+      const defs = data.defeated || [];
+      const cons = data.consumed || [];
+      for (const m of World.allMaps()) {
+        for (const n of m.npcs || []) {
+          if (defs.find(d => d.map === m.id && d.id === n.id)) n.defeated = true;
+          if (cons.find(d => d.map === m.id && d.id === n.id)) n.consumed = true;
+        }
       }
       return true;
     } catch(e) { return false; }
@@ -1029,6 +1076,18 @@
     // floating Z prompt above NPC the player faces
     drawInteractionPrompt(time);
 
+    // map banner (shows when entering new map)
+    if (game.mapBanner.t > 0) {
+      const a = game.mapBanner.t < 30 ? game.mapBanner.t / 30 : (game.mapBanner.t > 60 ? (90 - game.mapBanner.t) / 30 : 1);
+      ctx.fillStyle = `rgba(0,0,0,${0.75 * a})`;
+      ctx.fillRect(0, canvas.height/2 - 14, canvas.width, 22);
+      ctx.fillStyle = `rgba(255,203,5,${a})`;
+      ctx.font = "bold 9px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(game.mapBanner.text, canvas.width/2, canvas.height/2 + 1);
+      game.mapBanner.t--;
+    }
+
     // top hud
     ctx.fillStyle = "rgba(0,0,0,0.7)";
     ctx.fillRect(2, 2, 110, 12);
@@ -1036,6 +1095,15 @@
     ctx.font = "bold 5px monospace";
     ctx.textAlign = "left";
     ctx.fillText(`Bdg:${game.badges}/5  $${game.money}  T:${game.team.length}/6`, 4, 10);
+    // current map (small)
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    const mapName = World.getMapName();
+    const mw = mapName.length * 4 + 8;
+    ctx.fillRect(canvas.width - mw - 2, 2, mw, 10);
+    ctx.fillStyle = "#cfe9ff";
+    ctx.textAlign = "center";
+    ctx.fillText(mapName, canvas.width - mw/2 - 2, 9);
+    ctx.textAlign = "left";
 
     // bottom controls hint (always visible, prominent)
     ctx.fillStyle = "rgba(0,0,0,0.7)";

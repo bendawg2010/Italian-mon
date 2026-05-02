@@ -26,8 +26,8 @@ open_in_browser() {
   local browser
   browser="$(find_app_browser || true)"
   if [ -n "$browser" ]; then
-    echo "Opening as desktop app via: $browser"
-    "$browser" --app="$url" --window-size=1024,720 --window-position=100,80 \
+    echo "Opening as fullscreen desktop app via: $browser"
+    "$browser" --app="$url" --start-fullscreen --kiosk \
       --user-data-dir="${HOME}/.brainrot-monsters-app" \
       >/dev/null 2>&1 &
     return

@@ -31,8 +31,8 @@ start "Brainrot Server" /MIN cmd /c %SRVCMD%
 timeout /t 1 /nobreak >nul
 
 if defined BROWSER (
-  echo Opening as desktop app via "%BROWSER%"
-  start "" "%BROWSER%" --app=%URL% --window-size=1024,720 --user-data-dir="%TEMP%\brainrot-monsters-app"
+  echo Opening fullscreen as desktop app via "%BROWSER%"
+  start "" "%BROWSER%" --app=%URL% --start-fullscreen --kiosk --user-data-dir="%TEMP%\brainrot-monsters-app"
 ) else (
   echo Browser not found; opening default browser
   start "" %URL%
