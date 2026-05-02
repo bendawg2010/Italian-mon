@@ -411,6 +411,45 @@ const World = (() => {
       music: "route",
     },
 
+    // ========== SOUTH VALLEY ISLES (post-game, unlocked after Champion) ==========
+    south_valley: {
+      name: "South Valley Isles",
+      width: 28, height: 22,
+      tiles: parseMap([
+        "WWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+        "WGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+        "WGHHHHHHGGGGSGGGGGHHHHHHHGGW",
+        "WGHHHHHHGGGGGGGGGGHHHHHHHGGW",
+        "WGHHHHHHGGGGGGGGGGHHHHHHHGGW",
+        "WGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+        "WGGGGGGG~~~~~~~~~~~~GGGGGGGW",
+        "WGGGGG~~~~~~~~~~~~~~~~GGGGGW",
+        "WGGGG~~~~~~~~~~~~~~~~~~GGGGW",
+        "PPPPPPPPPPPPPPPPPPPPPPPPGGGGW",
+        "PPPPPPPPPPPPPPPPPPPPPPPPGGGGW",
+        "WGGGG~~~~~~~~~~~~~~~~~~GGGGW",
+        "WGGGGG~~~~~~~~~~~~~~~~GGGGGW",
+        "WGGGGGGG~~~~~~~~~~~~GGGGGGGW",
+        "WGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+        "WGGGHHHHGGGGGSGGGGGGHHHHGGGGW",
+        "WGGGHHHHGGGGGGGGGGGGHHHHGGGGW",
+        "WGGGHHHHGGGGGGGGGGGGHHHHGGGGW",
+        "WGGGHHHHGGGGGGGGGGGGHHHHGGGGW",
+        "WGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+        "WGGGGGGGGGGGGGGGGGGGGGGGGGGW",
+        "WWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      ]),
+      portals: [
+        // West edge teleports back to Vermilion's east edge (post-game ferry)
+        { x: 0, y: 9, to: { map: "vermilion", x: 20, y: 18 } },
+        { x: 0, y: 10, to: { map: "vermilion", x: 20, y: 18 } },
+      ],
+      encounters: "SOUTH_VALLEY",
+      music: "route",
+      // Post-game gate: only enterable after beating the Champion.
+      requiresChampion: true,
+    },
+
     // ========== VERMILION (port town with FIRE GYM) ==========
     vermilion: {
       name: "Vermilion City",
@@ -562,6 +601,10 @@ const World = (() => {
         dialog: ["Old Man: In my day, only ONE skibidi toilet."] },
       { id: "aura_farmer_cer", x: 18, y: 9, color: "#9aa5ff", facing: "down", defeated: false, type: "trainer",
         dialog: ["Aura Farmer Goncho: Mid. Mid. Mid."], trainerKey: "AURA_FARMER" },
+      // STORY: Cult Lieutenant ambushes you after Badge 3 (Sigma Gym).
+      { id: "cult_lieu_cer", x: 4, y: 4, color: "#5a1a8a", facing: "down", defeated: false, type: "trainer",
+        dialog: ["Cult Lieutenant Gorm: I knew you'd come east.\nGlorbo whispered it to me through the espresso steam."],
+        trainerKey: "CULT_LIEUTENANT_GORM" },
       { id: "sign_cer", x: 16, y: 16, color: null, type: "sign",
         dialog: ["[CERULEAN CITY]\nSigma Gym (Badge 3) center!\nEast: Route 4"] },
     ],
@@ -573,6 +616,10 @@ const World = (() => {
         dialog: ["Beach Bum Brad: Bruh."], trainerKey: "BEACH_BUM" },
       { id: "cosmic_rancher", x: 11, y: 2, color: "#fff5e0", facing: "down", defeated: false, type: "trainer",
         dialog: ["Cosmic Rancher Saturno: My cows orbit."], trainerKey: "COSMIC_RANCHER" },
+      // STORY: The Cult tries to summon Glorbnoxion at the beach.
+      { id: "cult_capt_r4", x: 24, y: 14, color: "#5a1a8a", facing: "down", defeated: false, type: "trainer",
+        dialog: ["Cult Captain Vessi: Stay back. The summoning is delicate.\nThe tide will sing him into the world."],
+        trainerKey: "CULT_CAPTAIN_VESSI" },
       { id: "sign_r4", x: 21, y: 2, color: null, type: "sign",
         dialog: ["[ROUTE 4 - Coast]\nEast: Vermilion City\nWest: Cerulean"] },
     ],
@@ -592,10 +639,33 @@ const World = (() => {
         dialog: ["Brainrot Queen: Final test, challenger!"], trainerKey: "CHAMPION" },
       { id: "ai_researcher", x: 7, y: 11, color: "#ffaaff", facing: "down", defeated: false, type: "trainer",
         dialog: ["AI Researcher Synthia: Trained on the entire web."], trainerKey: "AI_RESEARCHER" },
+      // STORY: Final Cult confrontation before the Champion fight.
+      { id: "cult_leader_verm", x: 14, y: 11, color: "#5a1a8a", facing: "down", defeated: false, type: "trainer",
+        dialog: ["Cult Leader Vibrius: GLORBO'S TRUE NAME IS GLORBNOXION!\nAnd he hears me when I scream."],
+        trainerKey: "CULT_LEADER_VIBRIUS" },
       { id: "high_roller", x: 19, y: 5, color: "#ffd700", facing: "down", defeated: false, type: "trainer",
         dialog: ["High Roller Lucky: 7-7-7. Watch."], trainerKey: "HIGH_ROLLER" },
+      // POST-GAME: Ferry captain opens the route to the South Valley
+      // Isles after the Champion has been beaten.
+      { id: "ferry_capt_verm", x: 20, y: 18, color: "#3a78dc", facing: "down", type: "ferry",
+        dialog: ["Ferry Captain: Beat the Champion to unlock my route.",
+                 "Ferry Captain: I sail you to the SOUTH VALLEY ISLES.",
+                 "Ferry Captain: Wild legendaries roam there. Bring Ultra Cells."],
+        ferryTo: { map: "south_valley", x: 1, y: 9 } },
       { id: "sign_verm", x: 16, y: 3, color: null, type: "sign",
         dialog: ["[VERMILION CITY]\nLast major town!\nGyms 4&5 + Champion here."] },
+    ],
+
+    south_valley: [
+      { id: "sv_sign", x: 12, y: 2, color: null, type: "sign",
+        dialog: ["[SOUTH VALLEY ISLES]\nPost-game island. Legendaries roam here.",
+                 "Walk into the deepest grass at your own risk."] },
+      { id: "sv_old_man", x: 13, y: 15, color: "#aabbcc", facing: "down", type: "npc",
+        dialog: ["Old Man: I came here to forget. Glorbnoxion never left me.",
+                 "Old Man: But the Tralalero pods? They sing me to sleep."] },
+      { id: "sv_ferry_back", x: 1, y: 9, color: "#3a78dc", facing: "down", type: "ferry",
+        dialog: ["Ferry Captain: Headed back to Vermilion?"],
+        ferryTo: { map: "vermilion", x: 20, y: 18 } },
     ],
   };
 

@@ -30,9 +30,20 @@ browser otherwise.
 | **Linux**       | `play.sh`                  | `./play.sh` in a terminal                        |
 | **Windows**     | `play.bat`                 | Double-click in Explorer                         |
 
-> **First-run on macOS:** Gatekeeper may block the unsigned `.app` /
-> `.command`. Right-click → Open → Open to allow it once. After that
-> a regular double-click works.
+> **First-run on macOS — fix the "Apple could not verify" popup:**
+> Brainrot Monsters isn't signed with an Apple Developer ID, so when
+> you download the repo as a zip macOS marks the `.app` as
+> quarantined. Two ways to fix:
+>
+> 1. **Easy:** double-click `Trust Brainrot Monsters.command` once.
+>    It clears the quarantine flag from the `.app` and the launcher
+>    scripts. After that, double-click `BrainrotMonsters.app` works
+>    normally.
+> 2. **Manual:** in Terminal, run
+>    `xattr -dr com.apple.quarantine /path/to/BrainrotMonsters.app`
+>
+> If macOS blocks the trust script itself, right-click it → **Open**
+> → **Open**. You only need to do this once per download.
 
 ### Or do it yourself
 

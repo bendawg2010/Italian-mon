@@ -4,4 +4,8 @@ node_modules/
 dist/
 ad/node_modules/
 ad/.cache/
-ad/out/test-*.jpg
+# Don't commit rendered ads / preview frames — keep them local only.
+ad/out/*.mp4
+ad/out/*.gif
+ad/out/*.jpg
+ad/out/*.png

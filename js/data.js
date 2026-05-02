@@ -1057,11 +1057,58 @@ const TRAINERS = {
   },
   CULTIST: {
     name: "Cultist Velvelo",
-    intro: "Velvelo: GLORBO! GLORBO! He whom we serve!",
-    defeat: "Velvelo: Glorbo... has forsaken me...",
+    intro: "Velvelo: GLORBO! GLORBO! He whom we serve!\nThe Cult of Glorbo will sing the world to sleep!",
+    defeat: "Velvelo: Glorbo... has forsaken me...\n(He drops a torn page from a journal as he flees.)",
     team: [{ id: "GLORBO", lvl: 16 }, { id: "TRIPPI", lvl: 16 }, { id: "RIZZARDO", lvl: 17 }],
     reward: 450,
     requiresBadge: 2,
+    storyBeat: 2,
+  },
+
+  // ===== CULT OF GLORBO ARC =====
+  // Story-gated villain encounters. Each one advances game.story.beat.
+  CULT_LIEUTENANT_GORM: {
+    name: "Cult Lieutenant Gorm",
+    title: "Of the Inner Eye",
+    intro: "Gorm: Velvelo was a fool, but the lore he stole was real.\nThe brainrot is not a curse, challenger — it is a CALL.",
+    defeat: "Gorm: You hear nothing... but Glorbo hears YOU now.",
+    team: [
+      { id: "GLORBO", lvl: 22 },
+      { id: "TRIPPI", lvl: 22 },
+      { id: "FANUMTAX", lvl: 23 },
+      { id: "RIZZARDO", lvl: 24 },
+    ],
+    reward: 1400, requiresBadge: 3, storyBeat: 3,
+  },
+
+  CULT_CAPTAIN_VESSI: {
+    name: "Cult Captain Vessi",
+    title: "Tide of the Beam",
+    intro: "Vessi: We tried to summon Glorbnoxion at this beach.\nIt almost worked. The Tralalero pods sang back.\nNow you've come to ruin everything. Of course.",
+    defeat: "Vessi: The vessel... was already chosen.\nYou'll meet her at the top.",
+    team: [
+      { id: "TRIPPI", lvl: 28 },
+      { id: "GLORBO", lvl: 28 },
+      { id: "AISLOP", lvl: 29 },
+      { id: "TIRAMISU", lvl: 30 },
+      { id: "GLORBNOXION", lvl: 32 },
+    ],
+    reward: 2400, requiresBadge: 4, storyBeat: 4,
+  },
+
+  CULT_LEADER_VIBRIUS: {
+    name: "Cult Leader Vibrius",
+    title: "Voice of Glorbnoxion",
+    intro: "Vibrius: You have climbed too high, challenger.\nWe wanted to wake Glorbnoxion gently.\nNow he wakes ANGRY. And so, fittingly, do I.",
+    defeat: "Vibrius: It does not matter. The vessel is sealed.\nClimb to the Champion. Meet what you have wrought.",
+    team: [
+      { id: "GLORBO", lvl: 38 },
+      { id: "OHIO", lvl: 38 },
+      { id: "BRAINCORE", lvl: 40 },
+      { id: "AISLOP", lvl: 40 },
+      { id: "GLORBNOXION", lvl: 42 },
+    ],
+    reward: 4500, requiresBadge: 5, storyBeat: 5,
   },
 
   // ----- GYM LEADERS (5) -----
@@ -1226,9 +1273,9 @@ const TRAINERS = {
   // ----- CHAMPION -----
   CHAMPION: {
     name: "Champion Brainrot Queen",
-    title: "Embodiment of TikTok 2026",
-    intro: "Queen: You've climbed far, challenger.\nThe lore deepest is mine alone.\nTralalero tralala... your final test begins.",
-    defeat: "Queen: Impossible! You... understand the lore!",
+    title: "Vessel of Glorbnoxion",
+    intro: "Queen: So. You climbed past every gym, past every cultist.\nVibrius told you my name, didn't he?\nQueen: I AM the Brainrot Queen. I am also Glorbnoxion's vessel.\nThis is my world now. The brainrot is the future.\nQueen: Tralalero tralala... your final test begins.",
+    defeat: "Queen: Impossible! You... understand the lore!\nThe vessel cracks. Glorbnoxion withdraws. The world... breathes.\nQueen: ...go. The Memedex is yours to finish. The Isles of South Valley open.",
     team: [
       { id: "GLORBO", lvl: 40 },
       { id: "OHIO", lvl: 41 },

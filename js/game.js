@@ -204,6 +204,10 @@
     // stats.totalPlayMs accumulates across all sessions; sessionStart is
     // reset every page load so we can show "this session" separately.
     stats: { steps: 0, battlesWon: 0, monsCaught: 0, totalPlayMs: 0, sessionStart: Date.now() },
+    // story.beat is the highest story beat the player has cleared. Cult
+    // trainers carry storyBeat=N which they push into here on defeat.
+    // Used by the Lore Journal menu to gate which entries are unlocked.
+    story: { beat: 0 },
   };
 
   const keys = {};
@@ -503,7 +507,7 @@
   let menuState = null;
   function openMenu() {
     Audio.play("open");
-    menuState = { items: ["MEMEDEX", "TEAM", "BOX", "BAG", "STATS", "TUTORIAL", "SAVE", "MUTE", "CLOSE"], idx: 0 };
+    menuState = { items: ["MEMEDEX", "TEAM", "BOX", "BAG", "LORE", "STATS", "TUTORIAL", "SAVE", "MUTE", "CLOSE"], idx: 0 };
     game.mode = "menu";
     renderMenu();
     document.getElementById("menu").classList.remove("hidden");
@@ -547,6 +551,51 @@
     if (choice === "BOX") { closeMenu(); openBox(); return; }
     if (choice === "STATS") { closeMenu(); showStatsDialog(); return; }
     if (choice === "TUTORIAL") { closeMenu(); showTutorial(); return; }
+    if (choice === "LORE") { closeMenu(); showLoreJournal(); return; }
+  }
+
+  // Lore Journal — entries unlock as the player clears Cult of Glorbo
+  // story beats. game.story.beat is the highest cleared beat.
+  // Beats: 0 (none), 2 (Velvelo / first cultist), 3 (Lt. Gorm),
+  // 4 (Captain Vessi), 5 (Leader Vibrius), 6 (Champion / Glorbnoxion).
+  function showLoreJournal() {
+    const beat = (game.story && game.story.beat) || 0;
+    const entries = [];
+    entries.push("═══ LORE JOURNAL ═══");
+    entries.push(
+      "PROFESSOR PARMIGIANO'S NOTES:\n" +
+      "The brainrot creatures are a 2026 phenomenon — born of memes, " +
+      "amplified by the algorithm, given form by something deeper. " +
+      "I suspect a sentient cosmic force is involved."
+    );
+    if (beat >= 2) entries.push(
+      "BEAT 2 — CULTIST VELVELO:\n" +
+      "A man in purple robes shouted GLORBO and attacked. " +
+      "On defeat he dropped a torn page that read: \"the call grows louder.\""
+    );
+    if (beat >= 3) entries.push(
+      "BEAT 3 — LIEUTENANT GORM, CERULEAN:\n" +
+      "The Cult of Glorbo is real and structured. Gorm called the " +
+      "brainrot a CALL, not a curse. Said Glorbo HEARS US."
+    );
+    if (beat >= 4) entries.push(
+      "BEAT 4 — CAPTAIN VESSI, ROUTE 4 BEACH:\n" +
+      "They tried to summon Glorbnoxion at the tide. The Tralalero " +
+      "pods sang back. Vessi mentioned a 'vessel.' She didn't say who."
+    );
+    if (beat >= 5) entries.push(
+      "BEAT 5 — CULT LEADER VIBRIUS, VERMILION:\n" +
+      "Glorbnoxion is awake. The vessel is sealed. Vibrius said the " +
+      "vessel is 'at the top.' The only thing at the top is the Champion."
+    );
+    if (game.beatenChampion) entries.push(
+      "FINAL — THE BRAINROT QUEEN:\n" +
+      "She was the vessel. She is also Glorbnoxion. On her defeat " +
+      "the cosmic force withdrew — the world kept its brainrots, " +
+      "but the world stayed the world."
+    );
+    if (entries.length === 1) entries.push("(No story beats unlocked yet.\nDefeat Cultist Velvelo in Viridian Forest to begin.)");
+    showDialog(entries, () => {});
   }
 
   function showTutorial() {
@@ -1157,6 +1206,16 @@
         });
       } else if (npc.type === "shop") {
         showDialog(npc.dialog, () => { openShop(); });
+      } else if (npc.type === "ferry") {
+        // Post-game ferry: gated by beating the Champion
+        if (!game.beatenChampion) {
+          showDialog(["Ferry Captain: I don't sail for trainers without a Champion ribbon.\nCome back when you've beaten the Brainrot Queen."], () => {});
+          return;
+        }
+        showDialog(npc.dialog, () => {
+          if (!npc.ferryTo) return;
+          doMapTransition(npc.ferryTo);
+        });
       } else if (npc.type === "item") {
         if (npc.consumed) return;
         Audio.play("captured");
@@ -1191,6 +1250,11 @@
         if (result.defeatedTrainer) {
           npc.defeated = true;
           game.stats.battlesWon++;
+          // Story beat: Cult trainers carry storyBeat=N. We only ever
+          // raise the bar so re-fights don't reset progress.
+          if (data.storyBeat && data.storyBeat > (game.story.beat || 0)) {
+            game.story.beat = data.storyBeat;
+          }
           if (data.reward) game.money += data.reward;
           const lines = [];
           if (data.reward) lines.push(`You earned $${data.reward}!`);
@@ -1410,6 +1474,7 @@
       dex: game.dex,
       beatenChampion: !!game.beatenChampion,
       stats: liveStats,
+      story: game.story,
       defeated, consumed,
     };
     try { localStorage.setItem("brainrot_save_v4", JSON.stringify(data)); } catch(e) {}
@@ -1452,6 +1517,7 @@
           sessionStart: Date.now(),
         };
       }
+      if (data.story) game.story = { beat: data.story.beat || 0 };
       const defs = data.defeated || [];
       const cons = data.consumed || [];
       for (const m of World.allMaps()) {

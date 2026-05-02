@@ -16,6 +16,11 @@
 
 cd "$(dirname "$0")" || exit 1
 
+# Self-heal: if we got marked quarantined by macOS, clear the flag on
+# our siblings so the user doesn't get blocked next time. Silent if
+# nothing is quarantined.
+xattr -dr com.apple.quarantine . 2>/dev/null || true
+
 PORT=8765
 # ?desktop=1 unlocks the Desktop Edition: higher canvas resolution, more
 # particle effects, splash screen, and a small "DESKTOP EDITION" badge.
