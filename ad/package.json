@@ -1,0 +1,23 @@
+{
+  "name": "brainrot-monsters-ad",
+  "version": "1.0.0",
+  "description": "Apple-style launch ad for Brainrot Monsters",
+  "scripts": {
+    "dev": "remotion studio",
+    "build": "remotion render Ad out/ad.mp4 --concurrency=1 --jpeg-quality=90",
+    "build:square": "remotion render AdSquare out/ad-square.mp4 --concurrency=1"
+  },
+  "type": "module",
+  "dependencies": {
+    "@remotion/bundler": "^4.0.456",
+    "@remotion/cli": "^4.0.456",
+    "@remotion/google-fonts": "^4.0.456",
+    "@remotion/renderer": "^4.0.456",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "remotion": "^4.0.456",
+    "typescript": "^5.6.3"
+  }
+}

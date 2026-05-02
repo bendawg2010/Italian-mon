@@ -23,6 +23,21 @@
       <!-- Small persistent "DESKTOP" badge in the corner once running -->
       <div id="desktop-badge" class="hidden">DESKTOP EDITION</div>
 
+      <!-- Save-protection warning. Shown only on hosted domains, only on first
+           visit, dismissible. Reminds the player that clearing site data wipes
+           the save permanently. -->
+      <div id="save-warning" class="hidden">
+        <div class="save-warning-inner">
+          <div class="save-warning-icon">!</div>
+          <div class="save-warning-body">
+            <b>Heads up — your save lives in your browser.</b>
+            <p>Brainrot Monsters stores your team, badges, and Memedex in this browser's <b>local storage</b>. If you clear cookies/site data for this domain, or use a different browser/device, you'll lose your save.</p>
+            <p style="opacity:.75">Tip: bookmark this page and don't "clear browsing data → site data" for it.</p>
+          </div>
+          <button id="save-warning-ok" type="button">Got it</button>
+        </div>
+      </div>
+
       <div id="dialog" class="ui-box hidden">
         <div id="dialog-text"></div>
         <div id="dialog-arrow">▼</div>

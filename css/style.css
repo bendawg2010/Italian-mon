@@ -370,6 +370,68 @@ html, body {
   100% { opacity: 0; visibility: hidden; }
 }
 
+/* Save-protection warning banner — sits over the top of everything,
+   high z-index. Dismissed via the Got-it button (writes to localStorage). */
+#save-warning {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  padding: 5%;
+  animation: save-warn-in 0.3s ease forwards;
+}
+@keyframes save-warn-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.save-warning-inner {
+  background: linear-gradient(180deg, #1a1a30, #0d0d18);
+  border: 2px solid #ffcb05;
+  border-radius: 10px;
+  padding: 20px 24px;
+  max-width: min(440px, 92%);
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+  font-family: "Courier New", monospace;
+}
+.save-warning-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: #ffcb05;
+  color: #1a1a30;
+  font-weight: bold;
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+.save-warning-body p {
+  margin: 8px 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #e0e0f0;
+}
+.save-warning-body b { color: #ffcb05; }
+#save-warning-ok {
+  margin-top: 14px;
+  background: #ffcb05;
+  color: #1a1a30;
+  border: 0;
+  font-family: inherit;
+  font-weight: bold;
+  font-size: 14px;
+  padding: 8px 22px;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+#save-warning-ok:hover { background: #fff; }
+
 #desktop-badge {
   position: absolute;
   top: 8px;

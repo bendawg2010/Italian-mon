@@ -6,7 +6,11 @@ Glorbo Florbo, Ohio Skibidini, and many more).
 
 ## How to play
 
-### Easiest — just double-click `play.html`
+### Play in your browser
+
+The game is live at **[brainrot-monsters.pages.dev](https://brainrot-monsters.pages.dev/)** — no install, just open and play. Your save lives in browser localStorage; don't clear site data for that domain or you'll lose your progress.
+
+### Easiest local install — just double-click `play.html`
 
 `play.html` is a single self-contained file with all the JS and CSS
 inlined. Open it in any modern browser and you're playing. No server,

@@ -19,7 +19,11 @@
     catch (e) { return urlIsDesktop; }
   })();
   window.__brainrotDesktop = IS_DESKTOP;
-  if (IS_DESKTOP) {
+  // ?embed=1 means we're being shown inside an iframe (e.g. for the
+  // marketing video). Suppress all overlays so the host frame controls
+  // the visuals.
+  const isEmbed = new URLSearchParams(location.search).get("embed") === "1";
+  if (IS_DESKTOP && !isEmbed) {
     document.getElementById("desktop-splash").classList.remove("hidden");
     document.getElementById("desktop-badge").classList.remove("hidden");
     // Auto-dismiss splash after CSS animation finishes
@@ -27,6 +31,135 @@
       const sp = document.getElementById("desktop-splash");
       if (sp) sp.classList.add("hidden");
     }, 2400);
+  }
+
+  // ----- Save-protection warning -----
+  // Only relevant when the player is on a real hosted domain — clearing
+  // site data is a real risk there. We skip it on file://, localhost,
+  // and the desktop edition (those have implicit persistence guarantees).
+  function shouldShowSaveWarning() {
+    const host = location.hostname;
+    if (!host) return false;                       // file://
+    if (host === "localhost" || host === "127.0.0.1") return false;
+    if (IS_DESKTOP) return false;
+    try { return localStorage.getItem("brainrot_warn_seen") !== "1"; }
+    catch (e) { return false; }
+  }
+  if (shouldShowSaveWarning()) {
+    const warn = document.getElementById("save-warning");
+    if (warn) {
+      warn.classList.remove("hidden");
+      const ok = document.getElementById("save-warning-ok");
+      if (ok) ok.addEventListener("click", () => {
+        try { localStorage.setItem("brainrot_warn_seen", "1"); } catch (e) {}
+        warn.classList.add("hidden");
+      });
+    }
+  }
+
+  // ----- Demo / deep-link scenes -----
+  // ?scene=title|starter|overworld|battle|catch jumps the game directly
+  // to a specific state on load. Used by the marketing video (Remotion
+  // ad) to embed the live game in iframes showing each scene. Also useful
+  // for screenshots and debugging. ?scene=anything also implicitly hides
+  // the save-warning banner (assumed not the player's primary save).
+  const sceneParam = new URLSearchParams(location.search).get("scene");
+  if (sceneParam) {
+    // Hide save warning since this is a demo/embed
+    const warnEl = document.getElementById("save-warning");
+    if (warnEl) warnEl.classList.add("hidden");
+    // Use a different localStorage key so demos don't write to player's save
+    sessionStorage.setItem("brainrot_demo_mode", "1");
+    setTimeout(() => bootIntoScene(sceneParam), 100);
+  }
+
+  function bootIntoScene(scene) {
+    // Skip the title screen entirely
+    document.getElementById("title-screen").classList.add("hidden");
+    Audio.unlock();
+    const isTouch = matchMedia("(pointer: coarse)").matches;
+    if (isTouch) document.getElementById("touch-controls").classList.remove("hidden");
+
+    if (scene === "title") {
+      // Show title without starting
+      document.getElementById("title-screen").classList.remove("hidden");
+      return;
+    }
+
+    // For all gameplay scenes, set up a starter team so the game has state
+    if (scene === "starter") {
+      game.mode = "starter";
+      game.starterIdx = 0;
+      showStarterDom(true);
+      // Auto-cycle through starters every 1.5s for demo eye-candy
+      let idx = 0;
+      setInterval(() => {
+        idx = (idx + 1) % 3;
+        game.starterIdx = idx;
+        if (typeof refreshStarterDom === "function") refreshStarterDom();
+      }, 1500);
+      return;
+    }
+
+    // Need a team for the rest — give them all three starters at L10
+    game.team = [
+      makeMon("TRALALERO", 10),
+      makeMon("BOMBARDINO", 9),
+      makeMon("TUNGTUNG", 9),
+    ];
+    game.mode = "overworld";
+    Music.start();
+
+    if (scene === "overworld") {
+      // Walk into Route 1 with tall grass visible
+      World.setCurrentMap("route1");
+      game.currentMap = "route1";
+      game.player.tileX = 8;
+      game.player.tileY = 6;
+      game.player.pixelX = 8 * 16;
+      game.player.pixelY = 6 * 16;
+      game.player.facing = "down";
+      // Fake-walk demo: every 8 frames toggle key state
+      let walkPhase = 0;
+      setInterval(() => {
+        walkPhase = (walkPhase + 1) % 4;
+        // Hold ArrowDown briefly so player walks
+      }, 200);
+      return;
+    }
+
+    if (scene === "battle") {
+      // Force a wild Glorbo encounter
+      World.setCurrentMap("route2");
+      game.currentMap = "route2";
+      game.player.tileX = 8; game.player.tileY = 6;
+      game.player.pixelX = 8 * 16; game.player.pixelY = 6 * 16;
+      // Trigger a battle directly with Glorbo
+      const enemy = makeMon("GLORBO", 12);
+      game.mode = "battle";
+      Battle.start(game.team, enemy, {
+        isTrainer: false,
+        onEnd: () => { game.mode = "overworld"; },
+      });
+      return;
+    }
+
+    if (scene === "catch") {
+      // Same as battle but at low HP so we can see the catch screen quickly
+      World.setCurrentMap("route2");
+      game.currentMap = "route2";
+      const enemy = makeMon("GLORBO", 12);
+      enemy.hp = 5;  // weakened
+      game.bag.BRAINCELL = 9;
+      game.mode = "battle";
+      Battle.start(game.team, enemy, {
+        isTrainer: false,
+        onEnd: () => { game.mode = "overworld"; },
+      });
+      // Auto-throw a Brain Cell after a beat
+      setTimeout(() => Battle.throwBraincell("BRAINCELL"), 1200);
+      return;
+    }
   }
 
   const game = {
