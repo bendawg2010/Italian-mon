@@ -768,6 +768,39 @@ const SpriteRenderer = (() => {
       px(ctx, x+s*0.46, y+s*0.50, s*0.08, s*0.10, sp.color3);
     },
 
+    // Skibidini Maximus — Skibidi's evolved form, with crown
+    SKIBIDINI(ctx, sp, x, y, s, t) {
+      SPECIAL.SKIBIDI(ctx, sp, x, y, s, t);
+      // crown on top of the slicked-back head
+      const bob = Math.sin(t * 0.005) * 1.5;
+      px(ctx, x+s*0.36, y+s*0.06+bob, s*0.28, s*0.04, sp.color2);
+      px(ctx, x+s*0.40, y+s*0.02+bob, s*0.04, s*0.06, sp.color2);
+      px(ctx, x+s*0.48, y+s*0.00+bob, s*0.04, s*0.08, sp.color2);
+      px(ctx, x+s*0.56, y+s*0.02+bob, s*0.04, s*0.06, sp.color2);
+      // gem
+      px(ctx, x+s*0.49, y+s*0.04+bob, s*0.02, s*0.02, "#ff3d3d");
+    },
+
+    // Glorbnoxion — Glorbo's final, aggressive form
+    GLORBNOXION(ctx, sp, x, y, s, t) {
+      // start from Glorbo's pulsing blob
+      SPECIAL.GLORBO(ctx, sp, x, y, s, t);
+      // add second eye + jagged rage tendrils
+      const bob = Math.sin(t * 0.006) * 2;
+      px(ctx, x+s*0.28, y+s*0.46+bob, s*0.10, s*0.08, "#fff");
+      px(ctx, x+s*0.30, y+s*0.48+bob, s*0.06, s*0.04, "#000");
+      // angry brow lines
+      px(ctx, x+s*0.30, y+s*0.42+bob, s*0.10, s*0.02, sp.color3);
+      px(ctx, x+s*0.50, y+s*0.42+bob, s*0.10, s*0.02, sp.color3);
+      // jagged tendrils sticking out
+      const jag = Math.sin(t * 0.01);
+      for (let i = 0; i < 6; i++) {
+        const a = i * Math.PI / 3 + jag * 0.3;
+        const r = s*0.42;
+        px(ctx, x+s*0.5 + Math.cos(a) * r, y+s*0.5 + Math.sin(a) * r * 0.7, s*0.04, s*0.06, sp.color1);
+      }
+    },
+
     // Tung-Tung-Tung Sahur Maximus — a pile of bats with a face
     TUNGTITAN(ctx, sp, x, y, s, t) {
       // base on TUNGTUNG with massive scaling

@@ -17,7 +17,9 @@
 cd "$(dirname "$0")" || exit 1
 
 PORT=8765
-URL="http://localhost:${PORT}/index.html"
+# ?desktop=1 unlocks the Desktop Edition: higher canvas resolution, more
+# particle effects, splash screen, and a small "DESKTOP EDITION" badge.
+URL="http://localhost:${PORT}/index.html?desktop=1"
 USERDATA="${HOME}/.brainrot-monsters-app"
 
 # ---- find a chromium-based browser that supports --app= ----

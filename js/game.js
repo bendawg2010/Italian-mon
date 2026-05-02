@@ -7,6 +7,28 @@
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
 
+  // ----- DESKTOP EDITION detection -----
+  // Set by play.command / BrainrotMonsters.app / play.bat passing ?desktop=1
+  // in the launch URL. Stored in sessionStorage so a soft reload keeps it on.
+  const urlIsDesktop = new URLSearchParams(location.search).get("desktop") === "1";
+  if (urlIsDesktop) {
+    try { sessionStorage.setItem("brainrot_desktop", "1"); } catch (e) {}
+  }
+  const IS_DESKTOP = (() => {
+    try { return sessionStorage.getItem("brainrot_desktop") === "1"; }
+    catch (e) { return urlIsDesktop; }
+  })();
+  window.__brainrotDesktop = IS_DESKTOP;
+  if (IS_DESKTOP) {
+    document.getElementById("desktop-splash").classList.remove("hidden");
+    document.getElementById("desktop-badge").classList.remove("hidden");
+    // Auto-dismiss splash after CSS animation finishes
+    setTimeout(() => {
+      const sp = document.getElementById("desktop-splash");
+      if (sp) sp.classList.add("hidden");
+    }, 2400);
+  }
+
   const game = {
     mode: "title", // title | starter | overworld | battle | dialog | menu | team | bag | shop
     player: {
@@ -23,7 +45,18 @@
     mapBanner: { text: "", t: 0 },
     team: [],
     box: [],
-    bag: { BRAINCELL: 8, GREATCELL: 1, CAPPUCCINO: 3 },
+    // Desktop Edition starts with one of each new PP-restore item as a
+    // small "thanks for installing the app" bonus.
+    bag: (() => {
+      const b = { BRAINCELL: 8, GREATCELL: 1, CAPPUCCINO: 3 };
+      try {
+        if (new URLSearchParams(location.search).get("desktop") === "1" ||
+            sessionStorage.getItem("brainrot_desktop") === "1") {
+          b.ETEREO = 1; b.PASTATONIC = 1;
+        }
+      } catch (e) {}
+      return b;
+    })(),
     money: 500,
     dex: { seen: {}, caught: {} },
     cam: { x: 0, y: 0 },
@@ -35,7 +68,9 @@
     badges: 0,
     healFx: 0,            // ticks down while heal sparkle is animating
     saveToast: 0,         // ticks down while "Saved!" toast is on screen
-    stats: { steps: 0, battlesWon: 0, monsCaught: 0, startedAt: Date.now() },
+    // stats.totalPlayMs accumulates across all sessions; sessionStart is
+    // reset every page load so we can show "this session" separately.
+    stats: { steps: 0, battlesWon: 0, monsCaught: 0, totalPlayMs: 0, sessionStart: Date.now() },
   };
 
   const keys = {};
@@ -43,7 +78,7 @@
   let nowTime = 0;
 
   window.addEventListener("keydown", (e) => {
-    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Enter","z","x","Z","X","Escape","f","F","h","H"].includes(e.key)) {
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Enter","z","x","Z","X","Escape","f","F","h","H","r","R"].includes(e.key)) {
       e.preventDefault();
     }
     if (e.key === "f" || e.key === "F") { toggleFullscreen(); return; }
@@ -84,15 +119,34 @@
     if (e.target.tagName === "BUTTON") { Audio.unlock(); Battle.handleMove(e.target.dataset.move); }
   });
 
-  document.getElementById("title-screen").addEventListener("click", () => {
+  document.getElementById("title-screen").addEventListener("click", (e) => {
+    // Don't treat clicks on the reset button as "start game"
+    if (e.target && e.target.id === "reset-save-btn") return;
     Audio.unlock();
     if (game.mode === "title") startGame();
   });
   document.getElementById("title-screen").addEventListener("touchstart", (e) => {
+    if (e.target && e.target.id === "reset-save-btn") return;
     e.preventDefault();
     Audio.unlock();
     if (game.mode === "title") startGame();
   });
+  // Wipe-save-and-restart button
+  const resetBtn = document.getElementById("reset-save-btn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      Audio.unlock();
+      const hadSave = !!localStorage.getItem("brainrot_save_v4");
+      const ok = confirm(hadSave
+        ? "Delete your save and start a brand-new game? This cannot be undone."
+        : "No save found. Start a new game now?");
+      if (!ok) return;
+      try { localStorage.removeItem("brainrot_save_v4"); } catch (e2) {}
+      // Restart cleanly so module-level state is fresh
+      location.reload();
+    });
+  }
 
   function onKeyDown(key) {
     const k = key.length === 1 ? key.toLowerCase() : key;
@@ -146,6 +200,25 @@
       if (k === "x" || key === "Escape") { Audio.play("cancel"); closeDex(); }
       else if (key === "ArrowUp") { Audio.play("select"); dexMove(-1); }
       else if (key === "ArrowDown") { Audio.play("select"); dexMove(1); }
+      else if (key === "ArrowLeft") { Audio.play("select"); dexCycleFilter(-1); }
+      else if (key === "ArrowRight") { Audio.play("select"); dexCycleFilter(1); }
+      return;
+    }
+    if (game.mode === "box") {
+      if (k === "x" || key === "Escape") { Audio.play("cancel"); closeBox(); }
+      else if (key === "ArrowUp") { Audio.play("select"); boxMove(-1); }
+      else if (key === "ArrowDown") { Audio.play("select"); boxMove(1); }
+      else if (key === "ArrowLeft") { Audio.play("select"); boxSwitchPanel(-1); }
+      else if (key === "ArrowRight") { Audio.play("select"); boxSwitchPanel(1); }
+      else if (key === "Enter" || k === "z") boxSelect();
+      else if (k === "r") boxRelease();
+      return;
+    }
+    if (game.mode === "moveLearn") {
+      if (key === "ArrowUp") { Audio.play("select"); moveLearnMove(-1); }
+      else if (key === "ArrowDown") { Audio.play("select"); moveLearnMove(1); }
+      else if (key === "Enter" || k === "z") moveLearnConfirm();
+      else if (k === "x" || key === "Escape") moveLearnSkip();
       return;
     }
     if (game.mode === "overworld") {
@@ -297,7 +370,7 @@
   let menuState = null;
   function openMenu() {
     Audio.play("open");
-    menuState = { items: ["MEMEDEX", "TEAM", "BAG", "STATS", "SAVE", "MUTE", "CLOSE"], idx: 0 };
+    menuState = { items: ["MEMEDEX", "TEAM", "BOX", "BAG", "STATS", "TUTORIAL", "SAVE", "MUTE", "CLOSE"], idx: 0 };
     game.mode = "menu";
     renderMenu();
     document.getElementById("menu").classList.remove("hidden");
@@ -338,29 +411,51 @@
     if (choice === "TEAM") { closeMenu(); openTeamMenu(false); return; }
     if (choice === "BAG") { closeMenu(); openBagMenu(false); return; }
     if (choice === "MEMEDEX") { closeMenu(); openDex(); return; }
+    if (choice === "BOX") { closeMenu(); openBox(); return; }
     if (choice === "STATS") { closeMenu(); showStatsDialog(); return; }
+    if (choice === "TUTORIAL") { closeMenu(); showTutorial(); return; }
+  }
+
+  function showTutorial() {
+    showDialog([
+      "═══ HOW TO PLAY ═══",
+      "▶ ARROW KEYS — walk around\n▶ Z — talk / confirm / fight\n▶ X — open menu / cancel",
+      "▶ WALK INTO tall dark-green grass to find wild memes!",
+      "▶ Walk up to the Cappuccino Bar (red cross) to FULLY HEAL.",
+      "▶ Beat 5 GYM LEADERS for badges, then face the Champion!",
+      "▶ In battle: H = quick-heal with strongest item.",
+      "▶ Catch wild memes — if your team is full (6), they go to your BOX.",
+      "▶ Open the BOX from this menu to swap mons in/out.",
+    ], () => {});
   }
 
   function showStatsDialog() {
     const s = game.stats;
-    const playMs = Date.now() - (s.startedAt || Date.now());
-    const mins = Math.floor(playMs / 60000);
+    const sessionMs = Date.now() - (s.sessionStart || Date.now());
+    const totalMs = (s.totalPlayMs || 0) + sessionMs;
+    const fmt = (ms) => {
+      const mins = Math.floor(ms / 60000);
+      const hrs = Math.floor(mins / 60);
+      return hrs > 0 ? `${hrs}h ${mins % 60}m` : `${mins}m`;
+    };
     const seenCount = Object.keys(game.dex.seen || {}).length;
     const caughtCount = Object.keys(game.dex.caught || {}).length;
     showDialog([
       "═══ TRAINER STATS ═══",
       `Steps walked: ${s.steps}\nBattles won: ${s.battlesWon}\nMons caught: ${s.monsCaught}`,
       `Memedex: ${seenCount} seen / ${caughtCount} caught\nBadges: ${game.badges}/5`,
-      `Session playtime: ${mins} min\nMoney: $${game.money}`,
+      `This session: ${fmt(sessionMs)}\nTotal playtime: ${fmt(totalMs)}\nMoney: $${game.money}`,
     ], () => {});
   }
 
   // ----- Memedex -----
   let dexState = null;
+  // filter modes the player can cycle with ←/→
+  const DEX_FILTERS = ["ALL", "SEEN", "CAUGHT", "MISSING"];
   function openDex() {
     Audio.play("open");
-    const ids = Object.keys(SPECIES);
-    dexState = { idx: 0, ids };
+    dexState = { idx: 0, filter: 0 };
+    rebuildDexIds();
     game.mode = "dex";
     renderDex();
     document.getElementById("menu").classList.remove("hidden");
@@ -370,6 +465,22 @@
     dexState = null;
     game.mode = "overworld";
   }
+  function rebuildDexIds() {
+    const all = Object.keys(SPECIES);
+    const f = DEX_FILTERS[dexState.filter];
+    if (f === "SEEN")    dexState.ids = all.filter(id => game.dex.seen[id]);
+    else if (f === "CAUGHT")  dexState.ids = all.filter(id => game.dex.caught[id]);
+    else if (f === "MISSING") dexState.ids = all.filter(id => !game.dex.caught[id]);
+    else                      dexState.ids = all;
+    if (dexState.ids.length === 0) dexState.ids = all;  // fallback so we never have empty
+    if (dexState.idx >= dexState.ids.length) dexState.idx = 0;
+  }
+  function dexCycleFilter(d) {
+    dexState.filter = (dexState.filter + d + DEX_FILTERS.length) % DEX_FILTERS.length;
+    dexState.idx = 0;
+    rebuildDexIds();
+    renderDex();
+  }
   function dexMove(d) {
     if (!dexState) return;
     dexState.idx = (dexState.idx + d + dexState.ids.length) % dexState.ids.length;
@@ -378,17 +489,19 @@
   function renderDex() {
     const ul = document.getElementById("menu-list");
     const ids = dexState.ids;
-    const seenCount = ids.filter(id => game.dex.seen[id]).length;
-    const caughtCount = ids.filter(id => game.dex.caught[id]).length;
-    const start = Math.max(0, Math.min(ids.length - 8, dexState.idx - 3));
+    const all = Object.keys(SPECIES);
+    const seenCount = all.filter(id => game.dex.seen[id]).length;
+    const caughtCount = all.filter(id => game.dex.caught[id]).length;
+    const filterName = DEX_FILTERS[dexState.filter];
+    const start = Math.max(0, Math.min(Math.max(0, ids.length - 8), dexState.idx - 3));
     const visible = ids.slice(start, start + 8);
-    let html = `<li class="header">MEMEDEX · Seen ${seenCount}/${ids.length} · Caught ${caughtCount}</li>`;
+    let html = `<li class="header">MEMEDEX [${filterName}] · ${seenCount}/${all.length} seen · ${caughtCount} caught</li>`;
     visible.forEach((id, off) => {
       const i = start + off;
       const sp = SPECIES[id];
       const seen = game.dex.seen[id];
       const caught = game.dex.caught[id];
-      const num = String(i + 1).padStart(3, "0");
+      const num = String(all.indexOf(id) + 1).padStart(3, "0");
       const name = seen ? sp.name : "??????";
       const status = caught ? "✦" : seen ? "·" : " ";
       html += `<li class="${i === dexState.idx ? "selected" : ""}">
@@ -399,14 +512,186 @@
     // detail panel for selected
     const sel = ids[dexState.idx];
     const selSp = SPECIES[sel];
-    if (game.dex.seen[sel]) {
+    if (sel && game.dex.seen[sel]) {
       html += `<li class="dex-detail"><b>${selSp.name}</b> — ${selSp.types.join(" / ")}<br>
         <small>${game.dex.caught[sel] ? selSp.flavor : "(caught one to read full lore)"}</small><br>
         <small>HP:${selSp.base.hp}  ATK:${selSp.base.atk}  DEF:${selSp.base.def}  SPD:${selSp.base.spd}</small></li>`;
     } else {
       html += `<li class="dex-detail"><small>Not yet encountered.</small></li>`;
     }
-    html += `<li class="footer"><small>↑↓ scroll · X = back</small></li>`;
+    html += `<li class="footer"><small>↑↓ scroll · ←→ filter · X = back</small></li>`;
+    ul.innerHTML = html;
+  }
+
+  // ----- Move-learn prompt (when a mon learns a 5th move) -----
+  // Replaces the old silent "auto-replace slot 4" behavior with a real
+  // pick-one-to-forget UI. Drained after every battle.
+  let moveLearnState = null;
+  let moveLearnQueue = [];
+  function enqueueMoveLearns(items) {
+    for (const it of items) moveLearnQueue.push(it);
+    drainMoveLearns();
+  }
+  function drainMoveLearns() {
+    if (moveLearnState) return;       // already showing one
+    if (game.mode !== "overworld") return;  // wait for overworld
+    const next = moveLearnQueue.shift();
+    if (!next) return;
+    const mon = game.team[next.monIdx];
+    if (!mon) { drainMoveLearns(); return; }
+    moveLearnState = { mon, newMoveId: next.newMoveId, idx: 0 };
+    game.mode = "moveLearn";
+    renderMoveLearn();
+    document.getElementById("menu").classList.remove("hidden");
+  }
+  function renderMoveLearn() {
+    const ul = document.getElementById("menu-list");
+    const mon = moveLearnState.mon;
+    const newMv = MOVES[moveLearnState.newMoveId];
+    let html = `<li class="header">${SPECIES[mon.species].name} wants to learn ${newMv.name}!</li>`;
+    html += `<li><b>NEW: ${newMv.name}</b><br><small>${newMv.type} · pwr ${newMv.power} · ${newMv.pp} PP</small></li>`;
+    html += `<li class="dex-detail"><small>Pick a move to forget (or X to skip and not learn ${newMv.name}):</small></li>`;
+    mon.moves.forEach((slot, i) => {
+      const mv = MOVES[slot.id];
+      html += `<li class="${i === moveLearnState.idx ? "selected" : ""}">
+        <b>${mv.name}</b><br><small>${mv.type} · pwr ${mv.power} · ${slot.pp}/${slot.maxPp} PP</small>
+      </li>`;
+    });
+    html += `<li class="footer"><small>↑↓ pick · Z = forget+learn · X = skip</small></li>`;
+    ul.innerHTML = html;
+  }
+  function moveLearnMove(d) {
+    moveLearnState.idx = (moveLearnState.idx + d + moveLearnState.mon.moves.length) % moveLearnState.mon.moves.length;
+    renderMoveLearn();
+  }
+  function moveLearnConfirm() {
+    Audio.play("confirm");
+    const mon = moveLearnState.mon;
+    const newId = moveLearnState.newMoveId;
+    const oldId = mon.moves[moveLearnState.idx].id;
+    mon.moves[moveLearnState.idx] = { id: newId, pp: MOVES[newId].pp, maxPp: MOVES[newId].pp };
+    closeMoveLearn();
+    showDialog([`${SPECIES[mon.species].name} forgot ${MOVES[oldId].name} and learned ${MOVES[newId].name}!`], () => {
+      drainMoveLearns();
+    });
+  }
+  function moveLearnSkip() {
+    Audio.play("cancel");
+    const mon = moveLearnState.mon;
+    const newId = moveLearnState.newMoveId;
+    closeMoveLearn();
+    showDialog([`${SPECIES[mon.species].name} did not learn ${MOVES[newId].name}.`], () => {
+      drainMoveLearns();
+    });
+  }
+  function closeMoveLearn() {
+    document.getElementById("menu").classList.add("hidden");
+    moveLearnState = null;
+    game.mode = "overworld";
+  }
+
+  // ----- BOX (PC storage) -----
+  // Two panels: TEAM (left) and BOX (right). ↑↓ move within current panel,
+  // ←→ switch panels, Z = swap selected slot (team↔box), R = release.
+  let boxState = null;
+  function openBox() {
+    Audio.play("open");
+    boxState = { panel: 1, idx: 0 };  // start on box panel
+    if (game.box.length === 0) boxState.panel = 0;
+    if (game.team.length === 0) boxState.panel = 1;
+    game.mode = "box";
+    renderBox();
+    document.getElementById("menu").classList.remove("hidden");
+  }
+  function closeBox() {
+    document.getElementById("menu").classList.add("hidden");
+    boxState = null;
+    game.mode = "overworld";
+  }
+  function boxCurrentList() {
+    return boxState.panel === 0 ? game.team : game.box;
+  }
+  function boxMove(d) {
+    const list = boxCurrentList();
+    if (list.length === 0) return;
+    boxState.idx = (boxState.idx + d + list.length) % list.length;
+    renderBox();
+  }
+  function boxSwitchPanel(d) {
+    boxState.panel = (boxState.panel + d + 2) % 2;
+    boxState.idx = 0;
+    renderBox();
+  }
+  function boxSelect() {
+    Audio.play("confirm");
+    const list = boxCurrentList();
+    if (list.length === 0) return;
+    if (boxState.panel === 0) {
+      // Move team mon → box (must keep at least 1 mon in team)
+      if (game.team.length <= 1) {
+        showDialogOver(["You must keep at least one mon in your team!"], () => { renderBox(); });
+        return;
+      }
+      const mon = game.team.splice(boxState.idx, 1)[0];
+      game.box.push(mon);
+      if (boxState.idx >= game.team.length) boxState.idx = Math.max(0, game.team.length - 1);
+      saveGame();
+      renderBox();
+    } else {
+      // Move box mon → team (only if team has space)
+      if (game.team.length >= 6) {
+        showDialogOver(["Your team is full (6/6). Move a team mon to the box first."], () => { renderBox(); });
+        return;
+      }
+      const mon = game.box.splice(boxState.idx, 1)[0];
+      game.team.push(mon);
+      if (boxState.idx >= game.box.length) boxState.idx = Math.max(0, game.box.length - 1);
+      saveGame();
+      renderBox();
+    }
+  }
+  function boxRelease() {
+    if (boxState.panel !== 1) {
+      showDialogOver(["You can only release mons from the BOX, not the team."], () => { renderBox(); });
+      return;
+    }
+    if (game.box.length === 0) return;
+    const mon = game.box[boxState.idx];
+    if (!mon) return;
+    // Use a tiny native confirm — keeps the box menu visible behind it.
+    const ok = confirm(`Release ${SPECIES[mon.species].name} (Lv.${mon.level})? This cannot be undone.`);
+    if (!ok) return;
+    game.box.splice(boxState.idx, 1);
+    if (boxState.idx >= game.box.length) boxState.idx = Math.max(0, game.box.length - 1);
+    Audio.play("cancel");
+    saveGame();
+    renderBox();
+  }
+  function renderBox() {
+    const ul = document.getElementById("menu-list");
+    const team = game.team, box = game.box;
+    const panelLabel = boxState.panel === 0 ? "TEAM" : "BOX";
+    const otherLabel = boxState.panel === 0 ? "BOX" : "TEAM";
+    let html = `<li class="header">${panelLabel} · ${(boxState.panel === 0 ? team.length : box.length)} mons · ←→ to ${otherLabel}</li>`;
+    const list = boxCurrentList();
+    if (list.length === 0) {
+      html += `<li><small>(empty)</small></li>`;
+    } else {
+      list.forEach((m, i) => {
+        const sp = SPECIES[m.species];
+        const hpRatio = m.hp / m.maxHp;
+        const hpColor = hpRatio < 0.2 ? "#ff5e5e" : hpRatio < 0.5 ? "#ffe070" : "#5cd765";
+        const fainted = m.hp <= 0 ? " ❌" : "";
+        const sel = i === boxState.idx;
+        html += `<li class="${sel ? "selected" : ""}">
+          <b>${sp.name}</b>${fainted} <small>Lv.${m.level}</small><br>
+          <span style="color:${hpColor}">HP: ${m.hp}/${m.maxHp}</span>
+          <small style="opacity:.7"> · ${sp.types.join("/")}</small>
+        </li>`;
+      });
+    }
+    const action = boxState.panel === 0 ? "send to BOX" : "bring to TEAM";
+    html += `<li class="footer"><small>X = back · Z = ${action} · R = release (box only)</small></li>`;
     ul.innerHTML = html;
   }
 
@@ -456,10 +741,39 @@
     const idx = teamMenuState.idx;
     Audio.play("confirm");
     if (teamMenuState.useItem) {
-      // apply item to selected mon
       const item = ITEMS[teamMenuState.useItem];
       const mon = game.team[idx];
-      if (!item || !item.heal) {
+      if (!item) {
+        teamMenuState.useItem = null;
+        renderTeamMenu();
+        return;
+      }
+      if ((game.bag[teamMenuState.useItem] || 0) <= 0) {
+        showDialogOver(["You're out of that item."], () => { renderTeamMenu(); });
+        return;
+      }
+      // PP-restore items take a different path
+      if (item.ppHeal) {
+        const totalMissing = mon.moves.reduce((s, mv) => s + (mv.maxPp - mv.pp), 0);
+        if (totalMissing === 0) {
+          showDialogOver(["All moves are already at full PP."], () => { renderTeamMenu(); });
+          return;
+        }
+        let restored = 0;
+        for (const mv of mon.moves) {
+          const give = Math.min(mv.maxPp - mv.pp, item.ppHeal);
+          mv.pp += give;
+          restored += give;
+        }
+        game.bag[teamMenuState.useItem]--;
+        Audio.play("heal");
+        teamMenuState.useItem = null;
+        saveGame();
+        showDialogOver([`${SPECIES[mon.species].name}'s moves recovered ${restored} PP total!`], () => { renderTeamMenu(); });
+        return;
+      }
+      // HP-heal items
+      if (!item.heal) {
         teamMenuState.useItem = null;
         renderTeamMenu();
         return;
@@ -470,11 +784,6 @@
       }
       if (mon.hp <= 0 && item.heal < 999) {
         showDialogOver(["That monster has fainted. Use a stronger heal."], () => { renderTeamMenu(); });
-        return;
-      }
-      // consume
-      if ((game.bag[teamMenuState.useItem] || 0) <= 0) {
-        showDialogOver(["You're out of that item."], () => { renderTeamMenu(); });
         return;
       }
       game.bag[teamMenuState.useItem]--;
@@ -554,6 +863,7 @@
     const rows = items.map(([k, v], i) => {
       const it = ITEMS[k];
       const tag = it.heal ? `<span style="color:#5cd765">[HEAL]</span>`
+                : it.ppHeal ? `<span style="color:#9aa5ff">[PP]</span>`
                 : it.catchMod ? `<span style="color:#ffe070">[CATCH]</span>`
                 : "";
       return `<li class="${i === bagMenuState.idx ? "selected" : ""}">
@@ -586,13 +896,11 @@
       }
       return;
     }
-    // overworld use: heal items
-    if (item && item.heal) {
-      // open team menu with useItem set
+    // overworld use: heal or PP-restore items
+    if (item && (item.heal || item.ppHeal)) {
       document.getElementById("menu").classList.add("hidden");
       const itemKey = key;
       bagMenuState = null;
-      // open team menu but with item-use mode
       Audio.play("open");
       teamMenuState = { idx: 0, fromBattle: false, swapMode: false, useItem: itemKey };
       game.mode = "team";
@@ -661,6 +969,25 @@
     else if (p.facing === "left") tx--;
     else if (p.facing === "right") tx++;
     const npc = World.npcAt(tx, ty);
+    if (!npc) {
+      // No NPC there. If we're staring at a building door, offer a hint
+      // so the player isn't confused by an unresponsive doorway.
+      const tile = World.tileAt(tx, ty);
+      if (tile === World.T.D) {
+        showDialog(["The door is locked from the outside.\nWalk around the building to find an entrance."], () => {});
+        return;
+      }
+      // Likewise for shop / heal floors approached from outside
+      if (tile === World.T.SHOP_FLOOR) {
+        showDialog(["This is the Brain Cell Mart.\nLook for the shopkeeper inside."], () => {});
+        return;
+      }
+      if (tile === World.T.HEAL_SIGN) {
+        showDialog(["Cappuccino Bar — full restore inside.\nLook for the barista (pink hair)."], () => {});
+        return;
+      }
+      return;
+    }
     if (npc) {
       if (npc.type === "trainer") {
         if (npc.defeated) {
@@ -724,6 +1051,10 @@
       trainerName: data.name,
       trainerData: data,
       onEnd: (result) => {
+        // Drain any "wants to learn move" prompts queued during the fight.
+        if (result.pendingMoveLearns && result.pendingMoveLearns.length) {
+          enqueueMoveLearns(result.pendingMoveLearns);
+        }
         if (result.defeatedTrainer) {
           npc.defeated = true;
           game.stats.battlesWon++;
@@ -776,6 +1107,9 @@
     Battle.start(game.team, enemy, {
       isTrainer: false,
       onEnd: (result) => {
+        if (result.pendingMoveLearns && result.pendingMoveLearns.length) {
+          enqueueMoveLearns(result.pendingMoveLearns);
+        }
         if (result.caught) {
           markDexCaught(result.enemyMon.species);
           game.stats.monsCaught++;
@@ -925,6 +1259,13 @@
         if (n.consumed) consumed.push({ map: m.id, id: n.id });
       }
     }
+    // Roll the current session's elapsed time into totalPlayMs at save time
+    // so the persisted "total playtime" never lags behind real play.
+    const liveStats = Object.assign({}, game.stats, {
+      totalPlayMs: (game.stats.totalPlayMs || 0) + (Date.now() - (game.stats.sessionStart || Date.now())),
+      sessionStart: Date.now(),
+    });
+    game.stats = liveStats;
     const data = {
       team: game.team,
       box: game.box,
@@ -935,7 +1276,7 @@
       badges: game.badges,
       dex: game.dex,
       beatenChampion: !!game.beatenChampion,
-      stats: game.stats,
+      stats: liveStats,
       defeated, consumed,
     };
     try { localStorage.setItem("brainrot_save_v4", JSON.stringify(data)); } catch(e) {}
@@ -969,13 +1310,13 @@
       }
       game.beatenChampion = !!data.beatenChampion;
       if (data.stats) {
-        // merge stored counters but reset session start to "now" so playtime
-        // accrues from save load
         game.stats = {
           steps: data.stats.steps || 0,
           battlesWon: data.stats.battlesWon || 0,
           monsCaught: data.stats.monsCaught || 0,
-          startedAt: data.stats.startedAt || Date.now(),
+          // Migrate old saves that used `startedAt` as totalPlayMs proxy.
+          totalPlayMs: data.stats.totalPlayMs || 0,
+          sessionStart: Date.now(),
         };
       }
       const defs = data.defeated || [];
@@ -1059,7 +1400,9 @@
   const titleMons = [];
   function setupTitleMons() {
     const ids = Object.keys(SPECIES);
-    for (let i = 0; i < 8; i++) {
+    // Desktop edition gets a denser, more elaborate background drift.
+    const count = IS_DESKTOP ? 18 : 8;
+    for (let i = 0; i < count; i++) {
       titleMons.push({
         id: ids[Math.floor(Math.random() * ids.length)],
         x: Math.random() * 480,

@@ -270,7 +270,17 @@ const SPECIES = {
     catchRate: 70,
     xpYield: 65,
     learn: [[1, "TACKLE"], [1, "TOILET_FLUSH"], [10, "TOILET_HEAD"], [18, "RIZZ_CHARM"]],
+    evolvesTo: "SKIBIDINI", evolvesAt: 22,
     color1: "#f0f0f0", color2: "#ffd0a0", color3: "#3a5070",
+  },
+  SKIBIDINI: {
+    id: "SKIBIDINI", name: "Skibidini Maximus",
+    flavor: "Evolved Skibidi. The CEO head now wears a tiny crown. Says 'sigma aura'.",
+    types: ["Steel", "Sigma"],
+    base: { hp: 85, atk: 80, def: 85, spd: 75 },
+    catchRate: 25, xpYield: 145,
+    learn: [[1, "TOILET_FLUSH"], [1, "TOILET_HEAD"], [1, "SIGMA_STARE"], [28, "ALPHA_PUNCH"], [36, "OHIO_BOMB"]],
+    color1: "#fffaf0", color2: "#ffd700", color3: "#1a1a3a",
   },
 
   GLORBO: {
@@ -282,7 +292,18 @@ const SPECIES = {
     catchRate: 50,
     xpYield: 80,
     learn: [[1, "SCREECH"], [1, "GLORBO_BEAM"], [12, "CONFUSE_RAY"], [22, "OHIO_BOMB"]],
+    evolvesTo: "GLORBNOXION", evolvesAt: 26,
     color1: "#c93dff", color2: "#ff8aff", color3: "#5a1a8a",
+  },
+  GLORBNOXION: {
+    id: "GLORBNOXION", name: "Glorbnoxion",
+    flavor: "Glorbo's final form. Now actively hostile to anything not glorbo.",
+    types: ["Brainrot", "Chaos"],
+    base: { hp: 90, atk: 100, def: 75, spd: 80 },
+    catchRate: 15, xpYield: 170,
+    learn: [[1, "GLORBO_BEAM"], [1, "OHIO_BOMB"], [1, "CONFUSE_RAY"], [32, "RIZZ_CHARM"]],
+    legendary: true,
+    color1: "#ff3dff", color2: "#9aa5ff", color3: "#ffff8a",
   },
 
   SIGMAWOLF: {
@@ -1228,6 +1249,8 @@ const SHOP_ITEMS = [
   { key: "CAPPUCCINO", price: 100 },
   { key: "ESPRESSO_DBL", price: 300 },
   { key: "ELIXIR", price: 1500 },
+  { key: "ETEREO", price: 400 },
+  { key: "PASTATONIC", price: 1800 },
 ];
 
 // Items
@@ -1238,6 +1261,9 @@ const ITEMS = {
   CAPPUCCINO:   { name: "Cappuccino",     desc: "Heals 30 HP.", heal: 30 },
   ESPRESSO_DBL: { name: "Doppio Espresso",desc: "Heals 80 HP.", heal: 80 },
   ELIXIR:       { name: "Pasta Elixir",   desc: "Fully restores HP.", heal: 999 },
+  // PP restore items — refill move PP without visiting a Cappuccino Bar
+  ETEREO:       { name: "Etereo Espresso",desc: "Restores 10 PP to all moves of one mon.", ppHeal: 10 },
+  PASTATONIC:   { name: "Pasta Tonic",    desc: "Fully restores PP for all moves of one mon.", ppHeal: 999 },
 };
 
 // Helpers

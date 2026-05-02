@@ -11,6 +11,18 @@
     <div id="screen">
       <canvas id="game" width="240" height="160"></canvas>
 
+      <!-- Desktop-only splash overlay; visible briefly on .app/.command/.bat launch -->
+      <div id="desktop-splash" class="hidden">
+        <div class="splash-inner">
+          <div class="splash-title">BRAINROT MONSTERS</div>
+          <div class="splash-edition">DESKTOP EDITION</div>
+          <div class="splash-tagline">Tralalero Tralala...</div>
+        </div>
+      </div>
+
+      <!-- Small persistent "DESKTOP" badge in the corner once running -->
+      <div id="desktop-badge" class="hidden">DESKTOP EDITION</div>
+
       <div id="dialog" class="ui-box hidden">
         <div id="dialog-text"></div>
         <div id="dialog-arrow">▼</div>
@@ -63,6 +75,7 @@
           <div class="row tip" style="margin-top:4px;color:#9aa;border:none">When facing an NPC, look for the [Z] bubble!</div>
         </div>
         <p class="prompt">Press ENTER or Tap to Start</p>
+        <button id="reset-save-btn" type="button">Delete save & start new</button>
         <p class="credits">A 2026 Italian Brain Rot Adventure</p>
       </div>
 

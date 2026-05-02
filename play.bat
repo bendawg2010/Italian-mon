@@ -4,7 +4,8 @@ REM Chrome/Edge "app window" so it feels like a desktop game.
 
 cd /d "%~dp0"
 set PORT=8765
-set URL=http://localhost:%PORT%/index.html
+REM ?desktop=1 unlocks Desktop Edition extras (higher-res, splash, badge).
+set URL=http://localhost:%PORT%/index.html?desktop=1
 
 REM Find a chromium-based browser
 set "BROWSER="

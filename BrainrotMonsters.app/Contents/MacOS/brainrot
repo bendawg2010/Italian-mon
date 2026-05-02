@@ -36,7 +36,8 @@ fi
 cd "$GAME_DIR" || exit 1
 
 PORT=8765
-URL="http://localhost:${PORT}/index.html"
+# ?desktop=1 unlocks Desktop Edition extras (higher-res, splash, badge).
+URL="http://localhost:${PORT}/index.html?desktop=1"
 USERDATA="${HOME}/.brainrot-monsters-app"
 
 find_chromium() {

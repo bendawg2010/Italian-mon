@@ -55,8 +55,22 @@ heal item on the active mon.
 
 ## What's in it
 
-- **71 meme creatures** with unique procedural sprites (many hand-tuned
+- **73 meme creatures** with unique procedural sprites (many hand-tuned
   for flagship mons), types, base stats, learnable moves, and evolutions
+- **PC Box** — when your team is full (6/6) caught mons go here. Open
+  the BOX from the pause menu to view, swap, or release stored mons.
+- **Move-forgetting prompt** — when a mon learns its 5th move, you
+  pick which one to forget (or skip) instead of slot 4 being silently
+  overwritten.
+- **Memedex filter** — cycle ALL / SEEN / CAUGHT / MISSING with ←/→.
+- **Quick-heal** in battle (`H`) and **PP-restore items** (Etereo
+  Espresso, Pasta Tonic) to skip extra Cappuccino Bar trips.
+- **Stats screen** — steps, battles, captures, session + total playtime.
+- **Catch animation** — real ball-throw arc + shake count + sparkle on
+  capture, instead of a text-only message.
+- **Desktop Edition** — launch via `BrainrotMonsters.app` / `play.command` /
+  `play.bat` for a splash screen, persistent "DESKTOP EDITION" badge,
+  denser title-screen mon drift, and 2 free PP-restore items at start.
 - **3 starters**: Tralalero, Bombardino, Tung Sahur — each evolves
 - **Type chart** with 10 types: Pasta, Fire, Water, Earth, Air, Beast,
   Brainrot, Sigma, Chaos, Steel

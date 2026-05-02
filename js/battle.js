@@ -426,9 +426,11 @@ const Battle = (() => {
         mon.moves.push({ id: moveId, pp: MOVES[moveId].pp, maxPp: MOVES[moveId].pp });
         enqueue(`${SPECIES[mon.species].name} learned ${MOVES[moveId].name}!`);
       } else {
-        const old = mon.moves[3];
-        mon.moves[3] = { id: moveId, pp: MOVES[moveId].pp, maxPp: MOVES[moveId].pp };
-        enqueue(`${SPECIES[mon.species].name} forgot ${MOVES[old.id].name} and learned ${MOVES[moveId].name}!`);
+        // Queue a "choose which to forget" prompt that the player resolves
+        // after all currently-queued battle messages finish.
+        enqueue(`${SPECIES[mon.species].name} wants to learn ${MOVES[moveId].name}!`);
+        if (!state.pendingMoveLearns) state.pendingMoveLearns = [];
+        state.pendingMoveLearns.push({ monIdx: state.playerTeam.indexOf(mon), newMoveId: moveId });
       }
     }
     if (sp.evolvesAt && mon.level >= sp.evolvesAt && sp.evolvesTo) {
@@ -493,20 +495,75 @@ const Battle = (() => {
     let success = Math.random() * 255 < a;
     if (sp.legendary && Math.random() < 0.6) success = false;
     enqueue(`You hurled a ${ITEMS[itemKey].name}!`);
+
+    // Drive a real ball-throw + shake animation: ball flies up to the
+    // enemy, mon fades, ball shakes N times, then opens (failure) or
+    // sparkles (success).
+    const shakes = success ? 3 : Math.max(1, Math.min(3, Math.floor((a / 255) * 4)));
+    state.catchAnim = {
+      itemKey,
+      success,
+      shakes,
+      // phase: "throwing" → "shaking" → "result"
+      phase: "throwing",
+      t: 0,
+      shakeIdx: 0,
+    };
+
     if (success) {
-      state.catchShakes = 3;
-      enqueue(`Gotcha! ${sp.name} was caught!`);
-      Audio.play("captured");
       state.caught = true;
+      enqueue(`Gotcha! ${sp.name} was caught!`);
+      // delay the "captured" sound until the animation says so
       state.phase = "caughtMon";
-      nextMessage();
     } else {
-      const shakes = Math.max(1, Math.min(3, Math.floor((a / 255) * 4)));
-      state.catchShakes = shakes;
       enqueue(`(*${"shake ".repeat(shakes).trim()}*) ${sp.name} broke free!`);
-      Audio.play("breakOut");
-      enemyFreeTurn();
     }
+    // Run the animation, then advance to the next message / enemy turn.
+    runCatchAnim(() => {
+      if (success) {
+        Audio.play("captured");
+        nextMessage();
+      } else {
+        Audio.play("breakOut");
+        enemyFreeTurn();
+      }
+    });
+  }
+
+  // Drive the throw → shake → result animation by stepping `state.catchAnim`
+  // through phases on a wall-clock timer. Calls onDone when finished.
+  function runCatchAnim(onDone) {
+    const a = state.catchAnim;
+    if (!a) { onDone(); return; }
+    state.uiBlocked = true;
+    const THROW_MS = 360;
+    const PER_SHAKE_MS = 380;
+    const RESULT_MS = 360;
+
+    const start = performance.now();
+    function tick(now) {
+      if (!state || !state.catchAnim) { onDone(); return; }
+      const elapsed = now - start;
+      if (a.phase === "throwing") {
+        a.t = Math.min(1, elapsed / THROW_MS);
+        if (a.t >= 1) { a.phase = "shaking"; a.shakeStart = now; a.shakeIdx = 0; }
+      } else if (a.phase === "shaking") {
+        const sinceShake = now - a.shakeStart;
+        a.shakeIdx = Math.min(a.shakes, Math.floor(sinceShake / PER_SHAKE_MS));
+        a.t = (sinceShake % PER_SHAKE_MS) / PER_SHAKE_MS;
+        if (sinceShake >= a.shakes * PER_SHAKE_MS) { a.phase = "result"; a.resultStart = now; }
+      } else {
+        a.t = Math.min(1, (now - a.resultStart) / RESULT_MS);
+        if (a.t >= 1) {
+          state.catchAnim = null;
+          state.uiBlocked = false;
+          onDone();
+          return;
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
   }
 
   function game_bag_consume(itemKey) {
@@ -647,6 +704,7 @@ const Battle = (() => {
       ranAway: state.ranAway,
       defeatedTrainer: state.isTrainer && (!state.enemyTeam || state.enemyTeam.every(m => m.hp <= 0)),
       enemyMon: state.enemyMon,
+      pendingMoveLearns: state.pendingMoveLearns || [],
     };
     state = null;
     cb(result);
@@ -750,9 +808,19 @@ const Battle = (() => {
     // enemy mon
     const ex = W*0.78 - eSize/2 + state.enemyOffsetX + eShakeX + enemyLungeX;
     const ey = H*0.20 + state.enemyOffsetY;
-    if (!state.enemyFainted || state.enemyOffsetY < 50) {
+    // During catch animation, fade the mon then hide once captured by ball.
+    let drawEnemy = (!state.enemyFainted || state.enemyOffsetY < 50);
+    if (state.catchAnim) {
+      const ph = state.catchAnim.phase;
+      if (ph !== "throwing") drawEnemy = false;     // mon "is in the ball"
+      else { ctx.globalAlpha = 1 - state.catchAnim.t * 0.8; }
+    }
+    if (drawEnemy) {
       drawMonWithFlash(ctx, state.enemyMon.species, ex, ey, eSize, time, state.enemyFlash);
     }
+    ctx.globalAlpha = 1;
+    // Catch ball overlay
+    if (state.catchAnim) drawCatchBall(ctx, ex + eSize/2, ey + eSize/2, W, H);
     // player mon
     const px = W*0.25 - pSize/2 + state.playerOffsetX + pShakeX + playerLungeX;
     const py = H*0.50 + state.playerOffsetY;
@@ -773,6 +841,79 @@ const Battle = (() => {
       ctx.closePath();
       ctx.fill();
     }
+  }
+
+  // Render the catch-ball animation overlay in front of the enemy slot.
+  // Throwing → ball arcs from off-screen left to enemy position.
+  // Shaking → ball wobbles side-to-side at enemy position; flash on hit.
+  // Result success → sparkle burst; failure → ball "pops open" (briefly grows).
+  function drawCatchBall(ctx, ex, ey, W, H) {
+    const a = state.catchAnim;
+    if (!a) return;
+    const r = Math.max(6, W * 0.018);
+    let x = ex, y = ey;
+    if (a.phase === "throwing") {
+      // arc from lower-left toward enemy
+      const startX = -r * 2, startY = H * 0.55;
+      x = startX + (ex - startX) * a.t;
+      y = startY + (ey - startY) * a.t - Math.sin(a.t * Math.PI) * H * 0.25;
+    } else if (a.phase === "shaking") {
+      const sw = Math.sin(a.t * Math.PI * 4) * r * 0.5 * (1 - a.t);
+      x = ex + sw;
+      y = ey + r * 1.2;
+    } else {
+      // result phase
+      y = ey + r * 1.2;
+      if (a.success) {
+        // captured: small sparkle burst around the ball
+        for (let i = 0; i < 8; i++) {
+          const ang = (i / 8) * Math.PI * 2;
+          const dist = a.t * r * 4;
+          ctx.fillStyle = `rgba(255,215,0,${1 - a.t})`;
+          ctx.fillRect(x + Math.cos(ang) * dist - 1, y + Math.sin(ang) * dist - 1, 2, 2);
+        }
+      } else {
+        // failed: ball "opens" — grow slightly then fade
+        const grow = 1 + a.t * 0.6;
+        ctx.globalAlpha = 1 - a.t;
+        drawBall(ctx, x, y, r * grow);
+        ctx.globalAlpha = 1;
+        return;
+      }
+    }
+    drawBall(ctx, x, y, r);
+  }
+
+  // Two-tone catch ball (red top, white bottom, black band, button).
+  function drawBall(ctx, cx, cy, r) {
+    // top half — red
+    ctx.fillStyle = "#d83a3a";
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, Math.PI, 0, false);
+    ctx.fill();
+    // bottom half — white
+    ctx.fillStyle = "#f4f4f4";
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI, false);
+    ctx.fill();
+    // center band
+    ctx.fillStyle = "#1a1a1a";
+    ctx.fillRect(cx - r, cy - 1, r * 2, 2);
+    // button
+    ctx.fillStyle = "#1a1a1a";
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.32, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#f4f4f4";
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+    // outline
+    ctx.strokeStyle = "#1a1a1a";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
   }
 
   function drawMonWithFlash(ctx, species, x, y, size, time, flash) {

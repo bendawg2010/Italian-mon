@@ -5,7 +5,10 @@
 const Audio = (() => {
   let ctx = null;
   let masterGain = null;
+  // Restore previous mute preference on page load so the player doesn't
+  // have to mute every single visit.
   let muted = false;
+  try { muted = localStorage.getItem("brainrot_muted") === "1"; } catch (e) {}
   let unlocked = false;
 
   function ensure() {
@@ -90,6 +93,7 @@ const Audio = (() => {
     play: (k) => { if (SFX[k]) SFX[k](); },
     setMuted: (m) => {
       muted = m;
+      try { localStorage.setItem("brainrot_muted", m ? "1" : "0"); } catch (e) {}
       if (m) Music.stop();
       else if (Music._wasPlaying) Music.start();
     },
