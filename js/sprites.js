@@ -25,72 +25,577 @@ const SpriteRenderer = (() => {
 
   // ----- BIG MEME SPRITES (in battle) -----
   const SPECIAL = {
+    // Three-legged shark in Nikes. Now actually shark-shaped.
     TRALALERO(ctx, sp, x, y, s, t) {
       const bob = Math.sin(t * 0.005) * 1;
-      shadow(ctx, x + s/2, y + s - 4, s*0.4, 4);
-      px(ctx, x+s*0.15, y+s*0.30+bob, s*0.7, s*0.4, sp.color1);
-      px(ctx, x+s*0.20, y+s*0.50+bob, s*0.6, s*0.20, sp.color2);
-      px(ctx, x+s*0.05, y+s*0.30+bob, s*0.10, s*0.30, sp.color1);
-      px(ctx, x+s*0.00, y+s*0.20+bob, s*0.10, s*0.15, sp.color1);
-      px(ctx, x+s*0.00, y+s*0.55+bob, s*0.10, s*0.15, sp.color1);
-      px(ctx, x+s*0.70, y+s*0.36+bob, s*0.10, s*0.10, "#fff");
-      px(ctx, x+s*0.74, y+s*0.40+bob, s*0.05, s*0.05, "#000");
-      px(ctx, x+s*0.80, y+s*0.50+bob, s*0.10, s*0.04, "#000");
-      px(ctx, x+s*0.82, y+s*0.46+bob, s*0.02, s*0.04, "#fff");
-      px(ctx, x+s*0.85, y+s*0.46+bob, s*0.02, s*0.04, "#fff");
+      shadow(ctx, x + s/2, y + s - 4, s*0.42, 4);
+      // body: tapered shark torpedo (head left, tail right)
+      px(ctx, x+s*0.10, y+s*0.36+bob, s*0.70, s*0.28, sp.color1);
+      px(ctx, x+s*0.05, y+s*0.42+bob, s*0.10, s*0.16, sp.color1);          // snout taper
+      px(ctx, x+s*0.78, y+s*0.40+bob, s*0.06, s*0.20, sp.color1);          // peduncle
+      // dorsal fin
+      px(ctx, x+s*0.34, y+s*0.22+bob, s*0.16, s*0.16, sp.color1);
+      px(ctx, x+s*0.40, y+s*0.16+bob, s*0.08, s*0.08, sp.color1);
+      // tail fluke (animated)
+      const tw = Math.sin(t * 0.012) * s*0.04;
+      px(ctx, x+s*0.83, y+s*0.30+bob - tw, s*0.06, s*0.18, sp.color1);
+      px(ctx, x+s*0.83, y+s*0.50+bob + tw, s*0.06, s*0.18, sp.color1);
+      px(ctx, x+s*0.88, y+s*0.36+bob, s*0.06, s*0.26, sp.color1);
+      // pec fin
+      px(ctx, x+s*0.30, y+s*0.58+bob, s*0.16, s*0.06, sp.color1);
+      // pale belly
+      px(ctx, x+s*0.18, y+s*0.54+bob, s*0.56, s*0.10, sp.color2);
+      // gills
+      px(ctx, x+s*0.20, y+s*0.42+bob, s*0.02, s*0.08, "#1a4a7a");
+      px(ctx, x+s*0.24, y+s*0.42+bob, s*0.02, s*0.08, "#1a4a7a");
+      px(ctx, x+s*0.28, y+s*0.42+bob, s*0.02, s*0.08, "#1a4a7a");
+      // eye (white sclera + black pupil + glint)
+      px(ctx, x+s*0.14, y+s*0.40+bob, s*0.07, s*0.07, "#fff");
+      px(ctx, x+s*0.16, y+s*0.42+bob, s*0.04, s*0.04, "#000");
+      px(ctx, x+s*0.17, y+s*0.42+bob, s*0.01, s*0.01, "#fff");
+      // toothy grin
+      px(ctx, x+s*0.05, y+s*0.52+bob, s*0.14, s*0.03, "#000");
+      for (let i = 0; i < 4; i++) {
+        px(ctx, x+s*(0.06 + i*0.035), y+s*0.50+bob, s*0.02, s*0.02, "#fff");
+      }
+      // three legs in Nikes
       for (let i = 0; i < 3; i++) {
-        const lx = x+s*(0.25 + i*0.20);
-        px(ctx, lx, y+s*0.70+bob, s*0.10, s*0.10, "#000");
-        px(ctx, lx-s*0.02, y+s*0.78+bob, s*0.16, s*0.06, sp.color3);
-        px(ctx, lx+s*0.02, y+s*0.74+bob, s*0.06, s*0.02, "#fff");
+        const lx = x+s*(0.28 + i*0.18);
+        const stride = (Math.sin(t * 0.008 + i*1.4) * 1) * (s*0.01);
+        // leg
+        px(ctx, lx + s*0.04, y+s*0.64+bob, s*0.06, s*0.16, "#f5d59a");
+        // shoe sole
+        px(ctx, lx-s*0.01 + stride, y+s*0.82+bob, s*0.18, s*0.05, "#fff");
+        // shoe upper (Nike orange)
+        px(ctx, lx + s*0.01 + stride, y+s*0.78+bob, s*0.16, s*0.05, sp.color3);
+        // swoosh
+        px(ctx, lx + s*0.06 + stride, y+s*0.79+bob, s*0.06, s*0.015, "#fff");
       }
     },
     TRALALERONE(ctx, sp, x, y, s, t) {
       SPECIAL.TRALALERO(ctx, sp, x, y, s, t);
-      for (let i = 0; i < 4; i++) px(ctx, x+s*(0.20+i*0.15), y+s*0.25, s*0.05, s*0.10, sp.color3);
+      // extra tail-shoes
+      const stride = Math.sin(t * 0.008) * (s*0.01);
+      for (let i = 0; i < 3; i++) {
+        const lx = x+s*(0.86 + i*0.02);
+        px(ctx, lx + stride, y+s*0.62 + i*s*0.06, s*0.08, s*0.04, sp.color3);
+      }
+      // crown of fins on head
+      px(ctx, x+s*0.10, y+s*0.30, s*0.04, s*0.06, sp.color3);
+      px(ctx, x+s*0.16, y+s*0.26, s*0.04, s*0.06, sp.color3);
     },
+    // Crocodile fused with a WW2 bomber. Now actually has a snout + wings + props.
     BOMBARDINO(ctx, sp, x, y, s, t) {
-      const bob = Math.sin(t * 0.005) * 1.5;
-      shadow(ctx, x + s/2, y + s - 4, s*0.4, 4);
-      px(ctx, x+s*0.05, y+s*0.40+bob, s*0.20, s*0.10, sp.color2);
-      px(ctx, x+s*0.75, y+s*0.40+bob, s*0.20, s*0.10, sp.color2);
-      px(ctx, x+s*0.20, y+s*0.30+bob, s*0.60, s*0.35, sp.color1);
-      px(ctx, x+s*0.25, y+s*0.50+bob, s*0.50, s*0.15, sp.color2);
-      px(ctx, x+s*0.78, y+s*0.42+bob, s*0.15, s*0.10, sp.color1);
-      for (let i = 0; i < 4; i++) px(ctx, x+s*(0.80+i*0.03), y+s*0.50+bob, s*0.02, s*0.03, "#fff");
-      px(ctx, x+s*0.66, y+s*0.36+bob, s*0.06, s*0.06, "#fff");
-      px(ctx, x+s*0.68, y+s*0.38+bob, s*0.03, s*0.03, "#000");
-      px(ctx, x+s*0.30, y+s*0.70+bob, s*0.10, s*0.10, "#222");
-      px(ctx, x+s*0.55, y+s*0.70+bob, s*0.10, s*0.10, "#222");
-      px(ctx, x+s*0.38, y+s*0.20+bob, s*0.24, s*0.04, "#888");
+      const bob = Math.sin(t * 0.004) * 1.5;
+      const propSpin = Math.floor(t * 0.05) % 2;  // 0 or 1, prop blur
+      shadow(ctx, x + s/2, y + s - 4, s*0.45, 4);
+      // wings (broad, swept slightly)
+      px(ctx, x+s*0.00, y+s*0.46+bob, s*0.22, s*0.10, sp.color1);
+      px(ctx, x+s*0.78, y+s*0.46+bob, s*0.22, s*0.10, sp.color1);
+      // wing tips (darker color2)
+      px(ctx, x+s*0.00, y+s*0.50+bob, s*0.06, s*0.06, sp.color2);
+      px(ctx, x+s*0.94, y+s*0.50+bob, s*0.06, s*0.06, sp.color2);
+      // engine pods + propellers
+      const propW = propSpin ? s*0.12 : s*0.02;
+      const propH = propSpin ? s*0.02 : s*0.12;
+      px(ctx, x+s*0.04, y+s*0.42+bob, s*0.06, s*0.06, "#444");          // engine L
+      px(ctx, x+s*0.84, y+s*0.42+bob, s*0.06, s*0.06, "#444");           // engine R
+      px(ctx, x-s*0.02 + (s*0.06 - propW)/2 + s*0.04, y+s*0.45+bob + (s*0.06 - propH)/2, propW, propH, "#aaa");
+      px(ctx, x+s*0.84 + (s*0.06 - propW)/2, y+s*0.45+bob + (s*0.06 - propH)/2, propW, propH, "#aaa");
+      // crocodile fuselage body (camo green/brown)
+      px(ctx, x+s*0.22, y+s*0.32+bob, s*0.56, s*0.34, sp.color1);
+      px(ctx, x+s*0.20, y+s*0.40+bob, s*0.60, s*0.18, sp.color2);        // belly
+      // long snout (crocodile face on the front)
+      px(ctx, x+s*0.78, y+s*0.42+bob, s*0.18, s*0.14, sp.color1);
+      px(ctx, x+s*0.94, y+s*0.46+bob, s*0.04, s*0.06, sp.color1);        // nose tip
+      // teeth row in mouth
+      px(ctx, x+s*0.80, y+s*0.50+bob, s*0.16, s*0.02, "#000");
+      for (let i = 0; i < 4; i++) {
+        px(ctx, x+s*(0.81 + i*0.04), y+s*0.49+bob, s*0.02, s*0.02, "#fff");
+      }
+      // crocodile reptile eye (yellow slit)
+      px(ctx, x+s*0.70, y+s*0.36+bob, s*0.06, s*0.06, "#fff");
+      px(ctx, x+s*0.71, y+s*0.37+bob, s*0.04, s*0.04, "#ffe070");
+      px(ctx, x+s*0.73, y+s*0.37+bob, s*0.01, s*0.04, "#000");
+      // cockpit canopy (glass dome on the back)
+      px(ctx, x+s*0.40, y+s*0.24+bob, s*0.20, s*0.10, "#7ad0ff");
+      px(ctx, x+s*0.42, y+s*0.26+bob, s*0.04, s*0.04, "#fff");          // glass shine
+      // tail fin (vertical stabilizer)
+      px(ctx, x+s*0.18, y+s*0.20+bob, s*0.06, s*0.18, sp.color1);
+      // espresso bombs hanging
+      px(ctx, x+s*0.32, y+s*0.66+bob, s*0.06, s*0.10, "#3a2218");
+      px(ctx, x+s*0.32, y+s*0.66+bob, s*0.06, s*0.02, "#fff");           // bomb crema
+      px(ctx, x+s*0.62, y+s*0.66+bob, s*0.06, s*0.10, "#3a2218");
+      px(ctx, x+s*0.62, y+s*0.66+bob, s*0.06, s*0.02, "#fff");
+      // landing gear feet
+      px(ctx, x+s*0.30, y+s*0.74+bob, s*0.08, s*0.04, "#222");
+      px(ctx, x+s*0.62, y+s*0.74+bob, s*0.08, s*0.04, "#222");
     },
     BOMBARDIRO(ctx, sp, x, y, s, t) {
       SPECIAL.BOMBARDINO(ctx, sp, x, y, s, t);
-      px(ctx, x+s*0.74, y+s*0.45, s*0.10, s*0.04, "#000");
-      px(ctx, x+s*0.42, y+s*0.72, s*0.16, s*0.10, "#222");
+      // Extra: moustache + extra bombs
+      px(ctx, x+s*0.74, y+s*0.55, s*0.16, s*0.04, "#1a1008");
+      px(ctx, x+s*0.46, y+s*0.66, s*0.06, s*0.10, "#3a2218");
+      px(ctx, x+s*0.46, y+s*0.66, s*0.06, s*0.02, "#fff");
     },
+    // Wooden creature with a bat. Now has rounder face, drum body texture.
     TUNGTUNG(ctx, sp, x, y, s, t) {
       const bob = Math.sin(t * 0.004) * 1;
-      shadow(ctx, x + s/2, y + s - 4, s*0.35, 4);
-      px(ctx, x+s*0.30, y+s*0.20+bob, s*0.40, s*0.55, sp.color1);
-      px(ctx, x+s*0.32, y+s*0.30+bob, s*0.36, s*0.02, sp.color2);
-      px(ctx, x+s*0.32, y+s*0.50+bob, s*0.36, s*0.02, sp.color2);
-      px(ctx, x+s*0.36, y+s*0.32+bob, s*0.10, s*0.06, "#fff");
-      px(ctx, x+s*0.54, y+s*0.32+bob, s*0.10, s*0.06, "#fff");
-      px(ctx, x+s*0.40, y+s*0.34+bob, s*0.04, s*0.04, "#000");
-      px(ctx, x+s*0.58, y+s*0.34+bob, s*0.04, s*0.04, "#000");
-      px(ctx, x+s*0.40, y+s*0.50+bob, s*0.20, s*0.04, "#000");
-      px(ctx, x+s*0.72, y+s*0.20+bob, s*0.05, s*0.30, sp.color1);
-      px(ctx, x+s*0.70, y+s*0.10+bob, s*0.10, s*0.15, sp.color1);
-      px(ctx, x+s*0.34, y+s*0.75+bob, s*0.08, s*0.10, sp.color2);
-      px(ctx, x+s*0.58, y+s*0.75+bob, s*0.08, s*0.10, sp.color2);
+      const swing = Math.sin(t * 0.006) * (s*0.05);
+      shadow(ctx, x + s/2, y + s - 4, s*0.38, 4);
+      // wooden cylindrical body (drum shape)
+      px(ctx, x+s*0.26, y+s*0.22+bob, s*0.46, s*0.56, sp.color1);
+      px(ctx, x+s*0.24, y+s*0.26+bob, s*0.50, s*0.04, "#5a3818");        // top hoop
+      px(ctx, x+s*0.24, y+s*0.70+bob, s*0.50, s*0.04, "#5a3818");        // bottom hoop
+      // wood grain
+      px(ctx, x+s*0.30, y+s*0.36+bob, s*0.02, s*0.30, "#5a3818");
+      px(ctx, x+s*0.40, y+s*0.36+bob, s*0.02, s*0.30, "#5a3818");
+      px(ctx, x+s*0.58, y+s*0.36+bob, s*0.02, s*0.30, "#5a3818");
+      px(ctx, x+s*0.66, y+s*0.36+bob, s*0.02, s*0.30, "#5a3818");
+      // big wooden head on top
+      px(ctx, x+s*0.32, y+s*0.10+bob, s*0.36, s*0.18, sp.color1);
+      px(ctx, x+s*0.30, y+s*0.14+bob, s*0.40, s*0.10, sp.color1);
+      // huge googly eyes
+      px(ctx, x+s*0.36, y+s*0.13+bob, s*0.12, s*0.10, "#fff");
+      px(ctx, x+s*0.52, y+s*0.13+bob, s*0.12, s*0.10, "#fff");
+      const eyeShift = Math.sin(t * 0.003) * 0.02;
+      px(ctx, x+s*(0.40+eyeShift), y+s*0.16+bob, s*0.04, s*0.04, "#000");
+      px(ctx, x+s*(0.56+eyeShift), y+s*0.16+bob, s*0.04, s*0.04, "#000");
+      // mouth (open, surprised)
+      px(ctx, x+s*0.44, y+s*0.22+bob, s*0.12, s*0.04, "#000");
+      px(ctx, x+s*0.46, y+s*0.23+bob, s*0.08, s*0.02, "#a04020");
+      // drumstick arm raised, swinging the bat
+      px(ctx, x+s*0.72 + swing, y+s*0.34+bob, s*0.06, s*0.20, sp.color1);
+      // bat
+      px(ctx, x+s*0.72 + swing, y+s*0.18+bob, s*0.10, s*0.20, sp.color1);
+      px(ctx, x+s*0.74 + swing, y+s*0.06+bob, s*0.06, s*0.16, sp.color1);
+      // other arm hanging
+      px(ctx, x+s*0.20, y+s*0.40+bob, s*0.06, s*0.18, sp.color1);
+      // legs
+      px(ctx, x+s*0.34, y+s*0.78+bob, s*0.10, s*0.14, sp.color2);
+      px(ctx, x+s*0.56, y+s*0.78+bob, s*0.10, s*0.14, sp.color2);
+      // sandals
+      px(ctx, x+s*0.32, y+s*0.90+bob, s*0.14, s*0.04, "#000");
+      px(ctx, x+s*0.54, y+s*0.90+bob, s*0.14, s*0.04, "#000");
     },
     TUNGTUNGTUNG(ctx, sp, x, y, s, t) {
       SPECIAL.TUNGTUNG(ctx, sp, x, y, s, t);
-      px(ctx, x+s*0.20, y+s*0.30, s*0.05, s*0.30, sp.color1);
-      px(ctx, x+s*0.18, y+s*0.20, s*0.10, s*0.15, sp.color1);
-      px(ctx, x+s*0.40, y+s*0.34, s*0.04, s*0.04, sp.color3);
-      px(ctx, x+s*0.58, y+s*0.34, s*0.04, s*0.04, sp.color3);
+      // second + third arm with extra bats on the OTHER side
+      const swing2 = Math.sin(t * 0.006 + 1.5) * (s*0.05);
+      px(ctx, x+s*0.16 + swing2, y+s*0.34, s*0.06, s*0.18, sp.color1);
+      px(ctx, x+s*0.10 + swing2, y+s*0.18, s*0.10, s*0.20, sp.color1);
+      // glowing brainrot eyes
+      px(ctx, x+s*0.40, y+s*0.16, s*0.04, s*0.04, sp.color3);
+      px(ctx, x+s*0.56, y+s*0.16, s*0.04, s*0.04, sp.color3);
+    },
+
+    // Cow with rings of Saturn around the body
+    VACCASATURN(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.003) * 1;
+      const ringSpin = Math.sin(t * 0.002);
+      shadow(ctx, x + s/2, y + s - 4, s*0.45, 4);
+      // body (cow torso)
+      px(ctx, x+s*0.18, y+s*0.40+bob, s*0.64, s*0.30, sp.color1);
+      // black & white spots
+      px(ctx, x+s*0.22, y+s*0.46+bob, s*0.10, s*0.10, sp.color2);
+      px(ctx, x+s*0.66, y+s*0.50+bob, s*0.12, s*0.10, sp.color2);
+      px(ctx, x+s*0.40, y+s*0.42+bob, s*0.08, s*0.06, sp.color2);
+      // head
+      px(ctx, x+s*0.10, y+s*0.36+bob, s*0.18, s*0.20, sp.color1);
+      // muzzle
+      px(ctx, x+s*0.04, y+s*0.46+bob, s*0.12, s*0.10, "#ffd0c0");
+      px(ctx, x+s*0.06, y+s*0.50+bob, s*0.03, s*0.02, "#000");
+      px(ctx, x+s*0.10, y+s*0.50+bob, s*0.03, s*0.02, "#000");
+      // horns
+      px(ctx, x+s*0.10, y+s*0.30+bob, s*0.04, s*0.06, "#fff5b3");
+      px(ctx, x+s*0.22, y+s*0.30+bob, s*0.04, s*0.06, "#fff5b3");
+      // big cow eyes
+      px(ctx, x+s*0.14, y+s*0.40+bob, s*0.06, s*0.06, "#fff");
+      px(ctx, x+s*0.16, y+s*0.42+bob, s*0.03, s*0.03, "#000");
+      // udder
+      px(ctx, x+s*0.46, y+s*0.66+bob, s*0.10, s*0.10, "#ffaaaa");
+      // legs
+      for (let i = 0; i < 4; i++) {
+        px(ctx, x+s*(0.24 + i*0.14), y+s*0.70+bob, s*0.06, s*0.18, sp.color1);
+        px(ctx, x+s*(0.24 + i*0.14), y+s*0.86+bob, s*0.06, s*0.04, "#3a2218");
+      }
+      // SATURN RINGS — drawn as ellipses around the body
+      const cx = x+s*0.5, cy = y+s*0.55+bob;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(ringSpin * 0.1 - 0.15);
+      ctx.strokeStyle = sp.color3;
+      ctx.lineWidth = Math.max(1, s*0.025);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, s*0.50, s*0.10, 0, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(255,255,255,0.7)";
+      ctx.lineWidth = Math.max(1, s*0.015);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, s*0.55, s*0.12, 0, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+    },
+
+    // Fish wearing a cat head
+    TRULIMERO(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.005) * 1.5;
+      const tw = Math.sin(t * 0.008) * s*0.04;
+      shadow(ctx, x + s/2, y + s - 4, s*0.4, 4);
+      // fish body (torpedo, on the right)
+      px(ctx, x+s*0.30, y+s*0.42+bob, s*0.50, s*0.26, sp.color1);
+      px(ctx, x+s*0.28, y+s*0.50+bob, s*0.40, s*0.10, sp.color3);
+      // tail fluke
+      px(ctx, x+s*0.78, y+s*0.36+bob - tw, s*0.06, s*0.16, sp.color1);
+      px(ctx, x+s*0.78, y+s*0.50+bob + tw, s*0.06, s*0.16, sp.color1);
+      // dorsal fin
+      px(ctx, x+s*0.50, y+s*0.34+bob, s*0.14, s*0.10, sp.color1);
+      // CAT HEAD on the front (left)
+      px(ctx, x+s*0.10, y+s*0.30+bob, s*0.30, s*0.30, sp.color2);
+      // ears
+      px(ctx, x+s*0.10, y+s*0.24+bob, s*0.08, s*0.08, sp.color2);
+      px(ctx, x+s*0.32, y+s*0.24+bob, s*0.08, s*0.08, sp.color2);
+      px(ctx, x+s*0.13, y+s*0.27+bob, s*0.04, s*0.04, "#ff8aa8");
+      px(ctx, x+s*0.35, y+s*0.27+bob, s*0.04, s*0.04, "#ff8aa8");
+      // eyes
+      px(ctx, x+s*0.16, y+s*0.38+bob, s*0.06, s*0.06, sp.color3);
+      px(ctx, x+s*0.28, y+s*0.38+bob, s*0.06, s*0.06, sp.color3);
+      px(ctx, x+s*0.18, y+s*0.40+bob, s*0.02, s*0.04, "#000");
+      px(ctx, x+s*0.30, y+s*0.40+bob, s*0.02, s*0.04, "#000");
+      // nose + mouth
+      px(ctx, x+s*0.22, y+s*0.46+bob, s*0.04, s*0.02, "#ff8aa8");
+      px(ctx, x+s*0.20, y+s*0.50+bob, s*0.08, s*0.02, "#000");
+      // whiskers
+      px(ctx, x+s*0.06, y+s*0.46+bob, s*0.06, s*0.01, "#000");
+      px(ctx, x+s*0.06, y+s*0.50+bob, s*0.06, s*0.01, "#000");
+    },
+
+    // Watermelon-striped tiger
+    TIGRILINI(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.004) * 1;
+      shadow(ctx, x + s/2, y + s - 4, s*0.4, 4);
+      // body (watermelon-green)
+      px(ctx, x+s*0.20, y+s*0.40+bob, s*0.60, s*0.30, sp.color1);
+      // pink rind interior
+      px(ctx, x+s*0.24, y+s*0.46+bob, s*0.52, s*0.18, sp.color2);
+      // black tiger stripes (also = watermelon seeds)
+      for (let i = 0; i < 5; i++) {
+        px(ctx, x+s*(0.28 + i*0.10), y+s*0.42+bob, s*0.02, s*0.10, "#1a1a1a");
+      }
+      // tail
+      px(ctx, x+s*0.80, y+s*0.40+bob, s*0.12, s*0.06, sp.color1);
+      px(ctx, x+s*0.88, y+s*0.36+bob, s*0.06, s*0.10, sp.color1);
+      // head
+      px(ctx, x+s*0.10, y+s*0.30+bob, s*0.30, s*0.30, sp.color1);
+      // ears
+      px(ctx, x+s*0.10, y+s*0.24+bob, s*0.08, s*0.08, sp.color1);
+      px(ctx, x+s*0.32, y+s*0.24+bob, s*0.08, s*0.08, sp.color1);
+      // tiger face
+      px(ctx, x+s*0.16, y+s*0.40+bob, s*0.06, s*0.06, "#fff");
+      px(ctx, x+s*0.28, y+s*0.40+bob, s*0.06, s*0.06, "#fff");
+      px(ctx, x+s*0.18, y+s*0.42+bob, s*0.02, s*0.04, "#000");
+      px(ctx, x+s*0.30, y+s*0.42+bob, s*0.02, s*0.04, "#000");
+      // muzzle
+      px(ctx, x+s*0.20, y+s*0.50+bob, s*0.10, s*0.06, "#fff5e0");
+      px(ctx, x+s*0.23, y+s*0.52+bob, s*0.04, s*0.02, "#000");
+      // legs
+      px(ctx, x+s*0.30, y+s*0.70+bob, s*0.10, s*0.16, sp.color1);
+      px(ctx, x+s*0.60, y+s*0.70+bob, s*0.10, s*0.16, sp.color1);
+    },
+
+    // Elephant with coconut head
+    COCOFANTO(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.003) * 1;
+      shadow(ctx, x + s/2, y + s - 4, s*0.5, 4);
+      // huge elephant body
+      px(ctx, x+s*0.16, y+s*0.42+bob, s*0.68, s*0.32, sp.color1);
+      // belly
+      px(ctx, x+s*0.20, y+s*0.54+bob, s*0.60, s*0.14, "#a07a5a");
+      // huge coconut head
+      px(ctx, x+s*0.30, y+s*0.18+bob, s*0.40, s*0.32, sp.color2);
+      // coconut texture (3 round dots = the holes)
+      px(ctx, x+s*0.40, y+s*0.30+bob, s*0.04, s*0.04, "#3a2818");
+      px(ctx, x+s*0.50, y+s*0.30+bob, s*0.04, s*0.04, "#3a2818");
+      px(ctx, x+s*0.45, y+s*0.36+bob, s*0.04, s*0.04, "#3a2818");
+      // coconut hairs
+      for (let i = 0; i < 8; i++) {
+        px(ctx, x+s*(0.30 + i*0.05), y+s*0.16+bob, s*0.01, s*0.04, "#5a3818");
+      }
+      // tiny eyes (the elephant peeking out from below)
+      px(ctx, x+s*0.36, y+s*0.46+bob, s*0.04, s*0.03, "#fff");
+      px(ctx, x+s*0.60, y+s*0.46+bob, s*0.04, s*0.03, "#fff");
+      px(ctx, x+s*0.37, y+s*0.46+bob, s*0.02, s*0.03, "#000");
+      px(ctx, x+s*0.61, y+s*0.46+bob, s*0.02, s*0.03, "#000");
+      // trunk hanging down
+      px(ctx, x+s*0.46, y+s*0.50+bob, s*0.08, s*0.20, sp.color1);
+      px(ctx, x+s*0.50, y+s*0.68+bob, s*0.08, s*0.04, sp.color1);
+      // ears
+      px(ctx, x+s*0.06, y+s*0.40+bob, s*0.10, s*0.16, sp.color1);
+      px(ctx, x+s*0.84, y+s*0.40+bob, s*0.10, s*0.16, sp.color1);
+      // 4 chunky legs
+      for (let i = 0; i < 4; i++) {
+        px(ctx, x+s*(0.22 + i*0.16), y+s*0.74+bob, s*0.10, s*0.14, sp.color1);
+        px(ctx, x+s*(0.22 + i*0.16), y+s*0.86+bob, s*0.10, s*0.04, "#3a2218");
+      }
+    },
+
+    // Slot machine 777
+    SEVENSEVEN(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.006) * 1.5;
+      const flash = (Math.floor(t * 0.005) % 2) === 0;
+      shadow(ctx, x + s/2, y + s - 4, s*0.4, 4);
+      // slot machine body
+      px(ctx, x+s*0.18, y+s*0.20+bob, s*0.64, s*0.60, sp.color1);
+      // chrome highlights
+      px(ctx, x+s*0.18, y+s*0.20+bob, s*0.64, s*0.04, "#fff5b3");
+      px(ctx, x+s*0.18, y+s*0.78+bob, s*0.64, s*0.02, "#a08820");
+      // top crown lights (flashing)
+      const lightColor = flash ? "#fff" : sp.color2;
+      for (let i = 0; i < 5; i++) {
+        px(ctx, x+s*(0.22 + i*0.12), y+s*0.16+bob, s*0.06, s*0.04, lightColor);
+      }
+      // three reels showing 7 7 7
+      for (let i = 0; i < 3; i++) {
+        px(ctx, x+s*(0.24 + i*0.18), y+s*0.34+bob, s*0.14, s*0.20, "#fff");
+        // draw a "7" in the reel
+        px(ctx, x+s*(0.26 + i*0.18), y+s*0.36+bob, s*0.10, s*0.03, sp.color2);
+        px(ctx, x+s*(0.32 + i*0.18), y+s*0.36+bob, s*0.04, s*0.16, sp.color2);
+      }
+      // payout slot
+      px(ctx, x+s*0.30, y+s*0.62+bob, s*0.40, s*0.08, "#000");
+      // coin spilling out
+      px(ctx, x+s*0.46, y+s*0.66+bob, s*0.08, s*0.04, sp.color2);
+      // lever on the right
+      px(ctx, x+s*0.84, y+s*0.30+bob, s*0.04, s*0.20, "#888");
+      px(ctx, x+s*0.83, y+s*0.28+bob, s*0.06, s*0.06, sp.color2);
+      // little googly eyes (it's alive!)
+      px(ctx, x+s*0.32, y+s*0.26+bob, s*0.04, s*0.04, "#fff");
+      px(ctx, x+s*0.62, y+s*0.26+bob, s*0.04, s*0.04, "#fff");
+      px(ctx, x+s*0.33, y+s*0.27+bob, s*0.02, s*0.02, "#000");
+      px(ctx, x+s*0.63, y+s*0.27+bob, s*0.02, s*0.02, "#000");
+    },
+
+    // AI-generated horror — six fingers, glitchy
+    AISLOP(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.003) * 1;
+      const glitch = Math.sin(t * 0.02) * s*0.02;
+      shadow(ctx, x + s/2, y + s - 4, s*0.4, 4);
+      // body — pastel pinkish blob
+      px(ctx, x+s*0.20, y+s*0.34+bob, s*0.60, s*0.40, sp.color1);
+      px(ctx, x+s*0.16, y+s*0.40+bob, s*0.68, s*0.20, sp.color1);
+      // glitchy color shifts
+      px(ctx, x+s*0.22 + glitch, y+s*0.48+bob, s*0.20, s*0.06, sp.color2);
+      px(ctx, x+s*0.55 - glitch, y+s*0.42+bob, s*0.16, s*0.06, sp.color3);
+      // too-many eyes
+      px(ctx, x+s*0.28, y+s*0.40+bob, s*0.08, s*0.06, "#fff");
+      px(ctx, x+s*0.46, y+s*0.38+bob, s*0.08, s*0.06, "#fff");
+      px(ctx, x+s*0.62, y+s*0.40+bob, s*0.08, s*0.06, "#fff");
+      px(ctx, x+s*0.30, y+s*0.42+bob, s*0.04, s*0.04, "#000");
+      px(ctx, x+s*0.48, y+s*0.40+bob, s*0.04, s*0.04, "#000");
+      px(ctx, x+s*0.64, y+s*0.42+bob, s*0.04, s*0.04, "#000");
+      // smile too wide
+      px(ctx, x+s*0.30, y+s*0.58+bob, s*0.40, s*0.04, "#fff");
+      px(ctx, x+s*0.30, y+s*0.58+bob, s*0.40, s*0.02, "#000");
+      px(ctx, x+s*0.30, y+s*0.62+bob, s*0.40, s*0.02, "#000");
+      // SIX FINGERS on each hand (the AI tell)
+      for (let i = 0; i < 6; i++) {
+        px(ctx, x+s*(0.04 + i*0.025), y+s*0.66+bob, s*0.02, s*0.10, sp.color1);
+        px(ctx, x+s*(0.78 + i*0.025), y+s*0.66+bob, s*0.02, s*0.10, sp.color1);
+      }
+      // legs
+      px(ctx, x+s*0.32, y+s*0.74+bob, s*0.10, s*0.16, sp.color1);
+      px(ctx, x+s*0.58, y+s*0.74+bob, s*0.10, s*0.16, sp.color1);
+    },
+
+    // Skibidi Toiletto — toilet with a charismatic head
+    SKIBIDI(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.005) * 1.5;
+      shadow(ctx, x + s/2, y + s - 4, s*0.4, 4);
+      // toilet bowl base
+      px(ctx, x+s*0.18, y+s*0.60+bob, s*0.64, s*0.20, sp.color1);
+      // bowl rim
+      px(ctx, x+s*0.16, y+s*0.58+bob, s*0.68, s*0.04, "#d8d8d8");
+      // tank back
+      px(ctx, x+s*0.24, y+s*0.46+bob, s*0.52, s*0.16, sp.color1);
+      // water inside
+      px(ctx, x+s*0.28, y+s*0.66+bob, s*0.44, s*0.10, "#5a8aff");
+      // flusher knob
+      px(ctx, x+s*0.66, y+s*0.44+bob, s*0.06, s*0.04, sp.color3);
+      // CHARISMATIC HEAD popping out the top
+      px(ctx, x+s*0.30, y+s*0.20+bob, s*0.40, s*0.30, sp.color2);
+      // hair (slicked-back CEO)
+      px(ctx, x+s*0.28, y+s*0.18+bob, s*0.44, s*0.06, "#3a2218");
+      px(ctx, x+s*0.30, y+s*0.16+bob, s*0.40, s*0.04, "#3a2218");
+      // sigma sunglasses
+      px(ctx, x+s*0.32, y+s*0.32+bob, s*0.16, s*0.06, "#000");
+      px(ctx, x+s*0.52, y+s*0.32+bob, s*0.16, s*0.06, "#000");
+      px(ctx, x+s*0.48, y+s*0.34+bob, s*0.04, s*0.02, "#000");
+      // shine on glasses
+      px(ctx, x+s*0.34, y+s*0.33+bob, s*0.04, s*0.01, "#fff");
+      px(ctx, x+s*0.54, y+s*0.33+bob, s*0.04, s*0.01, "#fff");
+      // smug smile
+      px(ctx, x+s*0.40, y+s*0.42+bob, s*0.20, s*0.02, "#000");
+      px(ctx, x+s*0.40, y+s*0.42+bob, s*0.04, s*0.02, "#000");
+      px(ctx, x+s*0.56, y+s*0.42+bob, s*0.04, s*0.02, "#000");
+      // microphone in front
+      px(ctx, x+s*0.46, y+s*0.50+bob, s*0.04, s*0.10, "#222");
+      px(ctx, x+s*0.42, y+s*0.48+bob, s*0.12, s*0.08, "#444");
+    },
+
+    // Glorbo Florbo — translucent glowing blob
+    GLORBO(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.006) * 2;
+      const pulse = 0.5 + Math.sin(t * 0.004) * 0.5;
+      shadow(ctx, x + s/2, y + s - 4, s*0.4, 4);
+      // outer glow rings
+      ctx.fillStyle = `rgba(201,61,255,${0.1 * pulse})`;
+      ctx.beginPath();
+      ctx.ellipse(x+s*0.5, y+s*0.5+bob, s*0.5, s*0.4, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = `rgba(255,138,255,${0.18 * pulse})`;
+      ctx.beginPath();
+      ctx.ellipse(x+s*0.5, y+s*0.5+bob, s*0.4, s*0.32, 0, 0, Math.PI*2);
+      ctx.fill();
+      // body
+      ctx.fillStyle = sp.color1;
+      ctx.beginPath();
+      ctx.ellipse(x+s*0.5, y+s*0.5+bob, s*0.32, s*0.26, 0, 0, Math.PI*2);
+      ctx.fill();
+      // inner highlight
+      ctx.fillStyle = sp.color2;
+      ctx.beginPath();
+      ctx.ellipse(x+s*0.42, y+s*0.45+bob, s*0.12, s*0.08, 0, 0, Math.PI*2);
+      ctx.fill();
+      // floating sparkles
+      for (let i = 0; i < 4; i++) {
+        const a = t * 0.003 + i * Math.PI/2;
+        const sx = x+s*0.5 + Math.cos(a) * s*0.36;
+        const sy = y+s*0.5+bob + Math.sin(a) * s*0.28;
+        px(ctx, sx, sy, s*0.04, s*0.04, sp.color2);
+      }
+      // big single eye
+      px(ctx, x+s*0.42, y+s*0.46+bob, s*0.16, s*0.10, "#fff");
+      px(ctx, x+s*0.46, y+s*0.48+bob, s*0.08, s*0.06, "#000");
+      px(ctx, x+s*0.48, y+s*0.49+bob, s*0.02, s*0.02, "#fff");
+    },
+
+    // Ohio Skibidini — chaotic gremlin, reality bends
+    OHIO(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.008) * 2;
+      const wobble = Math.sin(t * 0.012) * s*0.02;
+      shadow(ctx, x + s/2, y + s - 4, s*0.45, 4);
+      // chaos aura ring
+      for (let i = 0; i < 6; i++) {
+        const a = t * 0.005 + i * Math.PI/3;
+        const sx = x+s*0.5 + Math.cos(a) * s*0.45;
+        const sy = y+s*0.5+bob + Math.sin(a) * s*0.30;
+        px(ctx, sx, sy, s*0.04, s*0.04, sp.color1);
+      }
+      // body (jagged shape)
+      px(ctx, x+s*0.20+wobble, y+s*0.40+bob, s*0.60, s*0.30, sp.color2);
+      px(ctx, x+s*0.16-wobble, y+s*0.46+bob, s*0.20, s*0.20, sp.color2);
+      px(ctx, x+s*0.64+wobble, y+s*0.46+bob, s*0.20, s*0.20, sp.color2);
+      // glitch slashes
+      px(ctx, x+s*0.28, y+s*0.50+bob, s*0.16, s*0.02, sp.color1);
+      px(ctx, x+s*0.56, y+s*0.56+bob, s*0.20, s*0.02, sp.color3);
+      // mismatched eyes (one big, one small, both glowing)
+      px(ctx, x+s*0.28, y+s*0.42+bob, s*0.16, s*0.10, sp.color3);
+      px(ctx, x+s*0.30, y+s*0.44+bob, s*0.10, s*0.06, "#000");
+      px(ctx, x+s*0.34, y+s*0.46+bob, s*0.02, s*0.02, "#fff");
+      px(ctx, x+s*0.58, y+s*0.46+bob, s*0.06, s*0.06, sp.color3);
+      px(ctx, x+s*0.59, y+s*0.47+bob, s*0.04, s*0.04, "#000");
+      // jagged mouth
+      px(ctx, x+s*0.32, y+s*0.62+bob, s*0.36, s*0.04, "#000");
+      for (let i = 0; i < 6; i++) {
+        px(ctx, x+s*(0.34 + i*0.06), y+s*0.60+bob, s*0.02, s*0.02, "#fff");
+      }
+      // claw arms
+      px(ctx, x+s*0.04, y+s*0.50+bob, s*0.10, s*0.04, sp.color1);
+      px(ctx, x+s*0.86, y+s*0.50+bob, s*0.10, s*0.04, sp.color1);
+      // legs
+      px(ctx, x+s*0.30, y+s*0.70+bob, s*0.10, s*0.16, sp.color2);
+      px(ctx, x+s*0.60, y+s*0.70+bob, s*0.10, s*0.16, sp.color2);
+    },
+
+    // Sigma Wolfini — stoic lone wolf
+    SIGMAWOLF(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.003) * 1;
+      shadow(ctx, x + s/2, y + s - 4, s*0.42, 4);
+      // body
+      px(ctx, x+s*0.18, y+s*0.46+bob, s*0.58, s*0.24, sp.color1);
+      px(ctx, x+s*0.24, y+s*0.56+bob, s*0.50, s*0.10, sp.color3);
+      // tail
+      px(ctx, x+s*0.74, y+s*0.42+bob, s*0.10, s*0.10, sp.color1);
+      px(ctx, x+s*0.82, y+s*0.36+bob, s*0.06, s*0.16, sp.color1);
+      // head
+      px(ctx, x+s*0.10, y+s*0.34+bob, s*0.30, s*0.26, sp.color1);
+      // pointed ears
+      px(ctx, x+s*0.10, y+s*0.26+bob, s*0.06, s*0.10, sp.color1);
+      px(ctx, x+s*0.32, y+s*0.26+bob, s*0.06, s*0.10, sp.color1);
+      // muzzle
+      px(ctx, x+s*0.04, y+s*0.44+bob, s*0.14, s*0.10, sp.color1);
+      px(ctx, x+s*0.04, y+s*0.50+bob, s*0.06, s*0.04, "#000");
+      // unblinking sigma eyes (bright blue)
+      px(ctx, x+s*0.16, y+s*0.40+bob, s*0.06, s*0.04, sp.color2);
+      px(ctx, x+s*0.28, y+s*0.40+bob, s*0.06, s*0.04, sp.color2);
+      px(ctx, x+s*0.18, y+s*0.41+bob, s*0.02, s*0.02, "#000");
+      px(ctx, x+s*0.30, y+s*0.41+bob, s*0.02, s*0.02, "#000");
+      // sigma scar
+      px(ctx, x+s*0.20, y+s*0.34+bob, s*0.02, s*0.06, "#fff");
+      // legs
+      px(ctx, x+s*0.24, y+s*0.70+bob, s*0.06, s*0.14, sp.color1);
+      px(ctx, x+s*0.40, y+s*0.70+bob, s*0.06, s*0.14, sp.color1);
+      px(ctx, x+s*0.56, y+s*0.70+bob, s*0.06, s*0.14, sp.color1);
+      px(ctx, x+s*0.66, y+s*0.70+bob, s*0.06, s*0.14, sp.color1);
+    },
+
+    // Cappuccino Assassino — cup with two katanas
+    CAPPUASS(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.004) * 1;
+      const slash = Math.sin(t * 0.008) * s*0.04;
+      shadow(ctx, x + s/2, y + s - 4, s*0.4, 4);
+      // saucer
+      px(ctx, x+s*0.16, y+s*0.78+bob, s*0.68, s*0.06, "#d8d8d8");
+      px(ctx, x+s*0.22, y+s*0.74+bob, s*0.56, s*0.06, "#fff5b3");
+      // cup
+      px(ctx, x+s*0.26, y+s*0.40+bob, s*0.48, s*0.36, sp.color1);
+      // handle
+      px(ctx, x+s*0.74, y+s*0.50+bob, s*0.10, s*0.18, sp.color1);
+      px(ctx, x+s*0.78, y+s*0.54+bob, s*0.06, s*0.10, "#0d0d18");
+      // cappuccino crema on top
+      px(ctx, x+s*0.30, y+s*0.36+bob, s*0.40, s*0.06, sp.color2);
+      // foam art (a leaf)
+      px(ctx, x+s*0.46, y+s*0.34+bob, s*0.08, s*0.04, "#5a3818");
+      // assassin eyes (red glow)
+      px(ctx, x+s*0.34, y+s*0.50+bob, s*0.10, s*0.06, "#ff3d3d");
+      px(ctx, x+s*0.56, y+s*0.50+bob, s*0.10, s*0.06, "#ff3d3d");
+      px(ctx, x+s*0.36, y+s*0.52+bob, s*0.04, s*0.04, "#000");
+      px(ctx, x+s*0.58, y+s*0.52+bob, s*0.04, s*0.04, "#000");
+      // mouth
+      px(ctx, x+s*0.42, y+s*0.62+bob, s*0.16, s*0.02, "#000");
+      // TWO KATANAS (one swinging)
+      // left katana (handle behind)
+      px(ctx, x+s*0.04 + slash, y+s*0.40+bob, s*0.04, s*0.40, "#1a1a1a");          // handle
+      px(ctx, x+s*0.06 + slash, y+s*0.20+bob, s*0.02, s*0.20, "#cfe9ff");          // blade
+      px(ctx, x+s*0.07 + slash, y+s*0.16+bob, s*0.02, s*0.04, "#fff");             // tip glint
+      // right katana
+      px(ctx, x+s*0.92 - slash, y+s*0.40+bob, s*0.04, s*0.40, "#1a1a1a");
+      px(ctx, x+s*0.92 - slash, y+s*0.20+bob, s*0.02, s*0.20, "#cfe9ff");
+      px(ctx, x+s*0.93 - slash, y+s*0.16+bob, s*0.02, s*0.04, "#fff");
+    },
+
+    // Tung-Tung-Tung Sahur Maximus — a pile of bats with a face
+    TUNGTITAN(ctx, sp, x, y, s, t) {
+      // base on TUNGTUNG with massive scaling
+      SPECIAL.TUNGTUNGTUNG(ctx, sp, x, y, s, t);
+      // crown of bats around the head
+      const swing = Math.sin(t * 0.008);
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI*0.6 + (i / 4) * Math.PI*1.2 + swing * 0.05;
+        const bx = x+s*0.5 + Math.cos(a) * s*0.42;
+        const by = y+s*0.18 + Math.sin(a) * s*0.20;
+        px(ctx, bx, by, s*0.04, s*0.10, sp.color3);
+      }
     },
   };
   // (other meme sprites use generic procedural fallback below)
@@ -195,105 +700,121 @@ const SpriteRenderer = (() => {
   }
 
   // ----- PLAYER + NPC SPRITES (overworld) -----
+  // 4-frame walk cycle: 0=idle/contact, 1=left lead, 2=passing, 3=right lead.
+  // The game emits 0/1 currently; we treat any frame >=0 modulo 4 so we can
+  // accept richer cycles when game.js is updated to feed them.
   function drawPlayer(ctx, x, y, dir, frame) {
-    // 16x16 character with bigger head + cap brim
+    const f = ((frame|0) % 4 + 4) % 4;
+    // body bob: rises slightly on the "passing" frames to suggest weight transfer
+    const bob = (f === 1 || f === 3) ? -1 : 0;
     ctx.fillStyle = "rgba(0,0,0,0.35)";
     ctx.beginPath();
-    ctx.ellipse(x+8, y+15, 5, 1.5, 0, 0, Math.PI*2);
+    ctx.ellipse(x+8, y+15.5, 5, 1.5, 0, 0, Math.PI*2);
     ctx.fill();
-    // legs (animate)
+    // legs — 4 distinct stride poses
     ctx.fillStyle = "#1f1f3d";
-    if (frame % 2 === 0) {
-      ctx.fillRect(x+5, y+12, 2, 3);
-      ctx.fillRect(x+9, y+13, 2, 2);
-    } else {
-      ctx.fillRect(x+5, y+13, 2, 2);
-      ctx.fillRect(x+9, y+12, 2, 3);
-    }
+    if (f === 0)      { ctx.fillRect(x+5, y+12+bob, 2, 3); ctx.fillRect(x+9, y+12+bob, 2, 3); }   // contact
+    else if (f === 1) { ctx.fillRect(x+5, y+11+bob, 2, 4); ctx.fillRect(x+9, y+13+bob, 2, 2); }   // left lead
+    else if (f === 2) { ctx.fillRect(x+5, y+12+bob, 2, 3); ctx.fillRect(x+9, y+12+bob, 2, 3); }   // contact (right phase)
+    else              { ctx.fillRect(x+5, y+13+bob, 2, 2); ctx.fillRect(x+9, y+11+bob, 2, 4); }   // right lead
     // shoes
     ctx.fillStyle = "#000";
-    ctx.fillRect(x+4, y+15, 3, 1);
-    ctx.fillRect(x+9, y+15, 3, 1);
+    if (f === 0 || f === 2) { ctx.fillRect(x+4, y+15+bob, 3, 1); ctx.fillRect(x+9, y+15+bob, 3, 1); }
+    else if (f === 1)       { ctx.fillRect(x+4, y+15+bob, 3, 1); ctx.fillRect(x+9, y+15+bob, 3, 1); }
+    else                    { ctx.fillRect(x+4, y+15+bob, 3, 1); ctx.fillRect(x+9, y+15+bob, 3, 1); }
     // body shirt
     ctx.fillStyle = "#3a5cff";
-    ctx.fillRect(x+4, y+8, 8, 5);
+    ctx.fillRect(x+4, y+8+bob, 8, 5);
     ctx.fillStyle = "#2a4cdc";
-    ctx.fillRect(x+4, y+12, 8, 1);
+    ctx.fillRect(x+4, y+12+bob, 8, 1);
     // backpack hint
     ctx.fillStyle = "#1a3aaa";
-    ctx.fillRect(x+5, y+9, 6, 2);
-    // arms
+    ctx.fillRect(x+5, y+9+bob, 6, 2);
+    // arms — swing opposite to legs
     ctx.fillStyle = "#ffd9a0";
-    ctx.fillRect(x+3, y+9, 1, 3);
-    ctx.fillRect(x+12, y+9, 1, 3);
+    const armOffL = (f === 1) ? 1 : (f === 3) ? -1 : 0;
+    const armOffR = (f === 3) ? 1 : (f === 1) ? -1 : 0;
+    ctx.fillRect(x+3, y+9+bob+armOffL, 1, 3);
+    ctx.fillRect(x+12, y+9+bob+armOffR, 1, 3);
     // head
     ctx.fillStyle = "#ffd9a0";
-    ctx.fillRect(x+4, y+3, 8, 5);
-    ctx.fillRect(x+5, y+8, 6, 1);
+    ctx.fillRect(x+4, y+3+bob, 8, 5);
+    ctx.fillRect(x+5, y+8+bob, 6, 1);
     // hair tuft (sides)
     ctx.fillStyle = "#5a3a1a";
-    ctx.fillRect(x+4, y+5, 1, 2);
-    ctx.fillRect(x+11, y+5, 1, 2);
+    ctx.fillRect(x+4, y+5+bob, 1, 2);
+    ctx.fillRect(x+11, y+5+bob, 1, 2);
     // cap (bigger, brim)
     ctx.fillStyle = "#cc2222";
-    ctx.fillRect(x+3, y+1, 10, 3);
-    ctx.fillRect(x+5, y, 6, 1);
-    // cap brim
+    ctx.fillRect(x+3, y+1+bob, 10, 3);
+    ctx.fillRect(x+5, y+bob, 6, 1);
+    // cap brim — directional
     ctx.fillStyle = "#7a0e0e";
-    if (dir === "down") ctx.fillRect(x+5, y+4, 6, 1);
-    else if (dir === "up") ctx.fillRect(x+5, y+1, 6, 0.5);
-    else if (dir === "left") ctx.fillRect(x+2, y+3, 2, 1);
-    else if (dir === "right") ctx.fillRect(x+12, y+3, 2, 1);
+    if (dir === "down") ctx.fillRect(x+5, y+4+bob, 6, 1);
+    else if (dir === "up") ctx.fillRect(x+5, y+1+bob, 6, 1);
+    else if (dir === "left") ctx.fillRect(x+1, y+3+bob, 3, 1);
+    else if (dir === "right") ctx.fillRect(x+12, y+3+bob, 3, 1);
     // cap highlight
     ctx.fillStyle = "#ff5e5e";
-    ctx.fillRect(x+5, y+1, 2, 1);
-    // eyes
+    ctx.fillRect(x+5, y+1+bob, 2, 1);
+    // eyes — directional, blink occasionally
     ctx.fillStyle = "#000";
+    const blink = (f === 2);
     if (dir === "down") {
-      ctx.fillRect(x+5, y+5, 1, 2);
-      ctx.fillRect(x+10, y+5, 1, 2);
+      if (blink) { ctx.fillRect(x+5, y+6+bob, 1, 1); ctx.fillRect(x+10, y+6+bob, 1, 1); }
+      else { ctx.fillRect(x+5, y+5+bob, 1, 2); ctx.fillRect(x+10, y+5+bob, 1, 2); }
+    } else if (dir === "up") {
+      // back of head — no eyes; show hair extending down
+      ctx.fillStyle = "#5a3a1a";
+      ctx.fillRect(x+4, y+6+bob, 8, 1);
     } else if (dir === "left") {
-      ctx.fillRect(x+5, y+5, 1, 2);
+      ctx.fillRect(x+4, y+5+bob, 1, blink ? 1 : 2);
     } else if (dir === "right") {
-      ctx.fillRect(x+10, y+5, 1, 2);
+      ctx.fillRect(x+11, y+5+bob, 1, blink ? 1 : 2);
     }
   }
 
   function drawNpc(ctx, x, y, color, frame) {
+    const f = ((frame|0) % 4 + 4) % 4;
+    const bob = (f === 1 || f === 3) ? -1 : 0;
     ctx.fillStyle = "rgba(0,0,0,0.35)";
     ctx.beginPath();
-    ctx.ellipse(x+8, y+15, 5, 1.5, 0, 0, Math.PI*2);
+    ctx.ellipse(x+8, y+15.5, 5, 1.5, 0, 0, Math.PI*2);
     ctx.fill();
-    // legs
+    // legs — 4-frame stride
     ctx.fillStyle = "#1a1a1a";
-    if (frame % 2 === 0) { ctx.fillRect(x+5, y+12, 2, 3); ctx.fillRect(x+9, y+13, 2, 2); }
-    else { ctx.fillRect(x+5, y+13, 2, 2); ctx.fillRect(x+9, y+12, 2, 3); }
+    if (f === 0)      { ctx.fillRect(x+5, y+12+bob, 2, 3); ctx.fillRect(x+9, y+12+bob, 2, 3); }
+    else if (f === 1) { ctx.fillRect(x+5, y+11+bob, 2, 4); ctx.fillRect(x+9, y+13+bob, 2, 2); }
+    else if (f === 2) { ctx.fillRect(x+5, y+12+bob, 2, 3); ctx.fillRect(x+9, y+12+bob, 2, 3); }
+    else              { ctx.fillRect(x+5, y+13+bob, 2, 2); ctx.fillRect(x+9, y+11+bob, 2, 4); }
     ctx.fillStyle = "#000";
-    ctx.fillRect(x+4, y+15, 3, 1);
-    ctx.fillRect(x+9, y+15, 3, 1);
+    ctx.fillRect(x+4, y+15+bob, 3, 1);
+    ctx.fillRect(x+9, y+15+bob, 3, 1);
     // body
     ctx.fillStyle = color;
-    ctx.fillRect(x+4, y+8, 8, 5);
+    ctx.fillRect(x+4, y+8+bob, 8, 5);
     ctx.fillStyle = shade(color, -0.3);
-    ctx.fillRect(x+4, y+12, 8, 1);
-    // arms
+    ctx.fillRect(x+4, y+12+bob, 8, 1);
+    // arms (subtle swing)
     ctx.fillStyle = "#e0c090";
-    ctx.fillRect(x+3, y+9, 1, 3);
-    ctx.fillRect(x+12, y+9, 1, 3);
+    const armOffL = (f === 1) ? 1 : (f === 3) ? -1 : 0;
+    const armOffR = (f === 3) ? 1 : (f === 1) ? -1 : 0;
+    ctx.fillRect(x+3, y+9+bob+armOffL, 1, 3);
+    ctx.fillRect(x+12, y+9+bob+armOffR, 1, 3);
     // head
     ctx.fillStyle = "#e0c090";
-    ctx.fillRect(x+4, y+3, 8, 5);
-    ctx.fillRect(x+5, y+8, 6, 1);
-    // hair (varies by hashed color)
+    ctx.fillRect(x+4, y+3+bob, 8, 5);
+    ctx.fillRect(x+5, y+8+bob, 6, 1);
+    // hair
     ctx.fillStyle = shade(color, -0.5);
-    ctx.fillRect(x+3, y+2, 10, 2);
-    ctx.fillRect(x+4, y+1, 8, 1);
-    // eyes
+    ctx.fillRect(x+3, y+2+bob, 10, 2);
+    ctx.fillRect(x+4, y+1+bob, 8, 1);
+    // eyes (occasional blink)
     ctx.fillStyle = "#000";
-    ctx.fillRect(x+5, y+5, 1, 2);
-    ctx.fillRect(x+10, y+5, 1, 2);
+    if (f === 2) { ctx.fillRect(x+5, y+6+bob, 1, 1); ctx.fillRect(x+10, y+6+bob, 1, 1); }
+    else { ctx.fillRect(x+5, y+5+bob, 1, 2); ctx.fillRect(x+10, y+5+bob, 1, 2); }
     // mouth
-    ctx.fillRect(x+7, y+7, 2, 1);
+    ctx.fillRect(x+7, y+7+bob, 2, 1);
   }
 
   function shade(hex, amt) {

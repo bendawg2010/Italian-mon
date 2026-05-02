@@ -33,6 +33,7 @@
     encounterCooldown: 0,
     flashTime: 0,
     badges: 0,
+    healFx: 0,  // ticks down while heal sparkle is animating
   };
 
   const keys = {};
@@ -172,6 +173,7 @@
       "Pick your starter, my dear traveler:",
     ], () => {
       game.mode = "starter";
+      showStarterDom(true);
     });
   }
 
@@ -184,10 +186,29 @@
 
   function cycleStarter(d) {
     game.starterIdx = (game.starterIdx + d + STARTERS.length) % STARTERS.length;
+    refreshStarterDom();
+  }
+
+  function refreshStarterDom() {
+    const sel = STARTERS[game.starterIdx];
+    const sp = SPECIES[sel];
+    const nameEl = document.getElementById("starter-name");
+    const flavorEl = document.getElementById("starter-flavor");
+    const infoEl = document.getElementById("starter-info");
+    if (nameEl) nameEl.textContent = sp.name;
+    if (flavorEl) flavorEl.textContent = `"${sp.flavor}"`;
+    if (infoEl) infoEl.textContent = STARTER_INFO[sel];
+  }
+  function showStarterDom(show) {
+    const el = document.getElementById("starter-screen");
+    if (!el) return;
+    el.classList.toggle("hidden", !show);
+    if (show) refreshStarterDom();
   }
 
   function confirmStarter() {
     Audio.play("confirm");
+    showStarterDom(false);
     const id = STARTERS[game.starterIdx];
     const mon = makeMon(id, 5);
     game.team.push(mon);
@@ -512,12 +533,18 @@
   function renderBagMenu() {
     const ul = document.getElementById("menu-list");
     const items = bagMenuState.items;
-    ul.innerHTML = `<li class="header">BAG · $${game.money}</li>` + items.map(([k, v], i) => {
+    const totalCount = items.reduce((s, [, v]) => s + v, 0);
+    const rows = items.map(([k, v], i) => {
       const it = ITEMS[k];
+      const tag = it.heal ? `<span style="color:#5cd765">[HEAL]</span>`
+                : it.catchMod ? `<span style="color:#ffe070">[CATCH]</span>`
+                : "";
       return `<li class="${i === bagMenuState.idx ? "selected" : ""}">
-        <b>${it.name}</b> ×${v}<br><small>${it.desc}</small>
+        <b>${it.name}</b> ${tag} <small style="float:right">×${v}</small><br>
+        <small>${it.desc}</small>
       </li>`;
-    }).join("") + `<li class="footer"><small>X = back · Z = use</small></li>`;
+    }).join("");
+    ul.innerHTML = `<li class="header">BAG · ${totalCount} items · $${game.money}</li>` + rows + `<li class="footer"><small>X = back · Z = use</small></li>`;
   }
   function bagMenuSelect() {
     if (!bagMenuState) return;
@@ -580,12 +607,18 @@
   }
   function renderShop() {
     const ul = document.getElementById("menu-list");
-    ul.innerHTML = `<li class="header">SHOP · $${game.money}</li>` + shopState.items.map((it, i) => {
+    const rows = shopState.items.map((it, i) => {
       const item = ITEMS[it.key];
+      const owned = game.bag[it.key] || 0;
+      const ownedTag = owned > 0 ? ` <small style="opacity:.7">(have ${owned})</small>` : "";
+      const cantAfford = game.money < it.price;
+      const priceColor = cantAfford ? "#ff8a8a" : "#ffe070";
       return `<li class="${i === shopState.idx ? "selected" : ""}">
-        <b>${item.name}</b> — $${it.price}<br><small>${item.desc}</small>
+        <b>${item.name}</b> <span style="color:${priceColor}">— $${it.price}</span>${ownedTag}<br>
+        <small>${item.desc}</small>
       </li>`;
-    }).join("") + `<li class="footer"><small>X = leave · Z = buy</small></li>`;
+    }).join("");
+    ul.innerHTML = `<li class="header">SHOP · $${game.money}</li>` + rows + `<li class="footer"><small>X = leave · Z = buy</small></li>`;
   }
   function shopBuy() {
     if (!shopState) return;
@@ -630,10 +663,18 @@
         });
       } else if (npc.type === "healer") {
         Audio.play("heal");
+        // trigger sparkle animation (rendered in render() below)
+        game.healFx = 90;
         showDialog(npc.dialog, () => {
+          let restored = 0;
           for (const m of game.team) {
+            restored += (m.maxHp - m.hp);
             m.hp = m.maxHp;
             for (const mv of m.moves) mv.pp = mv.maxPp;
+          }
+          // friendlier confirmation showing what was healed
+          if (restored > 0) {
+            showDialog([`Your team is fighting fit again!\n(+${restored} HP, all PP restored)`], () => {});
           }
           saveGame();
         });
@@ -807,7 +848,8 @@
       p.pixelY = p.tileY * 16;
       p.moving = false;
       p.stepCounter++;
-      p.animFrame = (p.animFrame + 1) % 2;
+      // 4-frame walk cycle: contact-L → left-lead → contact-R → right-lead
+      p.animFrame = (p.animFrame + 1) % 4;
       // map transition?
       const portal = World.portalAt(p.tileX, p.tileY);
       if (portal) {
@@ -931,6 +973,8 @@
   }
 
   function drawStarterScreen(time) {
+    // Background — sprites stay on the canvas (pixel-art crispness preserved).
+    // All text is rendered by the DOM #starter-screen overlay (sharp CSS text).
     ctx.fillStyle = "#0d0d18";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     for (let i = 0; i < 20; i++) {
@@ -940,10 +984,6 @@
       ctx.fillStyle = `rgba(255,203,5,${0.04 + (i%3)*0.02})`;
       ctx.fillRect(x, y, 1, 1);
     }
-    ctx.fillStyle = "#ffcb05";
-    ctx.font = "bold 8px monospace";
-    ctx.textAlign = "center";
-    ctx.fillText("CHOOSE YOUR STARTER", canvas.width/2, 14);
     const slots = [
       { x: canvas.width/2 - 80 },
       { x: canvas.width/2 - 24 },
@@ -955,25 +995,13 @@
       const bob = isSel ? Math.sin(time * 0.005) * 2 : 0;
       if (isSel) {
         ctx.fillStyle = "rgba(255,203,5,0.2)";
-        ctx.fillRect(s.x - 4, 24, 56, 56);
+        ctx.fillRect(s.x - 4, 18, 56, 56);
         ctx.strokeStyle = "#ffcb05";
         ctx.lineWidth = 1;
-        ctx.strokeRect(s.x - 4, 24, 56, 56);
+        ctx.strokeRect(s.x - 4, 18, 56, 56);
       }
-      SpriteRenderer.drawMon(ctx, STARTERS[i], s.x, 30 + bob, 48, time);
+      SpriteRenderer.drawMon(ctx, STARTERS[i], s.x, 24 + bob, 48, time);
     }
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 7px monospace";
-    const sel = STARTERS[game.starterIdx];
-    ctx.fillText(SPECIES[sel].name, canvas.width/2, 92);
-    ctx.fillStyle = "#ffd";
-    ctx.font = "5px monospace";
-    wrapText(ctx, SPECIES[sel].flavor, canvas.width/2, 102, 220, 7);
-    ctx.fillStyle = "#cfe9ff";
-    wrapText(ctx, STARTER_INFO[sel], canvas.width/2, 128, 220, 7);
-    ctx.fillStyle = "#aaa";
-    ctx.font = "5px monospace";
-    ctx.fillText("LEFT/RIGHT to choose - Z/Enter to confirm", canvas.width/2, 152);
   }
 
   function wrapText(ctx, text, x, y, maxW, lh) {
@@ -1046,6 +1074,7 @@
     }
     if (game.mode === "dialog") tickDialogTypewriter(dt);
     if (game.flashTime > 0) game.flashTime--;
+    if (game.healFx > 0) game.healFx--;
     // try to keep overworld music alive
     if ((game.mode === "overworld" || game.mode === "menu" || game.mode === "team" ||
          game.mode === "bag" || game.mode === "dex" || game.mode === "shop") &&
@@ -1062,16 +1091,52 @@
     if (game.mode === "starter") { drawStarterScreen(time); return; }
     if (game.mode === "battle") { Battle.draw(ctx, time); Battle.refreshInfo(); return; }
     World.draw(ctx, game.cam, time);
+    // While mid-step, alternate between contact and lead frame so legs visibly move.
+    let drawFrame = game.player.animFrame;
+    if (game.player.moving) {
+      // halfway through the step, show the lead frame; ends on the next contact.
+      const halfway = game.player.moveProgress >= 8;
+      // current foot phase: even animFrame (0,2) = contact, odd (1,3) = lead
+      const baseIsContact = (game.player.animFrame % 2 === 0);
+      drawFrame = baseIsContact && halfway
+        ? (game.player.animFrame === 0 ? 1 : 3)
+        : game.player.animFrame;
+    }
     SpriteRenderer.drawPlayer(
       ctx,
       game.player.pixelX - game.cam.x,
       game.player.pixelY - game.cam.y,
       game.player.facing,
-      game.player.animFrame
+      drawFrame
     );
     if (game.flashTime > 0) {
       ctx.fillStyle = `rgba(255,255,255,${game.flashTime / 12})`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    // Healing sparkles around the player
+    if (game.healFx > 0) {
+      const px = game.player.pixelX - game.cam.x + 8;
+      const py = game.player.pixelY - game.cam.y + 8;
+      const phase = (90 - game.healFx) / 90;
+      // soft green glow halo
+      const glowA = Math.max(0, 0.35 * (1 - phase));
+      ctx.fillStyle = `rgba(120,255,180,${glowA})`;
+      ctx.beginPath();
+      ctx.arc(px, py, 14, 0, Math.PI * 2);
+      ctx.fill();
+      // 6 orbiting sparkles spiraling outward
+      for (let i = 0; i < 6; i++) {
+        const a = (game.healFx * 0.06) + (i * Math.PI / 3);
+        const r = 4 + phase * 14;
+        const sx = px + Math.cos(a) * r;
+        const sy = py + Math.sin(a) * r * 0.6 - phase * 6;
+        const sa = Math.max(0, 1 - phase);
+        ctx.fillStyle = `rgba(255,255,255,${sa})`;
+        ctx.fillRect(sx - 0.5, sy - 0.5, 1, 1);
+        ctx.fillStyle = `rgba(120,255,180,${sa * 0.8})`;
+        ctx.fillRect(sx - 1, sy, 2, 1);
+        ctx.fillRect(sx, sy - 1, 1, 2);
+      }
     }
     // floating Z prompt above NPC the player faces
     drawInteractionPrompt(time);

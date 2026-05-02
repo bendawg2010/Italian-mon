@@ -12,15 +12,19 @@ Glorbo Florbo, Ohio Skibidini, and many more).
 inlined. Open it in any modern browser and you're playing. No server,
 no install.
 
-### Or run `play.sh` (Mac / Linux) / `play.bat` (Windows)
+### Or use the OS-specific launcher
 
 These start a tiny local web server on port 8765 and open the game in
 your browser automatically. Use this if `play.html` has any issue.
 
-```bash
-./play.sh        # Mac / Linux
-play.bat         # Windows
-```
+| OS              | Launcher       | How to run                                   |
+| --------------- | -------------- | -------------------------------------------- |
+| **macOS**       | `play.command` | Double-click in Finder (or `./play.command`) |
+| **Linux**       | `play.sh`      | `./play.sh` in a terminal                    |
+| **Windows**     | `play.bat`     | Double-click in Explorer                     |
+
+> First time on Mac, macOS may ask permission to run an unsigned shell
+> script. Right-click `play.command` → Open → Open to allow it once.
 
 ### Or do it yourself
 
@@ -44,16 +48,22 @@ In battle, click the `FIGHT` / `BAG` / `TEAM` / `RUN` buttons or press
 
 ## What's in it
 
-- **21 meme creatures** with unique procedural sprites, types, base
-  stats, and learnable moves
+- **50 meme creatures** with unique procedural sprites, types, base
+  stats, learnable moves, and (for many) evolutions
 - **3 starters**: Tralalero, Bombardino, Tung Sahur — each evolves
 - **Type chart** with 10 types: Pasta, Fire, Water, Earth, Air, Beast,
   Brainrot, Sigma, Chaos, Steel
-- **Trainer NPCs** including Rival Marco, Pasta Chef Luigi, Sigma Bro
-  Kai, and the Brainrot Queen
+- **11 connected maps** in a Pokemon-Red-style overworld:
+  Pallet → Route 1 → Viridian → Route 2 → Forest → Pewter →
+  Route 3 → Mt. Moon → Cerulean → Route 4 → Vermilion
+- **5 Gym Leaders** with named badges, each gated by the previous:
+  Pasta Gym (Luigi), Aviary Gym (Pia), Sigma Gym (Kai),
+  Sea Gym (Tony), Fire Gym (Greg)
+- **Espresso Four** + **Champion Brainrot Queen** post-game gauntlet
+- **Memedex** in the pause menu — tracks seen vs caught across all 50
 - **Catch wild monsters** with Brain Cells (gen-1 style catch formula)
 - **XP, leveling, evolution, move learning**
-- **Cappuccino Bar** healer, signs, save/load to localStorage
+- **Two Cappuccino Bars** for healing, signs, save/load to localStorage
 
 ## Files
 
