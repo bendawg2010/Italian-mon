@@ -516,6 +516,34 @@ const Battle = (() => {
     return true;
   }
 
+  // Quick-heal in battle: pick the strongest heal item the player owns
+  // and apply it to the active mon, all without opening the bag menu.
+  function quickHeal() {
+    if (!state || state.phase !== "menu" || state.uiBlocked) return;
+    const mon = playerMon();
+    if (mon.hp >= mon.maxHp) {
+      Audio.play("cancel");
+      enqueue(`${SPECIES[mon.species].name} is already at full HP.`);
+      state.phase = "endTurn";
+      nextMessage();
+      return;
+    }
+    const bag = (typeof window.__brainrotBagSnapshot === "function")
+      ? window.__brainrotBagSnapshot()
+      : {};
+    // Order from strongest to weakest so we use the elixir before a cappuccino.
+    const ranked = ["ELIXIR", "ESPRESSO_DBL", "CAPPUCCINO"];
+    const choice = ranked.find(k => (bag[k] || 0) > 0);
+    if (!choice) {
+      Audio.play("cancel");
+      enqueue("No heal items in your bag!");
+      state.phase = "endTurn";
+      nextMessage();
+      return;
+    }
+    useHealItemInBattle(choice);
+  }
+
   function useHealItemInBattle(itemKey) {
     const item = ITEMS[itemKey];
     if (!item || !item.heal) return false;
@@ -657,13 +685,32 @@ const Battle = (() => {
     return v + Math.sign(d) * max;
   }
 
+  // Per-map battle backdrop palettes — keep the gradient shape, swap colors
+  // so a fight in a forest doesn't look identical to a fight in a cave.
+  const BATTLE_BG = {
+    pallet:    ["#3a1a5c", "#5b2d8c", "#2a8c4a"],
+    route1:    ["#3a1a5c", "#5b2d8c", "#2a8c4a"],
+    viridian:  ["#3a1a5c", "#5b2d8c", "#2a8c4a"],
+    route2:    ["#1f3a1f", "#306030", "#5fa84a"],
+    forest:    ["#0e2a14", "#1f4a2a", "#3a7a3a"],
+    pewter:    ["#3a3a4a", "#5a5a6a", "#7a7a8a"],
+    route3:    ["#5a3a2a", "#7a5a3a", "#a07050"],
+    mt_moon:   ["#1a1430", "#3a2858", "#5a4080"],   // cave purple
+    cerulean:  ["#1a3a5c", "#2d5d8c", "#4a8cd5"],   // cool blue
+    route4:    ["#2a5a8c", "#4a8cd0", "#d4a043"],   // coastal
+    vermilion: ["#5a1a2a", "#8c2d3a", "#d44a2a"],   // warm port
+  };
+
   function draw(ctx, time) {
     if (!state) return;
     const W = ctx.canvas.width, H = ctx.canvas.height;
+    // Pick palette based on current map id; default to original purple/green.
+    const mapId = (window.__brainrot && window.__brainrot.game && window.__brainrot.game.currentMap) || "pallet";
+    const palette = BATTLE_BG[mapId] || BATTLE_BG.pallet;
     const grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, "#3a1a5c");
-    grad.addColorStop(0.5, "#5b2d8c");
-    grad.addColorStop(1, "#2a8c4a");
+    grad.addColorStop(0, palette[0]);
+    grad.addColorStop(0.5, palette[1]);
+    grad.addColorStop(1, palette[2]);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
     // grid floor
@@ -752,6 +799,8 @@ const Battle = (() => {
     if (state.phase === "menu") {
       if (key === "z" || key === "Enter") { handleAction("fight"); return true; }
       if (key === "x") { handleAction("run"); return true; }
+      // Quick-heal: H uses the strongest available heal item on the active mon.
+      if (key === "h") { quickHeal(); return true; }
       return true;
     }
     if (key === "z" || key === "Enter" || key === " ") {

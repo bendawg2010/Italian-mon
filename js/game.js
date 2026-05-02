@@ -33,7 +33,9 @@
     encounterCooldown: 0,
     flashTime: 0,
     badges: 0,
-    healFx: 0,  // ticks down while heal sparkle is animating
+    healFx: 0,            // ticks down while heal sparkle is animating
+    saveToast: 0,         // ticks down while "Saved!" toast is on screen
+    stats: { steps: 0, battlesWon: 0, monsCaught: 0, startedAt: Date.now() },
   };
 
   const keys = {};
@@ -41,7 +43,7 @@
   let nowTime = 0;
 
   window.addEventListener("keydown", (e) => {
-    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Enter","z","x","Z","X","Escape","f","F"].includes(e.key)) {
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Enter","z","x","Z","X","Escape","f","F","h","H"].includes(e.key)) {
       e.preventDefault();
     }
     if (e.key === "f" || e.key === "F") { toggleFullscreen(); return; }
@@ -295,7 +297,7 @@
   let menuState = null;
   function openMenu() {
     Audio.play("open");
-    menuState = { items: ["MEMEDEX", "TEAM", "BAG", "SAVE", "MUTE", "CLOSE"], idx: 0 };
+    menuState = { items: ["MEMEDEX", "TEAM", "BAG", "STATS", "SAVE", "MUTE", "CLOSE"], idx: 0 };
     game.mode = "menu";
     renderMenu();
     document.getElementById("menu").classList.remove("hidden");
@@ -336,6 +338,21 @@
     if (choice === "TEAM") { closeMenu(); openTeamMenu(false); return; }
     if (choice === "BAG") { closeMenu(); openBagMenu(false); return; }
     if (choice === "MEMEDEX") { closeMenu(); openDex(); return; }
+    if (choice === "STATS") { closeMenu(); showStatsDialog(); return; }
+  }
+
+  function showStatsDialog() {
+    const s = game.stats;
+    const playMs = Date.now() - (s.startedAt || Date.now());
+    const mins = Math.floor(playMs / 60000);
+    const seenCount = Object.keys(game.dex.seen || {}).length;
+    const caughtCount = Object.keys(game.dex.caught || {}).length;
+    showDialog([
+      "═══ TRAINER STATS ═══",
+      `Steps walked: ${s.steps}\nBattles won: ${s.battlesWon}\nMons caught: ${s.monsCaught}`,
+      `Memedex: ${seenCount} seen / ${caughtCount} caught\nBadges: ${game.badges}/5`,
+      `Session playtime: ${mins} min\nMoney: $${game.money}`,
+    ], () => {});
   }
 
   // ----- Memedex -----
@@ -709,6 +726,7 @@
       onEnd: (result) => {
         if (result.defeatedTrainer) {
           npc.defeated = true;
+          game.stats.battlesWon++;
           if (data.reward) game.money += data.reward;
           const lines = [];
           if (data.reward) lines.push(`You earned $${data.reward}!`);
@@ -760,6 +778,7 @@
       onEnd: (result) => {
         if (result.caught) {
           markDexCaught(result.enemyMon.species);
+          game.stats.monsCaught++;
           if (game.team.length < 6) game.team.push(result.enemyMon);
           else game.box.push(result.enemyMon);
         }
@@ -848,6 +867,7 @@
       p.pixelY = p.tileY * 16;
       p.moving = false;
       p.stepCounter++;
+      game.stats.steps++;
       // 4-frame walk cycle: contact-L → left-lead → contact-R → right-lead
       p.animFrame = (p.animFrame + 1) % 4;
       // map transition?
@@ -915,9 +935,12 @@
       badges: game.badges,
       dex: game.dex,
       beatenChampion: !!game.beatenChampion,
+      stats: game.stats,
       defeated, consumed,
     };
     try { localStorage.setItem("brainrot_save_v4", JSON.stringify(data)); } catch(e) {}
+    // Surface a tiny "Saved!" toast on every save so the player has feedback.
+    game.saveToast = 60;
   }
   function loadSave() {
     try {
@@ -945,6 +968,16 @@
         markDexCaught(m.species);
       }
       game.beatenChampion = !!data.beatenChampion;
+      if (data.stats) {
+        // merge stored counters but reset session start to "now" so playtime
+        // accrues from save load
+        game.stats = {
+          steps: data.stats.steps || 0,
+          battlesWon: data.stats.battlesWon || 0,
+          monsCaught: data.stats.monsCaught || 0,
+          startedAt: data.stats.startedAt || Date.now(),
+        };
+      }
       const defs = data.defeated || [];
       const cons = data.consumed || [];
       for (const m of World.allMaps()) {
@@ -963,6 +996,9 @@
     if ((game.bag[itemKey] || 0) <= 0) return false;
     game.bag[itemKey]--;
     return true;
+  };
+  window.__brainrotBagSnapshot = function() {
+    return Object.assign({}, game.bag);
   };
   window.__brainrotOpenBag = function(fromBattle) { openBagMenu(fromBattle); };
   window.__brainrotOpenTeam = function(fromBattle) { openTeamMenu(fromBattle); };
@@ -1075,6 +1111,7 @@
     if (game.mode === "dialog") tickDialogTypewriter(dt);
     if (game.flashTime > 0) game.flashTime--;
     if (game.healFx > 0) game.healFx--;
+    if (game.saveToast > 0) game.saveToast--;
     // try to keep overworld music alive
     if ((game.mode === "overworld" || game.mode === "menu" || game.mode === "team" ||
          game.mode === "bag" || game.mode === "dex" || game.mode === "shop") &&
@@ -1140,6 +1177,17 @@
     }
     // floating Z prompt above NPC the player faces
     drawInteractionPrompt(time);
+
+    // save toast (small, top-right under map name)
+    if (game.saveToast > 0) {
+      const a = game.saveToast < 15 ? game.saveToast / 15 : 1;
+      ctx.fillStyle = `rgba(0,0,0,${0.7 * a})`;
+      ctx.fillRect(canvas.width - 50, 14, 48, 9);
+      ctx.fillStyle = `rgba(120,255,180,${a})`;
+      ctx.font = "bold 5px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("✓ SAVED", canvas.width - 26, 21);
+    }
 
     // map banner (shows when entering new map)
     if (game.mapBanner.t > 0) {

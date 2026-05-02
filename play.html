@@ -1336,6 +1336,7 @@ const SPECIES = {
     base: { hp: 90, atk: 70, def: 80, spd: 45 },
     catchRate: 35, xpYield: 110,
     learn: [[1, "TACKLE"], [1, "FRIDGE_SLAM"], [14, "SIGMA_STARE"], [22, "OHIO_BOMB"], [30, "ALPHA_PUNCH"]],
+    evolvesTo: "VACCAGALAXIA", evolvesAt: 32,
     color1: "#fff5e0", color2: "#3a2218", color3: "#9aa5ff",
   },
 
@@ -1386,6 +1387,7 @@ const SPECIES = {
     base: { hp: 95, atk: 80, def: 85, spd: 35 },
     catchRate: 30, xpYield: 130,
     learn: [[1, "TACKLE"], [1, "CACTUS_PUNCH"], [14, "FRIDGE_SLAM"], [22, "ALPHA_PUNCH"], [30, "OHIO_BOMB"]],
+    evolvesTo: "COCOFANTITAN", evolvesAt: 36,
     color1: "#7a5a3a", color2: "#a07040", color3: "#fff5b3",
   },
 
@@ -1460,6 +1462,72 @@ const SPECIES = {
     color1: "#ffaaff", color2: "#aaffff", color3: "#ff8a00",
   },
 
+  // ----- EVOLUTIONS FOR NEW SPECIES -----
+  VACCAGALAXIA: {
+    id: "VACCAGALAXIA", name: "Vacca Galaxia",
+    flavor: "Vacca Saturno's evolved form. The rings are now solid stardust.",
+    types: ["Sigma", "Steel"],
+    base: { hp: 110, atk: 90, def: 100, spd: 60 },
+    catchRate: 15, xpYield: 175,
+    learn: [[1, "FRIDGE_SLAM"], [1, "ALPHA_PUNCH"], [30, "OHIO_BOMB"], [40, "GLORBO_BEAM"]],
+    color1: "#fff5e0", color2: "#1a0a3a", color3: "#ffd700",
+  },
+  COCOFANTITAN: {
+    id: "COCOFANTITAN", name: "Cocofantitan",
+    flavor: "An elephant whose entire body is now coconut. Solid as concrete.",
+    types: ["Earth", "Steel"],
+    base: { hp: 120, atk: 95, def: 110, spd: 30 },
+    catchRate: 15, xpYield: 180,
+    learn: [[1, "CACTUS_PUNCH"], [1, "FRIDGE_SLAM"], [1, "ALPHA_PUNCH"], [36, "OHIO_BOMB"]],
+    color1: "#5a3818", color2: "#8a6028", color3: "#fff5b3",
+  },
+
+  // ----- MORE BRAINROT EXPANSION -----
+  COCCODRILLO: {
+    id: "COCCODRILLO", name: "Crocodillo Bombardillo",
+    flavor: "A crocodile carrying a smaller bomber on its back. Confused but loyal.",
+    types: ["Beast", "Fire"],
+    base: { hp: 75, atk: 80, def: 65, spd: 55 },
+    catchRate: 50, xpYield: 90,
+    learn: [[1, "SHARK_BITE"], [1, "EMBER"], [14, "BOMBARDINO"], [24, "ALPHA_PUNCH"]],
+    color1: "#3a6a30", color2: "#a07040", color3: "#ff6b3d",
+  },
+  GIRAFFA: {
+    id: "GIRAFFA", name: "Giraffa Celeste",
+    flavor: "A giraffe with a head in the clouds. Literally — its head pokes through.",
+    types: ["Air", "Beast"],
+    base: { hp: 75, atk: 65, def: 60, spd: 70 },
+    catchRate: 60, xpYield: 80,
+    learn: [[1, "TACKLE"], [1, "WHIRLWIND"], [14, "GUSINI_DIVE"], [22, "ALPHA_PUNCH"]],
+    color1: "#ffd590", color2: "#a3361f", color3: "#cfe9ff",
+  },
+  GORLAMI: {
+    id: "GORLAMI", name: "Gorlami Italiano",
+    flavor: "Says 'gorlami' instead of any other word. Surprisingly polite.",
+    types: ["Pasta", "Sigma"],
+    base: { hp: 60, atk: 70, def: 60, spd: 80 },
+    catchRate: 55, xpYield: 85,
+    learn: [[1, "AL_DENTE"], [1, "SIGMA_STARE"], [14, "RIGATONI_RUSH"], [22, "ALPHA_PUNCH"]],
+    color1: "#3aa83a", color2: "#fff5b3", color3: "#d44a2a",
+  },
+  TUFFOTUFFO: {
+    id: "TUFFOTUFFO", name: "Tuffo Tuffo Mare",
+    flavor: "A diving duckling that yells 'tuffo!' before every cannonball.",
+    types: ["Water", "Air"],
+    base: { hp: 55, atk: 60, def: 50, spd: 80 },
+    catchRate: 75, xpYield: 65,
+    learn: [[1, "TRALA_WAVE"], [1, "WHIRLWIND"], [12, "TOILET_FLUSH"], [22, "GUSINI_DIVE"]],
+    color1: "#ffe070", color2: "#3a78dc", color3: "#ff8a4a",
+  },
+  GROOVYTOR: {
+    id: "GROOVYTOR", name: "Groovytor 2026",
+    flavor: "Permanently in dance mode. 2026's dance trend incarnate.",
+    types: ["Chaos", "Air"],
+    base: { hp: 60, atk: 70, def: 55, spd: 90 },
+    catchRate: 50, xpYield: 95,
+    learn: [[1, "RIZZ_CHARM"], [1, "WHIRLWIND"], [16, "ALPHA_PUNCH"], [26, "OHIO_BOMB"]],
+    color1: "#ff3d9b", color2: "#ffd700", color3: "#9aa5ff",
+  },
   // ----- POST-CHAMPION SECRET -----
   TUNGTITAN: {
     id: "TUNGTITAN", name: "Tung-Tung-Tung Sahur Maximus",
@@ -1504,16 +1572,18 @@ const ENCOUNTERS = {
     { id: "SALAMINO", weight: 5, minLvl: 9, maxLvl: 13 },
   ],
   FOREST_NORTH: [
-    { id: "PATAPIM", weight: 18, minLvl: 6, maxLvl: 10 },
-    { id: "CHIMPANZ", weight: 13, minLvl: 6, maxLvl: 10 },
-    { id: "ZUCCHINI", weight: 13, minLvl: 7, maxLvl: 11 },
-    { id: "TURBOFROGGO", weight: 9, minLvl: 8, maxLvl: 12 },
-    { id: "PIGEONORE", weight: 13, minLvl: 5, maxLvl: 9 },
-    { id: "CRINGEFLY", weight: 9, minLvl: 5, maxLvl: 9 },
-    { id: "GROCCO", weight: 9, minLvl: 9, maxLvl: 13 },
+    { id: "PATAPIM", weight: 16, minLvl: 6, maxLvl: 10 },
+    { id: "CHIMPANZ", weight: 11, minLvl: 6, maxLvl: 10 },
+    { id: "ZUCCHINI", weight: 11, minLvl: 7, maxLvl: 11 },
+    { id: "TURBOFROGGO", weight: 8, minLvl: 8, maxLvl: 12 },
+    { id: "PIGEONORE", weight: 11, minLvl: 5, maxLvl: 9 },
+    { id: "CRINGEFLY", weight: 8, minLvl: 5, maxLvl: 9 },
+    { id: "GROCCO", weight: 8, minLvl: 9, maxLvl: 13 },
     { id: "ZESTYBOI", weight: 5, minLvl: 8, maxLvl: 12 },
     { id: "TIGRILINI", weight: 6, minLvl: 9, maxLvl: 13 },
     { id: "COCOFANTO", weight: 5, minLvl: 10, maxLvl: 14 },
+    { id: "GIRAFFA", weight: 6, minLvl: 8, maxLvl: 12 },
+    { id: "COCCODRILLO", weight: 5, minLvl: 9, maxLvl: 13 },
   ],
   FOREST_EAST: [
     { id: "ZUCCHINI", weight: 18, minLvl: 8, maxLvl: 13 },
@@ -1537,10 +1607,12 @@ const ENCOUNTERS = {
     { id: "PIGEONORE", weight: 7, minLvl: 10, maxLvl: 14 },
     { id: "TRALATITAN", weight: 1, minLvl: 30, maxLvl: 35 },
     { id: "TRALALERONE", weight: 5, minLvl: 18, maxLvl: 22 },
-    { id: "TRULIMERO", weight: 9, minLvl: 12, maxLvl: 16 },
-    { id: "SALAMINO", weight: 7, minLvl: 13, maxLvl: 17 },
+    { id: "TRULIMERO", weight: 8, minLvl: 12, maxLvl: 16 },
+    { id: "SALAMINO", weight: 6, minLvl: 13, maxLvl: 17 },
     { id: "TIGRILINI", weight: 6, minLvl: 14, maxLvl: 18 },
     { id: "AURAFARM", weight: 4, minLvl: 16, maxLvl: 20 },
+    { id: "TUFFOTUFFO", weight: 8, minLvl: 11, maxLvl: 15 },
+    { id: "GROOVYTOR", weight: 4, minLvl: 14, maxLvl: 18 },
   ],
   GYM_GRASS: [
     { id: "RIZZARDO", weight: 15, minLvl: 14, maxLvl: 18 },
@@ -1567,11 +1639,17 @@ const ENCOUNTERS = {
     { id: "MARGHERITRON", weight: 4, minLvl: 24, maxLvl: 30 },
     { id: "TRALATITAN", weight: 1, minLvl: 38, maxLvl: 44 },
     { id: "BRAINCORE", weight: 1, minLvl: 38, maxLvl: 44 },
-    { id: "AISLOP", weight: 6, minLvl: 26, maxLvl: 32 },
-    { id: "FANUMTAX", weight: 6, minLvl: 24, maxLvl: 30 },
-    { id: "VACCASATURN", weight: 5, minLvl: 24, maxLvl: 30 },
-    { id: "SEVENSEVEN", weight: 5, minLvl: 26, maxLvl: 32 },
+    { id: "AISLOP", weight: 5, minLvl: 26, maxLvl: 32 },
+    { id: "FANUMTAX", weight: 5, minLvl: 24, maxLvl: 30 },
+    { id: "VACCASATURN", weight: 4, minLvl: 24, maxLvl: 30 },
+    { id: "SEVENSEVEN", weight: 4, minLvl: 26, maxLvl: 32 },
     { id: "TUNGTITAN", weight: 1, minLvl: 40, maxLvl: 46 },
+    { id: "VACCAGALAXIA", weight: 3, minLvl: 33, maxLvl: 38 },
+    { id: "COCOFANTITAN", weight: 3, minLvl: 36, maxLvl: 42 },
+    { id: "GROOVYTOR", weight: 5, minLvl: 22, maxLvl: 28 },
+    { id: "GORLAMI", weight: 5, minLvl: 24, maxLvl: 30 },
+    { id: "GIRAFFA", weight: 5, minLvl: 22, maxLvl: 28 },
+    { id: "COCCODRILLO", weight: 5, minLvl: 24, maxLvl: 30 },
   ],
   MT_MOON: [
     { id: "FRIGO", weight: 18, minLvl: 9, maxLvl: 13 },
@@ -2501,6 +2579,190 @@ const SpriteRenderer = (() => {
       px(ctx, x+s*0.92 - slash, y+s*0.40+bob, s*0.04, s*0.40, "#1a1a1a");
       px(ctx, x+s*0.92 - slash, y+s*0.20+bob, s*0.02, s*0.20, "#cfe9ff");
       px(ctx, x+s*0.93 - slash, y+s*0.16+bob, s*0.02, s*0.04, "#fff");
+    },
+
+    // Lirili Larila — cactus elephant in flip-flops
+    LIRILI(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.003) * 1;
+      shadow(ctx, x + s/2, y + s - 4, s*0.45, 4);
+      // big elephant body, green cactus skin
+      px(ctx, x+s*0.18, y+s*0.42+bob, s*0.64, s*0.34, sp.color1);
+      px(ctx, x+s*0.20, y+s*0.54+bob, s*0.60, s*0.18, "#3a7a30");
+      // cactus spines (vertical lines)
+      for (let i = 0; i < 6; i++) {
+        px(ctx, x+s*(0.24 + i*0.10), y+s*0.44+bob, s*0.01, s*0.20, "#1e4a18");
+      }
+      // small cactus flower on back
+      px(ctx, x+s*0.42, y+s*0.40+bob, s*0.06, s*0.04, sp.color2);
+      // head
+      px(ctx, x+s*0.06, y+s*0.36+bob, s*0.18, s*0.22, sp.color1);
+      // trunk
+      px(ctx, x+s*0.02, y+s*0.50+bob, s*0.10, s*0.08, sp.color1);
+      px(ctx, x+s*0.00, y+s*0.56+bob, s*0.08, s*0.04, sp.color1);
+      // ear
+      px(ctx, x+s*0.04, y+s*0.40+bob, s*0.06, s*0.10, sp.color1);
+      // eye
+      px(ctx, x+s*0.12, y+s*0.42+bob, s*0.05, s*0.05, "#fff");
+      px(ctx, x+s*0.13, y+s*0.43+bob, s*0.03, s*0.03, "#000");
+      // 4 legs
+      for (let i = 0; i < 4; i++) {
+        px(ctx, x+s*(0.22 + i*0.16), y+s*0.74+bob, s*0.08, s*0.12, sp.color1);
+        // flip-flops
+        px(ctx, x+s*(0.20 + i*0.16), y+s*0.86+bob, s*0.12, s*0.04, sp.color3);
+        px(ctx, x+s*(0.24 + i*0.16), y+s*0.84+bob, s*0.02, s*0.04, "#ffe070");
+      }
+    },
+
+    // Brr Brr Patapim — baboon-tree creature
+    PATAPIM(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.004) * 1;
+      shadow(ctx, x + s/2, y + s - 4, s*0.4, 4);
+      // tree trunk legs
+      px(ctx, x+s*0.30, y+s*0.62+bob, s*0.10, s*0.24, sp.color2);
+      px(ctx, x+s*0.60, y+s*0.62+bob, s*0.10, s*0.24, sp.color2);
+      px(ctx, x+s*0.30, y+s*0.86+bob, s*0.10, s*0.04, "#3a2218");
+      px(ctx, x+s*0.60, y+s*0.86+bob, s*0.10, s*0.04, "#3a2218");
+      // body — green leafy torso
+      px(ctx, x+s*0.22, y+s*0.34+bob, s*0.56, s*0.32, sp.color1);
+      // leafy tufts
+      px(ctx, x+s*0.18, y+s*0.30+bob, s*0.10, s*0.10, sp.color1);
+      px(ctx, x+s*0.72, y+s*0.30+bob, s*0.10, s*0.10, sp.color1);
+      // baboon head
+      px(ctx, x+s*0.30, y+s*0.10+bob, s*0.40, s*0.26, sp.color2);
+      // long proboscis nose
+      px(ctx, x+s*0.32, y+s*0.22+bob, s*0.10, s*0.16, "#ff8aa8");
+      // eyes
+      px(ctx, x+s*0.46, y+s*0.18+bob, s*0.06, s*0.06, "#ffe070");
+      px(ctx, x+s*0.58, y+s*0.18+bob, s*0.06, s*0.06, "#ffe070");
+      px(ctx, x+s*0.48, y+s*0.20+bob, s*0.02, s*0.04, "#000");
+      px(ctx, x+s*0.60, y+s*0.20+bob, s*0.02, s*0.04, "#000");
+      // mouth
+      px(ctx, x+s*0.46, y+s*0.30+bob, s*0.16, s*0.02, "#000");
+    },
+
+    // Trippi Troppi — cat-shrimp floater
+    TRIPPI(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.006) * 2;  // floats higher
+      shadow(ctx, x + s/2, y + s - 2, s*0.3, 3);
+      // shrimp body (curled, segmented)
+      px(ctx, x+s*0.20, y+s*0.40+bob, s*0.50, s*0.20, sp.color1);
+      // shrimp segments (orange stripes)
+      for (let i = 0; i < 4; i++) {
+        px(ctx, x+s*(0.24 + i*0.12), y+s*0.40+bob, s*0.02, s*0.20, sp.color2);
+      }
+      // shrimp tail curling up
+      px(ctx, x+s*0.66, y+s*0.34+bob, s*0.10, s*0.06, sp.color1);
+      px(ctx, x+s*0.70, y+s*0.28+bob, s*0.06, s*0.06, sp.color1);
+      // tiny shrimp legs underneath
+      for (let i = 0; i < 4; i++) {
+        px(ctx, x+s*(0.24 + i*0.10), y+s*0.60+bob, s*0.02, s*0.06, sp.color1);
+      }
+      // CAT HEAD on top
+      px(ctx, x+s*0.20, y+s*0.18+bob, s*0.30, s*0.24, sp.color3);
+      // cat ears
+      px(ctx, x+s*0.20, y+s*0.12+bob, s*0.08, s*0.08, sp.color3);
+      px(ctx, x+s*0.42, y+s*0.12+bob, s*0.08, s*0.08, sp.color3);
+      // floating effect — small ground-shimmer beneath body
+      px(ctx, x+s*0.30, y+s*s + 0, s*0.40, s*0.01, "rgba(255,255,255,0.3)");
+      // big eyes
+      px(ctx, x+s*0.24, y+s*0.24+bob, s*0.06, s*0.06, "#fff");
+      px(ctx, x+s*0.36, y+s*0.24+bob, s*0.06, s*0.06, "#fff");
+      px(ctx, x+s*0.26, y+s*0.26+bob, s*0.02, s*0.04, "#000");
+      px(ctx, x+s*0.38, y+s*0.26+bob, s*0.02, s*0.04, "#000");
+      // confused expression — wiggly mouth
+      const wig = Math.sin(t * 0.01);
+      px(ctx, x+s*0.28, y+s*0.34+bob, s*0.04, s*0.02, "#000");
+      px(ctx, x+s*0.32 + wig*0.5, y+s*0.32+bob, s*0.04, s*0.02, "#000");
+      px(ctx, x+s*0.36, y+s*0.34+bob, s*0.04, s*0.02, "#000");
+    },
+
+    // Pigeonore di Venezia — tired pigeon
+    PIGEONORE(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.005) * 1;
+      shadow(ctx, x + s/2, y + s - 4, s*0.35, 4);
+      // body
+      px(ctx, x+s*0.26, y+s*0.40+bob, s*0.46, s*0.28, sp.color1);
+      // chest pop
+      px(ctx, x+s*0.30, y+s*0.46+bob, s*0.36, s*0.16, "#c8c8c8");
+      // wing
+      px(ctx, x+s*0.50, y+s*0.40+bob, s*0.20, s*0.16, sp.color2);
+      // head
+      px(ctx, x+s*0.20, y+s*0.30+bob, s*0.20, s*0.18, sp.color1);
+      // beak (orange)
+      px(ctx, x+s*0.10, y+s*0.36+bob, s*0.10, s*0.06, sp.color3);
+      // eye (tired)
+      px(ctx, x+s*0.26, y+s*0.34+bob, s*0.04, s*0.02, "#000");
+      // legs
+      px(ctx, x+s*0.36, y+s*0.68+bob, s*0.02, s*0.10, sp.color3);
+      px(ctx, x+s*0.56, y+s*0.68+bob, s*0.02, s*0.10, sp.color3);
+      px(ctx, x+s*0.34, y+s*0.78+bob, s*0.06, s*0.02, sp.color3);
+      px(ctx, x+s*0.54, y+s*0.78+bob, s*0.06, s*0.02, sp.color3);
+    },
+
+    // Cringefly — cringe energy moth
+    CRINGEFLY(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.012) * 3;
+      const wing = Math.sin(t * 0.04);
+      shadow(ctx, x + s/2, y + s - 4, s*0.25, 3);
+      // wings (flapping)
+      const wW = s*0.30 + wing * s*0.06;
+      ctx.fillStyle = sp.color1;
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      ctx.ellipse(x+s*0.30, y+s*0.40+bob, wW, s*0.18, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x+s*0.70, y+s*0.40+bob, wW, s*0.18, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      // wing patterns (2026 cringe spiral)
+      px(ctx, x+s*0.26, y+s*0.40+bob, s*0.04, s*0.04, sp.color2);
+      px(ctx, x+s*0.66, y+s*0.40+bob, s*0.04, s*0.04, sp.color2);
+      // body
+      px(ctx, x+s*0.42, y+s*0.36+bob, s*0.16, s*0.30, sp.color3);
+      // big anime eyes
+      px(ctx, x+s*0.40, y+s*0.32+bob, s*0.08, s*0.08, "#fff");
+      px(ctx, x+s*0.52, y+s*0.32+bob, s*0.08, s*0.08, "#fff");
+      px(ctx, x+s*0.42, y+s*0.34+bob, s*0.04, s*0.06, "#000");
+      px(ctx, x+s*0.54, y+s*0.34+bob, s*0.04, s*0.06, "#000");
+      // antennae
+      px(ctx, x+s*0.42, y+s*0.20+bob, s*0.02, s*0.10, sp.color3);
+      px(ctx, x+s*0.56, y+s*0.20+bob, s*0.02, s*0.10, sp.color3);
+      px(ctx, x+s*0.40, y+s*0.18+bob, s*0.04, s*0.04, sp.color2);
+      px(ctx, x+s*0.56, y+s*0.18+bob, s*0.04, s*0.04, sp.color2);
+    },
+
+    // Vacca Galaxia — Saturn cow's evolved form
+    VACCAGALAXIA(ctx, sp, x, y, s, t) {
+      SPECIAL.VACCASATURN(ctx, sp, x, y, s, t);
+      // extra cosmic ring + stars
+      const cx = x+s*0.5, cy = y+s*0.55 + Math.sin(t * 0.003);
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(t * 0.0008 + 0.3);
+      ctx.strokeStyle = "rgba(255,215,0,0.7)";
+      ctx.lineWidth = Math.max(1, s*0.02);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, s*0.62, s*0.16, 0, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+      // tiny stars around
+      for (let i = 0; i < 4; i++) {
+        const a = t * 0.001 + i * Math.PI/2;
+        px(ctx, x+s*0.5 + Math.cos(a)*s*0.45, y+s*0.45 + Math.sin(a)*s*0.30, s*0.03, s*0.03, "#fff");
+      }
+    },
+
+    // Cocofantitan — bigger tougher Cocofanto
+    COCOFANTITAN(ctx, sp, x, y, s, t) {
+      SPECIAL.COCOFANTO(ctx, sp, x, y, s, t);
+      // armor plates on legs
+      px(ctx, x+s*0.22, y+s*0.78, s*0.10, s*0.04, "#1a1a1a");
+      px(ctx, x+s*0.38, y+s*0.78, s*0.10, s*0.04, "#1a1a1a");
+      px(ctx, x+s*0.54, y+s*0.78, s*0.10, s*0.04, "#1a1a1a");
+      px(ctx, x+s*0.70, y+s*0.78, s*0.10, s*0.04, "#1a1a1a");
+      // chest crystal
+      px(ctx, x+s*0.46, y+s*0.50, s*0.08, s*0.10, sp.color3);
     },
 
     // Tung-Tung-Tung Sahur Maximus — a pile of bats with a face
@@ -4227,6 +4489,34 @@ const Battle = (() => {
     return true;
   }
 
+  // Quick-heal in battle: pick the strongest heal item the player owns
+  // and apply it to the active mon, all without opening the bag menu.
+  function quickHeal() {
+    if (!state || state.phase !== "menu" || state.uiBlocked) return;
+    const mon = playerMon();
+    if (mon.hp >= mon.maxHp) {
+      Audio.play("cancel");
+      enqueue(`${SPECIES[mon.species].name} is already at full HP.`);
+      state.phase = "endTurn";
+      nextMessage();
+      return;
+    }
+    const bag = (typeof window.__brainrotBagSnapshot === "function")
+      ? window.__brainrotBagSnapshot()
+      : {};
+    // Order from strongest to weakest so we use the elixir before a cappuccino.
+    const ranked = ["ELIXIR", "ESPRESSO_DBL", "CAPPUCCINO"];
+    const choice = ranked.find(k => (bag[k] || 0) > 0);
+    if (!choice) {
+      Audio.play("cancel");
+      enqueue("No heal items in your bag!");
+      state.phase = "endTurn";
+      nextMessage();
+      return;
+    }
+    useHealItemInBattle(choice);
+  }
+
   function useHealItemInBattle(itemKey) {
     const item = ITEMS[itemKey];
     if (!item || !item.heal) return false;
@@ -4368,13 +4658,32 @@ const Battle = (() => {
     return v + Math.sign(d) * max;
   }
 
+  // Per-map battle backdrop palettes — keep the gradient shape, swap colors
+  // so a fight in a forest doesn't look identical to a fight in a cave.
+  const BATTLE_BG = {
+    pallet:    ["#3a1a5c", "#5b2d8c", "#2a8c4a"],
+    route1:    ["#3a1a5c", "#5b2d8c", "#2a8c4a"],
+    viridian:  ["#3a1a5c", "#5b2d8c", "#2a8c4a"],
+    route2:    ["#1f3a1f", "#306030", "#5fa84a"],
+    forest:    ["#0e2a14", "#1f4a2a", "#3a7a3a"],
+    pewter:    ["#3a3a4a", "#5a5a6a", "#7a7a8a"],
+    route3:    ["#5a3a2a", "#7a5a3a", "#a07050"],
+    mt_moon:   ["#1a1430", "#3a2858", "#5a4080"],   // cave purple
+    cerulean:  ["#1a3a5c", "#2d5d8c", "#4a8cd5"],   // cool blue
+    route4:    ["#2a5a8c", "#4a8cd0", "#d4a043"],   // coastal
+    vermilion: ["#5a1a2a", "#8c2d3a", "#d44a2a"],   // warm port
+  };
+
   function draw(ctx, time) {
     if (!state) return;
     const W = ctx.canvas.width, H = ctx.canvas.height;
+    // Pick palette based on current map id; default to original purple/green.
+    const mapId = (window.__brainrot && window.__brainrot.game && window.__brainrot.game.currentMap) || "pallet";
+    const palette = BATTLE_BG[mapId] || BATTLE_BG.pallet;
     const grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, "#3a1a5c");
-    grad.addColorStop(0.5, "#5b2d8c");
-    grad.addColorStop(1, "#2a8c4a");
+    grad.addColorStop(0, palette[0]);
+    grad.addColorStop(0.5, palette[1]);
+    grad.addColorStop(1, palette[2]);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
     // grid floor
@@ -4463,6 +4772,8 @@ const Battle = (() => {
     if (state.phase === "menu") {
       if (key === "z" || key === "Enter") { handleAction("fight"); return true; }
       if (key === "x") { handleAction("run"); return true; }
+      // Quick-heal: H uses the strongest available heal item on the active mon.
+      if (key === "h") { quickHeal(); return true; }
       return true;
     }
     if (key === "z" || key === "Enter" || key === " ") {
@@ -4518,7 +4829,9 @@ const Battle = (() => {
     encounterCooldown: 0,
     flashTime: 0,
     badges: 0,
-    healFx: 0,  // ticks down while heal sparkle is animating
+    healFx: 0,            // ticks down while heal sparkle is animating
+    saveToast: 0,         // ticks down while "Saved!" toast is on screen
+    stats: { steps: 0, battlesWon: 0, monsCaught: 0, startedAt: Date.now() },
   };
 
   const keys = {};
@@ -4526,7 +4839,7 @@ const Battle = (() => {
   let nowTime = 0;
 
   window.addEventListener("keydown", (e) => {
-    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Enter","z","x","Z","X","Escape","f","F"].includes(e.key)) {
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Enter","z","x","Z","X","Escape","f","F","h","H"].includes(e.key)) {
       e.preventDefault();
     }
     if (e.key === "f" || e.key === "F") { toggleFullscreen(); return; }
@@ -4780,7 +5093,7 @@ const Battle = (() => {
   let menuState = null;
   function openMenu() {
     Audio.play("open");
-    menuState = { items: ["MEMEDEX", "TEAM", "BAG", "SAVE", "MUTE", "CLOSE"], idx: 0 };
+    menuState = { items: ["MEMEDEX", "TEAM", "BAG", "STATS", "SAVE", "MUTE", "CLOSE"], idx: 0 };
     game.mode = "menu";
     renderMenu();
     document.getElementById("menu").classList.remove("hidden");
@@ -4821,6 +5134,21 @@ const Battle = (() => {
     if (choice === "TEAM") { closeMenu(); openTeamMenu(false); return; }
     if (choice === "BAG") { closeMenu(); openBagMenu(false); return; }
     if (choice === "MEMEDEX") { closeMenu(); openDex(); return; }
+    if (choice === "STATS") { closeMenu(); showStatsDialog(); return; }
+  }
+
+  function showStatsDialog() {
+    const s = game.stats;
+    const playMs = Date.now() - (s.startedAt || Date.now());
+    const mins = Math.floor(playMs / 60000);
+    const seenCount = Object.keys(game.dex.seen || {}).length;
+    const caughtCount = Object.keys(game.dex.caught || {}).length;
+    showDialog([
+      "═══ TRAINER STATS ═══",
+      `Steps walked: ${s.steps}\nBattles won: ${s.battlesWon}\nMons caught: ${s.monsCaught}`,
+      `Memedex: ${seenCount} seen / ${caughtCount} caught\nBadges: ${game.badges}/5`,
+      `Session playtime: ${mins} min\nMoney: ${game.money}`,
+    ], () => {});
   }
 
   // ----- Memedex -----
@@ -5194,6 +5522,7 @@ const Battle = (() => {
       onEnd: (result) => {
         if (result.defeatedTrainer) {
           npc.defeated = true;
+          game.stats.battlesWon++;
           if (data.reward) game.money += data.reward;
           const lines = [];
           if (data.reward) lines.push(`You earned ${data.reward}!`);
@@ -5245,6 +5574,7 @@ const Battle = (() => {
       onEnd: (result) => {
         if (result.caught) {
           markDexCaught(result.enemyMon.species);
+          game.stats.monsCaught++;
           if (game.team.length < 6) game.team.push(result.enemyMon);
           else game.box.push(result.enemyMon);
         }
@@ -5333,6 +5663,7 @@ const Battle = (() => {
       p.pixelY = p.tileY * 16;
       p.moving = false;
       p.stepCounter++;
+      game.stats.steps++;
       // 4-frame walk cycle: contact-L → left-lead → contact-R → right-lead
       p.animFrame = (p.animFrame + 1) % 4;
       // map transition?
@@ -5400,9 +5731,12 @@ const Battle = (() => {
       badges: game.badges,
       dex: game.dex,
       beatenChampion: !!game.beatenChampion,
+      stats: game.stats,
       defeated, consumed,
     };
     try { localStorage.setItem("brainrot_save_v4", JSON.stringify(data)); } catch(e) {}
+    // Surface a tiny "Saved!" toast on every save so the player has feedback.
+    game.saveToast = 60;
   }
   function loadSave() {
     try {
@@ -5430,6 +5764,16 @@ const Battle = (() => {
         markDexCaught(m.species);
       }
       game.beatenChampion = !!data.beatenChampion;
+      if (data.stats) {
+        // merge stored counters but reset session start to "now" so playtime
+        // accrues from save load
+        game.stats = {
+          steps: data.stats.steps || 0,
+          battlesWon: data.stats.battlesWon || 0,
+          monsCaught: data.stats.monsCaught || 0,
+          startedAt: data.stats.startedAt || Date.now(),
+        };
+      }
       const defs = data.defeated || [];
       const cons = data.consumed || [];
       for (const m of World.allMaps()) {
@@ -5448,6 +5792,9 @@ const Battle = (() => {
     if ((game.bag[itemKey] || 0) <= 0) return false;
     game.bag[itemKey]--;
     return true;
+  };
+  window.__brainrotBagSnapshot = function() {
+    return Object.assign({}, game.bag);
   };
   window.__brainrotOpenBag = function(fromBattle) { openBagMenu(fromBattle); };
   window.__brainrotOpenTeam = function(fromBattle) { openTeamMenu(fromBattle); };
@@ -5560,6 +5907,7 @@ const Battle = (() => {
     if (game.mode === "dialog") tickDialogTypewriter(dt);
     if (game.flashTime > 0) game.flashTime--;
     if (game.healFx > 0) game.healFx--;
+    if (game.saveToast > 0) game.saveToast--;
     // try to keep overworld music alive
     if ((game.mode === "overworld" || game.mode === "menu" || game.mode === "team" ||
          game.mode === "bag" || game.mode === "dex" || game.mode === "shop") &&
@@ -5625,6 +5973,17 @@ const Battle = (() => {
     }
     // floating Z prompt above NPC the player faces
     drawInteractionPrompt(time);
+
+    // save toast (small, top-right under map name)
+    if (game.saveToast > 0) {
+      const a = game.saveToast < 15 ? game.saveToast / 15 : 1;
+      ctx.fillStyle = `rgba(0,0,0,${0.7 * a})`;
+      ctx.fillRect(canvas.width - 50, 14, 48, 9);
+      ctx.fillStyle = `rgba(120,255,180,${a})`;
+      ctx.font = "bold 5px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("✓ SAVED", canvas.width - 26, 21);
+    }
 
     // map banner (shows when entering new map)
     if (game.mapBanner.t > 0) {

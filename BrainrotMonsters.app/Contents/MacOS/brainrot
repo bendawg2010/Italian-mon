@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# Brainrot Monsters — native Mac app entry point.
+# This is what runs when the user double-clicks BrainrotMonsters.app
+# in Finder or launches it from the Dock. Unlike play.command this
+# doesn't open a Terminal window at all — the game just appears.
+#
+# Strategy:
+#   1. Locate the game files relative to the .app bundle.
+#   2. Start a tiny Python http.server on port 8765 (background).
+#   3. Open the game in Chrome/Edge/Brave/Arc in --app fullscreen
+#      mode (chromeless, looks like a native window).
+#   4. Wait until the browser exits, then kill the server.
+
+set -e
+
+# The .app bundle layout is:
+#   BrainrotMonsters.app/
+#     Contents/
+#       MacOS/brainrot          <-- this file
+#       Info.plist
+# Game files live next to the .app (in the Italian-mon folder).
+BUNDLE_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+GAME_DIR="$(cd "$(dirname "$BUNDLE_DIR")" && pwd)"
+
+# If somebody dragged the .app out of the Italian-mon folder, fall back
+# to looking for index.html siblings.
+if [ ! -f "$GAME_DIR/index.html" ]; then
+  if [ -f "$BUNDLE_DIR/../index.html" ]; then
+    GAME_DIR="$(cd "$BUNDLE_DIR/.." && pwd)"
+  else
+    osascript -e 'display dialog "Could not find Italian-mon game files. Please put BrainrotMonsters.app inside the Italian-mon folder." buttons {"OK"} with icon stop'
+    exit 1
+  fi
+fi
+
+cd "$GAME_DIR" || exit 1
+
+PORT=8765
+URL="http://localhost:${PORT}/index.html"
+USERDATA="${HOME}/.brainrot-monsters-app"
+
+find_chromium() {
+  for c in \
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge" \
+    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" \
+    "/Applications/Arc.app/Contents/MacOS/Arc" \
+    "/Applications/Chromium.app/Contents/MacOS/Chromium"; do
+    [ -x "$c" ] && { echo "$c"; return 0; }
+  done
+  return 1
+}
+
+# Start the server (try python3, then python, then bail to play.html).
+SERVER_PID=""
+if command -v python3 >/dev/null 2>&1; then
+  python3 -m http.server "$PORT" >/dev/null 2>&1 &
+  SERVER_PID=$!
+elif command -v python >/dev/null 2>&1; then
+  python -m SimpleHTTPServer "$PORT" >/dev/null 2>&1 &
+  SERVER_PID=$!
+fi
+
+cleanup() {
+  if [ -n "$SERVER_PID" ]; then kill "$SERVER_PID" 2>/dev/null || true; fi
+}
+trap cleanup EXIT INT TERM
+
+# If no Python, fall back to opening the bundled single-file build.
+if [ -z "$SERVER_PID" ]; then
+  if [ -f "$GAME_DIR/play.html" ]; then
+    open "file://$GAME_DIR/play.html"
+  else
+    osascript -e 'display dialog "Python is required to run the multi-file build, and play.html was not found." buttons {"OK"} with icon stop'
+    exit 1
+  fi
+  exit 0
+fi
+
+# Give the server a moment to bind
+sleep 0.5
+
+BROWSER="$(find_chromium || true)"
+if [ -n "$BROWSER" ]; then
+  # Run Chrome in foreground so we can wait on it; killing this
+  # script (Cmd+Q on the .app) will then trigger cleanup() and shut
+  # the server down too.
+  "$BROWSER" \
+    --app="$URL" \
+    --start-fullscreen \
+    --user-data-dir="$USERDATA" \
+    --no-first-run --no-default-browser-check \
+    --disable-features=TranslateUI \
+    >/dev/null 2>&1
+else
+  # No Chromium — open in default browser. We can't track when the
+  # user closes the tab, so just keep the server alive a long time.
+  open "$URL"
+  osascript -e 'display dialog "Game running at http://localhost:8765\n\nFor a true fullscreen app feel, install Chrome or Edge and relaunch." buttons {"OK"} default button "OK"' >/dev/null 2>&1
+  wait "$SERVER_PID"
+fi

@@ -584,6 +584,190 @@ const SpriteRenderer = (() => {
       px(ctx, x+s*0.93 - slash, y+s*0.16+bob, s*0.02, s*0.04, "#fff");
     },
 
+    // Lirili Larila — cactus elephant in flip-flops
+    LIRILI(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.003) * 1;
+      shadow(ctx, x + s/2, y + s - 4, s*0.45, 4);
+      // big elephant body, green cactus skin
+      px(ctx, x+s*0.18, y+s*0.42+bob, s*0.64, s*0.34, sp.color1);
+      px(ctx, x+s*0.20, y+s*0.54+bob, s*0.60, s*0.18, "#3a7a30");
+      // cactus spines (vertical lines)
+      for (let i = 0; i < 6; i++) {
+        px(ctx, x+s*(0.24 + i*0.10), y+s*0.44+bob, s*0.01, s*0.20, "#1e4a18");
+      }
+      // small cactus flower on back
+      px(ctx, x+s*0.42, y+s*0.40+bob, s*0.06, s*0.04, sp.color2);
+      // head
+      px(ctx, x+s*0.06, y+s*0.36+bob, s*0.18, s*0.22, sp.color1);
+      // trunk
+      px(ctx, x+s*0.02, y+s*0.50+bob, s*0.10, s*0.08, sp.color1);
+      px(ctx, x+s*0.00, y+s*0.56+bob, s*0.08, s*0.04, sp.color1);
+      // ear
+      px(ctx, x+s*0.04, y+s*0.40+bob, s*0.06, s*0.10, sp.color1);
+      // eye
+      px(ctx, x+s*0.12, y+s*0.42+bob, s*0.05, s*0.05, "#fff");
+      px(ctx, x+s*0.13, y+s*0.43+bob, s*0.03, s*0.03, "#000");
+      // 4 legs
+      for (let i = 0; i < 4; i++) {
+        px(ctx, x+s*(0.22 + i*0.16), y+s*0.74+bob, s*0.08, s*0.12, sp.color1);
+        // flip-flops
+        px(ctx, x+s*(0.20 + i*0.16), y+s*0.86+bob, s*0.12, s*0.04, sp.color3);
+        px(ctx, x+s*(0.24 + i*0.16), y+s*0.84+bob, s*0.02, s*0.04, "#ffe070");
+      }
+    },
+
+    // Brr Brr Patapim — baboon-tree creature
+    PATAPIM(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.004) * 1;
+      shadow(ctx, x + s/2, y + s - 4, s*0.4, 4);
+      // tree trunk legs
+      px(ctx, x+s*0.30, y+s*0.62+bob, s*0.10, s*0.24, sp.color2);
+      px(ctx, x+s*0.60, y+s*0.62+bob, s*0.10, s*0.24, sp.color2);
+      px(ctx, x+s*0.30, y+s*0.86+bob, s*0.10, s*0.04, "#3a2218");
+      px(ctx, x+s*0.60, y+s*0.86+bob, s*0.10, s*0.04, "#3a2218");
+      // body — green leafy torso
+      px(ctx, x+s*0.22, y+s*0.34+bob, s*0.56, s*0.32, sp.color1);
+      // leafy tufts
+      px(ctx, x+s*0.18, y+s*0.30+bob, s*0.10, s*0.10, sp.color1);
+      px(ctx, x+s*0.72, y+s*0.30+bob, s*0.10, s*0.10, sp.color1);
+      // baboon head
+      px(ctx, x+s*0.30, y+s*0.10+bob, s*0.40, s*0.26, sp.color2);
+      // long proboscis nose
+      px(ctx, x+s*0.32, y+s*0.22+bob, s*0.10, s*0.16, "#ff8aa8");
+      // eyes
+      px(ctx, x+s*0.46, y+s*0.18+bob, s*0.06, s*0.06, "#ffe070");
+      px(ctx, x+s*0.58, y+s*0.18+bob, s*0.06, s*0.06, "#ffe070");
+      px(ctx, x+s*0.48, y+s*0.20+bob, s*0.02, s*0.04, "#000");
+      px(ctx, x+s*0.60, y+s*0.20+bob, s*0.02, s*0.04, "#000");
+      // mouth
+      px(ctx, x+s*0.46, y+s*0.30+bob, s*0.16, s*0.02, "#000");
+    },
+
+    // Trippi Troppi — cat-shrimp floater
+    TRIPPI(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.006) * 2;  // floats higher
+      shadow(ctx, x + s/2, y + s - 2, s*0.3, 3);
+      // shrimp body (curled, segmented)
+      px(ctx, x+s*0.20, y+s*0.40+bob, s*0.50, s*0.20, sp.color1);
+      // shrimp segments (orange stripes)
+      for (let i = 0; i < 4; i++) {
+        px(ctx, x+s*(0.24 + i*0.12), y+s*0.40+bob, s*0.02, s*0.20, sp.color2);
+      }
+      // shrimp tail curling up
+      px(ctx, x+s*0.66, y+s*0.34+bob, s*0.10, s*0.06, sp.color1);
+      px(ctx, x+s*0.70, y+s*0.28+bob, s*0.06, s*0.06, sp.color1);
+      // tiny shrimp legs underneath
+      for (let i = 0; i < 4; i++) {
+        px(ctx, x+s*(0.24 + i*0.10), y+s*0.60+bob, s*0.02, s*0.06, sp.color1);
+      }
+      // CAT HEAD on top
+      px(ctx, x+s*0.20, y+s*0.18+bob, s*0.30, s*0.24, sp.color3);
+      // cat ears
+      px(ctx, x+s*0.20, y+s*0.12+bob, s*0.08, s*0.08, sp.color3);
+      px(ctx, x+s*0.42, y+s*0.12+bob, s*0.08, s*0.08, sp.color3);
+      // floating effect — small ground-shimmer beneath body
+      px(ctx, x+s*0.30, y+s*s + 0, s*0.40, s*0.01, "rgba(255,255,255,0.3)");
+      // big eyes
+      px(ctx, x+s*0.24, y+s*0.24+bob, s*0.06, s*0.06, "#fff");
+      px(ctx, x+s*0.36, y+s*0.24+bob, s*0.06, s*0.06, "#fff");
+      px(ctx, x+s*0.26, y+s*0.26+bob, s*0.02, s*0.04, "#000");
+      px(ctx, x+s*0.38, y+s*0.26+bob, s*0.02, s*0.04, "#000");
+      // confused expression — wiggly mouth
+      const wig = Math.sin(t * 0.01);
+      px(ctx, x+s*0.28, y+s*0.34+bob, s*0.04, s*0.02, "#000");
+      px(ctx, x+s*0.32 + wig*0.5, y+s*0.32+bob, s*0.04, s*0.02, "#000");
+      px(ctx, x+s*0.36, y+s*0.34+bob, s*0.04, s*0.02, "#000");
+    },
+
+    // Pigeonore di Venezia — tired pigeon
+    PIGEONORE(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.005) * 1;
+      shadow(ctx, x + s/2, y + s - 4, s*0.35, 4);
+      // body
+      px(ctx, x+s*0.26, y+s*0.40+bob, s*0.46, s*0.28, sp.color1);
+      // chest pop
+      px(ctx, x+s*0.30, y+s*0.46+bob, s*0.36, s*0.16, "#c8c8c8");
+      // wing
+      px(ctx, x+s*0.50, y+s*0.40+bob, s*0.20, s*0.16, sp.color2);
+      // head
+      px(ctx, x+s*0.20, y+s*0.30+bob, s*0.20, s*0.18, sp.color1);
+      // beak (orange)
+      px(ctx, x+s*0.10, y+s*0.36+bob, s*0.10, s*0.06, sp.color3);
+      // eye (tired)
+      px(ctx, x+s*0.26, y+s*0.34+bob, s*0.04, s*0.02, "#000");
+      // legs
+      px(ctx, x+s*0.36, y+s*0.68+bob, s*0.02, s*0.10, sp.color3);
+      px(ctx, x+s*0.56, y+s*0.68+bob, s*0.02, s*0.10, sp.color3);
+      px(ctx, x+s*0.34, y+s*0.78+bob, s*0.06, s*0.02, sp.color3);
+      px(ctx, x+s*0.54, y+s*0.78+bob, s*0.06, s*0.02, sp.color3);
+    },
+
+    // Cringefly — cringe energy moth
+    CRINGEFLY(ctx, sp, x, y, s, t) {
+      const bob = Math.sin(t * 0.012) * 3;
+      const wing = Math.sin(t * 0.04);
+      shadow(ctx, x + s/2, y + s - 4, s*0.25, 3);
+      // wings (flapping)
+      const wW = s*0.30 + wing * s*0.06;
+      ctx.fillStyle = sp.color1;
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      ctx.ellipse(x+s*0.30, y+s*0.40+bob, wW, s*0.18, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x+s*0.70, y+s*0.40+bob, wW, s*0.18, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      // wing patterns (2026 cringe spiral)
+      px(ctx, x+s*0.26, y+s*0.40+bob, s*0.04, s*0.04, sp.color2);
+      px(ctx, x+s*0.66, y+s*0.40+bob, s*0.04, s*0.04, sp.color2);
+      // body
+      px(ctx, x+s*0.42, y+s*0.36+bob, s*0.16, s*0.30, sp.color3);
+      // big anime eyes
+      px(ctx, x+s*0.40, y+s*0.32+bob, s*0.08, s*0.08, "#fff");
+      px(ctx, x+s*0.52, y+s*0.32+bob, s*0.08, s*0.08, "#fff");
+      px(ctx, x+s*0.42, y+s*0.34+bob, s*0.04, s*0.06, "#000");
+      px(ctx, x+s*0.54, y+s*0.34+bob, s*0.04, s*0.06, "#000");
+      // antennae
+      px(ctx, x+s*0.42, y+s*0.20+bob, s*0.02, s*0.10, sp.color3);
+      px(ctx, x+s*0.56, y+s*0.20+bob, s*0.02, s*0.10, sp.color3);
+      px(ctx, x+s*0.40, y+s*0.18+bob, s*0.04, s*0.04, sp.color2);
+      px(ctx, x+s*0.56, y+s*0.18+bob, s*0.04, s*0.04, sp.color2);
+    },
+
+    // Vacca Galaxia — Saturn cow's evolved form
+    VACCAGALAXIA(ctx, sp, x, y, s, t) {
+      SPECIAL.VACCASATURN(ctx, sp, x, y, s, t);
+      // extra cosmic ring + stars
+      const cx = x+s*0.5, cy = y+s*0.55 + Math.sin(t * 0.003);
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(t * 0.0008 + 0.3);
+      ctx.strokeStyle = "rgba(255,215,0,0.7)";
+      ctx.lineWidth = Math.max(1, s*0.02);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, s*0.62, s*0.16, 0, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+      // tiny stars around
+      for (let i = 0; i < 4; i++) {
+        const a = t * 0.001 + i * Math.PI/2;
+        px(ctx, x+s*0.5 + Math.cos(a)*s*0.45, y+s*0.45 + Math.sin(a)*s*0.30, s*0.03, s*0.03, "#fff");
+      }
+    },
+
+    // Cocofantitan — bigger tougher Cocofanto
+    COCOFANTITAN(ctx, sp, x, y, s, t) {
+      SPECIAL.COCOFANTO(ctx, sp, x, y, s, t);
+      // armor plates on legs
+      px(ctx, x+s*0.22, y+s*0.78, s*0.10, s*0.04, "#1a1a1a");
+      px(ctx, x+s*0.38, y+s*0.78, s*0.10, s*0.04, "#1a1a1a");
+      px(ctx, x+s*0.54, y+s*0.78, s*0.10, s*0.04, "#1a1a1a");
+      px(ctx, x+s*0.70, y+s*0.78, s*0.10, s*0.04, "#1a1a1a");
+      // chest crystal
+      px(ctx, x+s*0.46, y+s*0.50, s*0.08, s*0.10, sp.color3);
+    },
+
     // Tung-Tung-Tung Sahur Maximus — a pile of bats with a face
     TUNGTITAN(ctx, sp, x, y, s, t) {
       // base on TUNGTUNG with massive scaling

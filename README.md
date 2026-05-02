@@ -15,16 +15,20 @@ no install.
 ### Or use the OS-specific launcher
 
 These start a tiny local web server on port 8765 and open the game in
-your browser automatically. Use this if `play.html` has any issue.
+fullscreen "app mode" (no URL bar, no tabs — feels like a desktop app)
+when Chrome / Edge / Brave / Arc is installed. Falls back to the default
+browser otherwise.
 
-| OS              | Launcher       | How to run                                   |
-| --------------- | -------------- | -------------------------------------------- |
-| **macOS**       | `play.command` | Double-click in Finder (or `./play.command`) |
-| **Linux**       | `play.sh`      | `./play.sh` in a terminal                    |
-| **Windows**     | `play.bat`     | Double-click in Explorer                     |
+| OS              | Launcher                   | How to run                                       |
+| --------------- | -------------------------- | ------------------------------------------------ |
+| **macOS**       | `BrainrotMonsters.app`     | Double-click — true Mac app, no Terminal window  |
+| **macOS**       | `play.command`             | Double-click in Finder (Terminal flashes briefly)|
+| **Linux**       | `play.sh`                  | `./play.sh` in a terminal                        |
+| **Windows**     | `play.bat`                 | Double-click in Explorer                         |
 
-> First time on Mac, macOS may ask permission to run an unsigned shell
-> script. Right-click `play.command` → Open → Open to allow it once.
+> **First-run on macOS:** Gatekeeper may block the unsigned `.app` /
+> `.command`. Right-click → Open → Open to allow it once. After that
+> a regular double-click works.
 
 ### Or do it yourself
 
@@ -35,21 +39,24 @@ python3 -m http.server 8765
 
 ## Controls
 
-| Action      | Keyboard                | Touch       |
-| ----------- | ----------------------- | ----------- |
-| Move        | Arrow keys              | D-pad       |
-| Confirm / A | `Z` or `Enter`          | A button    |
-| Cancel / B  | `X` or `Esc`            | B button    |
-| Open menu   | `X` (in overworld)      | B button    |
-| Start game  | `Enter` on title screen | Tap title   |
+| Action          | Keyboard                | Touch       |
+| --------------- | ----------------------- | ----------- |
+| Move            | Arrow keys              | D-pad       |
+| Confirm / A     | `Z` or `Enter`          | A button    |
+| Cancel / B      | `X` or `Esc`            | B button    |
+| Open menu       | `X` (in overworld)      | B button    |
+| Quick-heal      | `H` (in battle)         | —           |
+| Toggle fullscr. | `F`                     | —           |
+| Start game      | `Enter` on title screen | Tap title   |
 
 In battle, click the `FIGHT` / `BAG` / `TEAM` / `RUN` buttons or press
-`Z` to open Fight, then click a move.
+`Z` to open Fight, then click a move. `H` instantly uses your strongest
+heal item on the active mon.
 
 ## What's in it
 
-- **50 meme creatures** with unique procedural sprites, types, base
-  stats, learnable moves, and (for many) evolutions
+- **71 meme creatures** with unique procedural sprites (many hand-tuned
+  for flagship mons), types, base stats, learnable moves, and evolutions
 - **3 starters**: Tralalero, Bombardino, Tung Sahur — each evolves
 - **Type chart** with 10 types: Pasta, Fire, Water, Earth, Air, Beast,
   Brainrot, Sigma, Chaos, Steel
