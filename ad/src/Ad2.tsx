@@ -1,4 +1,10 @@
-import { AbsoluteFill, useVideoConfig } from "remotion";
+import {
+  AbsoluteFill,
+  interpolate,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
 import {
   TransitionSeries,
   linearTiming,
@@ -7,6 +13,7 @@ import {
 import { fade } from "@remotion/transitions/fade";
 import { slide } from "@remotion/transitions/slide";
 import { wipe } from "@remotion/transitions/wipe";
+import { Audio } from "@remotion/media";
 import { loadFont as loadInter } from "@remotion/google-fonts/Inter";
 import { ColdOpen } from "./scenes2/ColdOpen";
 import { Encounter } from "./scenes2/Encounter";
@@ -24,7 +31,16 @@ loadInter("normal", { weights: ["400", "700", "900"] });
 // numbers. Devices only appear in the final end card. Pace is faster
 // than Ad1 (more cuts, shorter scenes, transition wipes between beats).
 export const Ad2: React.FC = () => {
-  const { fps } = useVideoConfig();
+  const { fps, durationInFrames } = useVideoConfig();
+  // Music: same chiptune as the in-game overworld theme (gen-music.mjs
+  // synthesizes it from the same melody data as js/audio.js). 30s WAV
+  // looped, with a fade-out in the last 0.7s so it doesn't cut hard.
+  const fadeOut = (f: number) => interpolate(
+    f,
+    [0, durationInFrames - fps * 0.7, durationInFrames],
+    [1, 1, 0],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  );
 
   // Quick fade transitions between most beats; harder cut into the
   // battle scene for impact.
@@ -49,6 +65,11 @@ export const Ad2: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
+      <Audio
+        src={staticFile("music.wav")}
+        loop
+        volume={fadeOut}
+      />
       <TransitionSeries>
         <TransitionSeries.Sequence durationInFrames={2 * fps}>
           <ColdOpen />

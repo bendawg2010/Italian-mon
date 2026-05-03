@@ -42,6 +42,18 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
+      {/* 9:16 vertical cut for TikTok / Reels / Shorts. Same Ad2 scene
+          chain — every scene uses AbsoluteFill, so layout reflows to
+          portrait. Captions that were side-anchored in landscape end up
+          stacked, which is the Reels-friendly arrangement anyway. */}
+      <Composition
+        id="AdVertical"
+        component={Ad2}
+        durationInFrames={AD2_FRAMES}
+        fps={FPS}
+        width={1080}
+        height={1920}
+      />
     </>
   );
 };
