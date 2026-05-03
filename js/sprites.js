@@ -58,18 +58,26 @@ const SpriteRenderer = (() => {
       for (let i = 0; i < 4; i++) {
         px(ctx, x+s*(0.06 + i*0.035), y+s*0.50+bob, s*0.02, s*0.02, "#fff");
       }
-      // three legs in Nikes
+      // three legs in Nikes — sole, blue upper (real Nike Air Force-ish
+      // colorway), bigger swoosh more obviously branded
       for (let i = 0; i < 3; i++) {
         const lx = x+s*(0.28 + i*0.18);
         const stride = (Math.sin(t * 0.008 + i*1.4) * 1) * (s*0.01);
         // leg
         px(ctx, lx + s*0.04, y+s*0.64+bob, s*0.06, s*0.16, "#f5d59a");
-        // shoe sole
-        px(ctx, lx-s*0.01 + stride, y+s*0.82+bob, s*0.18, s*0.05, "#fff");
-        // shoe upper (Nike orange)
-        px(ctx, lx + s*0.01 + stride, y+s*0.78+bob, s*0.16, s*0.05, sp.color3);
-        // swoosh
-        px(ctx, lx + s*0.06 + stride, y+s*0.79+bob, s*0.06, s*0.015, "#fff");
+        // shoe — chunky sneaker silhouette
+        // White sole
+        px(ctx, lx-s*0.02 + stride, y+s*0.82+bob, s*0.20, s*0.05, "#ffffff");
+        // White midsole
+        px(ctx, lx-s*0.01 + stride, y+s*0.78+bob, s*0.18, s*0.04, "#f5f5f5");
+        // Blue/orange upper (Nike colors)
+        px(ctx, lx + s*0.00 + stride, y+s*0.74+bob, s*0.17, s*0.04, "#1a3a78");
+        // Tongue (white square peeking out)
+        px(ctx, lx + s*0.06 + stride, y+s*0.72+bob, s*0.06, s*0.04, "#ffffff");
+        // SWOOSH — bigger, more recognizable arc shape (3-pixel curved swipe)
+        px(ctx, lx + s*0.04 + stride, y+s*0.77+bob, s*0.04, s*0.012, "#ffffff");
+        px(ctx, lx + s*0.08 + stride, y+s*0.78+bob, s*0.04, s*0.012, "#ffffff");
+        px(ctx, lx + s*0.11 + stride, y+s*0.76+bob, s*0.03, s*0.012, "#ffffff");
       }
     },
     TRALALERONE(ctx, sp, x, y, s, t) {
@@ -407,76 +415,154 @@ const SpriteRenderer = (() => {
       px(ctx, x+s*0.58, y+s*0.74+bob, s*0.10, s*0.16, sp.color1);
     },
 
-    // Skibidi Toiletto — toilet with a charismatic head
+    // Skibidi Toiletto — bald head poking out of a toilet, singing into
+    // a mic. Faithful to the actual Skibidi Toilet meme (NOT the
+    // slicked-back CEO look it had before). Head is bald, eyes wild.
     SKIBIDI(ctx, sp, x, y, s, t) {
       const bob = Math.sin(t * 0.005) * 1.5;
+      const eyeWiggle = Math.sin(t * 0.012);
       shadow(ctx, x + s/2, y + s - 4, s*0.4, 4);
-      // toilet bowl base
-      px(ctx, x+s*0.18, y+s*0.60+bob, s*0.64, s*0.20, sp.color1);
-      // bowl rim
-      px(ctx, x+s*0.16, y+s*0.58+bob, s*0.68, s*0.04, "#d8d8d8");
-      // tank back
-      px(ctx, x+s*0.24, y+s*0.46+bob, s*0.52, s*0.16, sp.color1);
-      // water inside
-      px(ctx, x+s*0.28, y+s*0.66+bob, s*0.44, s*0.10, "#5a8aff");
-      // flusher knob
-      px(ctx, x+s*0.66, y+s*0.44+bob, s*0.06, s*0.04, sp.color3);
-      // CHARISMATIC HEAD popping out the top
-      px(ctx, x+s*0.30, y+s*0.20+bob, s*0.40, s*0.30, sp.color2);
-      // hair (slicked-back CEO)
-      px(ctx, x+s*0.28, y+s*0.18+bob, s*0.44, s*0.06, "#3a2218");
-      px(ctx, x+s*0.30, y+s*0.16+bob, s*0.40, s*0.04, "#3a2218");
-      // sigma sunglasses
-      px(ctx, x+s*0.32, y+s*0.32+bob, s*0.16, s*0.06, "#000");
-      px(ctx, x+s*0.52, y+s*0.32+bob, s*0.16, s*0.06, "#000");
-      px(ctx, x+s*0.48, y+s*0.34+bob, s*0.04, s*0.02, "#000");
-      // shine on glasses
-      px(ctx, x+s*0.34, y+s*0.33+bob, s*0.04, s*0.01, "#fff");
-      px(ctx, x+s*0.54, y+s*0.33+bob, s*0.04, s*0.01, "#fff");
-      // smug smile
-      px(ctx, x+s*0.40, y+s*0.42+bob, s*0.20, s*0.02, "#000");
-      px(ctx, x+s*0.40, y+s*0.42+bob, s*0.04, s*0.02, "#000");
-      px(ctx, x+s*0.56, y+s*0.42+bob, s*0.04, s*0.02, "#000");
-      // microphone in front
-      px(ctx, x+s*0.46, y+s*0.50+bob, s*0.04, s*0.10, "#222");
-      px(ctx, x+s*0.42, y+s*0.48+bob, s*0.12, s*0.08, "#444");
+
+      // Toilet bowl base (white porcelain)
+      px(ctx, x+s*0.16, y+s*0.62+bob, s*0.68, s*0.22, "#f4f4f4");
+      px(ctx, x+s*0.16, y+s*0.62+bob, s*0.68, s*0.04, "#d8d8d8");
+      // Bowl rim shading
+      px(ctx, x+s*0.16, y+s*0.82+bob, s*0.68, s*0.02, "#a8a8a8");
+      // Toilet tank behind the head
+      px(ctx, x+s*0.22, y+s*0.46+bob, s*0.56, s*0.18, "#ececec");
+      px(ctx, x+s*0.22, y+s*0.46+bob, s*0.56, s*0.03, "#c0c0c0");
+      // Flusher knob on tank
+      px(ctx, x+s*0.74, y+s*0.48+bob, s*0.05, s*0.04, "#a0a0a0");
+      // Water visible through the bowl opening
+      px(ctx, x+s*0.28, y+s*0.68+bob, s*0.44, s*0.08, "#5a8aff");
+      px(ctx, x+s*0.30, y+s*0.68+bob, s*0.40, s*0.02, "#7aaaff");
+
+      // BALD HEAD popping out the top — pink/skin color, wide
+      px(ctx, x+s*0.28, y+s*0.18+bob, s*0.44, s*0.32, "#ffd9a0");
+      // Subtle skull shading on top
+      px(ctx, x+s*0.34, y+s*0.16+bob, s*0.32, s*0.04, "#f0c890");
+      // Bald shine streak
+      px(ctx, x+s*0.40, y+s*0.20+bob, s*0.10, s*0.02, "#ffe6b3");
+      // Big ears
+      px(ctx, x+s*0.24, y+s*0.30+bob, s*0.06, s*0.10, "#ffd9a0");
+      px(ctx, x+s*0.70, y+s*0.30+bob, s*0.06, s*0.10, "#ffd9a0");
+      px(ctx, x+s*0.26, y+s*0.32+bob, s*0.02, s*0.04, "#e0a880");
+
+      // Wide-open eyes — Skibidi's signature unsettling stare
+      px(ctx, x+s*0.32, y+s*0.30+bob, s*0.12, s*0.10, "#ffffff");
+      px(ctx, x+s*0.56, y+s*0.30+bob, s*0.12, s*0.10, "#ffffff");
+      // Pupils that wiggle a bit
+      const pupilShift = eyeWiggle * 0.015;
+      px(ctx, x+s*(0.36 + pupilShift), y+s*0.32+bob, s*0.05, s*0.06, "#000");
+      px(ctx, x+s*(0.60 + pupilShift), y+s*0.32+bob, s*0.05, s*0.06, "#000");
+      // Tiny pupil highlights
+      px(ctx, x+s*(0.37 + pupilShift), y+s*0.33+bob, s*0.01, s*0.01, "#fff");
+      px(ctx, x+s*(0.61 + pupilShift), y+s*0.33+bob, s*0.01, s*0.01, "#fff");
+
+      // Singing-mouth (the meme's distinctive open-mouth singing pose)
+      px(ctx, x+s*0.40, y+s*0.42+bob, s*0.20, s*0.06, "#000");
+      px(ctx, x+s*0.42, y+s*0.43+bob, s*0.16, s*0.03, "#a04020");
+      // Tiny teeth on top
+      px(ctx, x+s*0.44, y+s*0.42+bob, s*0.02, s*0.02, "#fff");
+      px(ctx, x+s*0.48, y+s*0.42+bob, s*0.02, s*0.02, "#fff");
+      px(ctx, x+s*0.52, y+s*0.42+bob, s*0.02, s*0.02, "#fff");
+      px(ctx, x+s*0.56, y+s*0.42+bob, s*0.02, s*0.02, "#fff");
+
+      // Microphone held up to mouth
+      px(ctx, x+s*0.46, y+s*0.50+bob, s*0.04, s*0.12, "#1a1a1a");
+      // Mic head
+      px(ctx, x+s*0.42, y+s*0.46+bob, s*0.12, s*0.06, "#444");
+      px(ctx, x+s*0.43, y+s*0.47+bob, s*0.10, s*0.04, "#666");
+      // Mic mesh dots
+      px(ctx, x+s*0.45, y+s*0.48+bob, s*0.02, s*0.01, "#888");
+      px(ctx, x+s*0.49, y+s*0.48+bob, s*0.02, s*0.01, "#888");
     },
 
-    // Glorbo Florbo — translucent glowing blob
+    // Glorbo Florbo — small alien blob with one big eye, pointy
+    // antennae, and dangly tentacles. Faithful to the actual brainrot
+    // meme (the Family-Guy "they put Glorbo in" reference). Pulsing
+    // glow stays — it's the recognizable bit — but the shape now reads
+    // as a tiny critter, not just a luminous puddle.
     GLORBO(ctx, sp, x, y, s, t) {
       const bob = Math.sin(t * 0.006) * 2;
       const pulse = 0.5 + Math.sin(t * 0.004) * 0.5;
-      shadow(ctx, x + s/2, y + s - 4, s*0.4, 4);
-      // outer glow rings
+      const wig = Math.sin(t * 0.01);
+      shadow(ctx, x + s/2, y + s - 4, s*0.36, 4);
+
+      // Outer pulsing glow halo (kept — it's the iconic look)
       ctx.fillStyle = `rgba(201,61,255,${0.1 * pulse})`;
       ctx.beginPath();
-      ctx.ellipse(x+s*0.5, y+s*0.5+bob, s*0.5, s*0.4, 0, 0, Math.PI*2);
+      ctx.ellipse(x+s*0.5, y+s*0.5+bob, s*0.5, s*0.42, 0, 0, Math.PI*2);
       ctx.fill();
       ctx.fillStyle = `rgba(255,138,255,${0.18 * pulse})`;
       ctx.beginPath();
-      ctx.ellipse(x+s*0.5, y+s*0.5+bob, s*0.4, s*0.32, 0, 0, Math.PI*2);
+      ctx.ellipse(x+s*0.5, y+s*0.5+bob, s*0.4, s*0.34, 0, 0, Math.PI*2);
       ctx.fill();
-      // body
+
+      // Antennae — two pointy stalks with bulbs on top, slight wiggle
+      ctx.strokeStyle = sp.color1;
+      ctx.lineWidth = Math.max(1, s*0.025);
+      ctx.beginPath();
+      ctx.moveTo(x+s*0.36, y+s*0.32+bob);
+      ctx.lineTo(x+s*(0.30 + wig*0.02), y+s*0.16+bob);
+      ctx.moveTo(x+s*0.62, y+s*0.32+bob);
+      ctx.lineTo(x+s*(0.68 - wig*0.02), y+s*0.16+bob);
+      ctx.stroke();
+      // Antenna bulbs
+      px(ctx, x+s*(0.28 + wig*0.02), y+s*0.14+bob, s*0.06, s*0.06, sp.color2);
+      px(ctx, x+s*(0.66 - wig*0.02), y+s*0.14+bob, s*0.06, s*0.06, sp.color2);
+
+      // Body — a single squat lumpy oval
       ctx.fillStyle = sp.color1;
       ctx.beginPath();
-      ctx.ellipse(x+s*0.5, y+s*0.5+bob, s*0.32, s*0.26, 0, 0, Math.PI*2);
+      ctx.ellipse(x+s*0.5, y+s*0.5+bob, s*0.30, s*0.24, 0, 0, Math.PI*2);
       ctx.fill();
-      // inner highlight
+      // Belly highlight
       ctx.fillStyle = sp.color2;
       ctx.beginPath();
-      ctx.ellipse(x+s*0.42, y+s*0.45+bob, s*0.12, s*0.08, 0, 0, Math.PI*2);
+      ctx.ellipse(x+s*0.46, y+s*0.56+bob, s*0.16, s*0.08, 0, 0, Math.PI*2);
       ctx.fill();
-      // floating sparkles
+
+      // ONE BIG EYE in the center — the meme's single most-iconic feature
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.ellipse(x+s*0.5, y+s*0.46+bob, s*0.13, s*0.11, 0, 0, Math.PI*2);
+      ctx.fill();
+      // Pupil tracking slightly with wig
+      ctx.fillStyle = "#000";
+      ctx.beginPath();
+      ctx.ellipse(x+s*(0.5 + wig*0.025), y+s*0.47+bob, s*0.06, s*0.06, 0, 0, Math.PI*2);
+      ctx.fill();
+      // Eye highlight
+      px(ctx, x+s*(0.52 + wig*0.025), y+s*0.45+bob, s*0.02, s*0.02, "#fff");
+
+      // Wide grinning mouth (curved fang line below eye)
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = Math.max(1, s*0.018);
+      ctx.beginPath();
+      ctx.arc(x+s*0.5, y+s*0.62+bob, s*0.10, 0.15*Math.PI, 0.85*Math.PI);
+      ctx.stroke();
+      // Two tiny fangs
+      px(ctx, x+s*0.44, y+s*0.66+bob, s*0.02, s*0.04, "#fff");
+      px(ctx, x+s*0.54, y+s*0.66+bob, s*0.02, s*0.04, "#fff");
+
+      // Three dangly tentacle legs
+      for (let i = 0; i < 3; i++) {
+        const lx = x+s*(0.30 + i*0.20);
+        const ly = y+s*0.72+bob;
+        const sway = Math.sin(t * 0.008 + i*1.5) * s*0.02;
+        px(ctx, lx + sway, ly, s*0.06, s*0.04, sp.color1);
+        px(ctx, lx + sway*1.5, ly + s*0.04, s*0.06, s*0.04, sp.color1);
+        px(ctx, lx + sway*2, ly + s*0.08, s*0.08, s*0.04, sp.color2);
+      }
+
+      // Floating sparkles around (kept from old version)
       for (let i = 0; i < 4; i++) {
         const a = t * 0.003 + i * Math.PI/2;
-        const sx = x+s*0.5 + Math.cos(a) * s*0.36;
-        const sy = y+s*0.5+bob + Math.sin(a) * s*0.28;
-        px(ctx, sx, sy, s*0.04, s*0.04, sp.color2);
+        const sx = x+s*0.5 + Math.cos(a) * s*0.40;
+        const sy = y+s*0.5+bob + Math.sin(a) * s*0.30;
+        px(ctx, sx, sy, s*0.03, s*0.03, sp.color2);
       }
-      // big single eye
-      px(ctx, x+s*0.42, y+s*0.46+bob, s*0.16, s*0.10, "#fff");
-      px(ctx, x+s*0.46, y+s*0.48+bob, s*0.08, s*0.06, "#000");
-      px(ctx, x+s*0.48, y+s*0.49+bob, s*0.02, s*0.02, "#fff");
     },
 
     // Ohio Skibidini — chaotic gremlin, reality bends
@@ -917,121 +1003,255 @@ const SpriteRenderer = (() => {
   }
 
   // ----- PLAYER + NPC SPRITES (overworld) -----
-  // 4-frame walk cycle: 0=idle/contact, 1=left lead, 2=passing, 3=right lead.
-  // The game emits 0/1 currently; we treat any frame >=0 modulo 4 so we can
-  // accept richer cycles when game.js is updated to feed them.
-  function drawPlayer(ctx, x, y, dir, frame) {
-    const f = ((frame|0) % 4 + 4) % 4;
-    // body bob: rises slightly on the "passing" frames to suggest weight transfer
-    const bob = (f === 1 || f === 3) ? -1 : 0;
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
+  // ===== PLAYER & NPC HUMAN SPRITES =====
+  // Both characters share a 16×16 footprint and a 4-frame walk cycle.
+  // The walk cycle is:
+  //   0 = contact-L (both feet down, body low)
+  //   1 = left-lead (left foot forward, body slightly raised)
+  //   2 = contact-R (both feet down, body low; eye-blink frame)
+  //   3 = right-lead (right foot forward, body slightly raised)
+
+  // Shared ground shadow under any humanoid sprite
+  function shadow16(ctx, x, y) {
+    ctx.fillStyle = "rgba(0,0,0,0.32)";
     ctx.beginPath();
-    ctx.ellipse(x+8, y+15.5, 5, 1.5, 0, 0, Math.PI*2);
+    ctx.ellipse(x+8, y+15.4, 4.5, 1.4, 0, 0, Math.PI*2);
     ctx.fill();
-    // legs — 4 distinct stride poses
-    ctx.fillStyle = "#1f1f3d";
-    if (f === 0)      { ctx.fillRect(x+5, y+12+bob, 2, 3); ctx.fillRect(x+9, y+12+bob, 2, 3); }   // contact
-    else if (f === 1) { ctx.fillRect(x+5, y+11+bob, 2, 4); ctx.fillRect(x+9, y+13+bob, 2, 2); }   // left lead
-    else if (f === 2) { ctx.fillRect(x+5, y+12+bob, 2, 3); ctx.fillRect(x+9, y+12+bob, 2, 3); }   // contact (right phase)
-    else              { ctx.fillRect(x+5, y+13+bob, 2, 2); ctx.fillRect(x+9, y+11+bob, 2, 4); }   // right lead
-    // shoes
-    ctx.fillStyle = "#000";
-    if (f === 0 || f === 2) { ctx.fillRect(x+4, y+15+bob, 3, 1); ctx.fillRect(x+9, y+15+bob, 3, 1); }
-    else if (f === 1)       { ctx.fillRect(x+4, y+15+bob, 3, 1); ctx.fillRect(x+9, y+15+bob, 3, 1); }
-    else                    { ctx.fillRect(x+4, y+15+bob, 3, 1); ctx.fillRect(x+9, y+15+bob, 3, 1); }
-    // body shirt
-    ctx.fillStyle = "#3a5cff";
-    ctx.fillRect(x+4, y+8+bob, 8, 5);
-    ctx.fillStyle = "#2a4cdc";
+  }
+
+  // Draws a human character with overalls + a colored shirt visible at
+  // collar + headband. Used by both player (with cap) and NPCs (with
+  // role-specific hat/hair on top).
+  function drawHumanBody(ctx, x, y, frame, opts) {
+    const f = ((frame|0) % 4 + 4) % 4;
+    const bob = (f === 1 || f === 3) ? -1 : 0;
+    const skin = opts.skin || "#ffd9a0";
+    const shirt = opts.shirt;            // collar/sleeves visible color
+    const overalls = opts.overalls || "#1f3aaa";
+    const overallsLight = opts.overallsLight || shade(overalls, 0.18);
+    const shoe = opts.shoe || "#000";
+
+    // Pant-legs: stride pose
+    ctx.fillStyle = overalls;
+    if (f === 0 || f === 2) {
+      ctx.fillRect(x+5, y+12+bob, 2, 3);
+      ctx.fillRect(x+9, y+12+bob, 2, 3);
+    } else if (f === 1) {
+      ctx.fillRect(x+5, y+11+bob, 2, 4);
+      ctx.fillRect(x+9, y+13+bob, 2, 2);
+    } else {
+      ctx.fillRect(x+5, y+13+bob, 2, 2);
+      ctx.fillRect(x+9, y+11+bob, 2, 4);
+    }
+    // Shoes
+    ctx.fillStyle = shoe;
+    ctx.fillRect(x+4, y+15+bob, 3, 1);
+    ctx.fillRect(x+9, y+15+bob, 3, 1);
+
+    // Torso — overalls main body
+    ctx.fillStyle = overalls;
+    ctx.fillRect(x+4, y+9+bob, 8, 4);
+    // Belt
+    ctx.fillStyle = shade(overalls, -0.4);
     ctx.fillRect(x+4, y+12+bob, 8, 1);
-    // backpack hint
-    ctx.fillStyle = "#1a3aaa";
-    ctx.fillRect(x+5, y+9+bob, 6, 2);
-    // arms — swing opposite to legs
-    ctx.fillStyle = "#ffd9a0";
-    const armOffL = (f === 1) ? 1 : (f === 3) ? -1 : 0;
-    const armOffR = (f === 3) ? 1 : (f === 1) ? -1 : 0;
+    // Shirt collar showing above overalls
+    ctx.fillStyle = shirt;
+    ctx.fillRect(x+4, y+8+bob, 8, 1);
+    // Overall shoulder straps (V across the chest)
+    ctx.fillStyle = overallsLight;
+    ctx.fillRect(x+5, y+9+bob, 1, 2);
+    ctx.fillRect(x+10, y+9+bob, 1, 2);
+    // Single overall button
+    ctx.fillStyle = "#ffd700";
+    ctx.fillRect(x+7, y+10+bob, 1, 1);
+    ctx.fillRect(x+8, y+10+bob, 1, 1);
+
+    // Arms — swing opposite the leading leg
+    ctx.fillStyle = skin;
+    const armOffL = (f === 1) ?  1 : (f === 3) ? -1 : 0;
+    const armOffR = (f === 3) ?  1 : (f === 1) ? -1 : 0;
     ctx.fillRect(x+3, y+9+bob+armOffL, 1, 3);
     ctx.fillRect(x+12, y+9+bob+armOffR, 1, 3);
-    // head
-    ctx.fillStyle = "#ffd9a0";
+    // Tiny shirt cuff
+    ctx.fillStyle = shirt;
+    ctx.fillRect(x+3, y+8+bob+armOffL, 1, 1);
+    ctx.fillRect(x+12, y+8+bob+armOffR, 1, 1);
+
+    // Head
+    ctx.fillStyle = skin;
     ctx.fillRect(x+4, y+3+bob, 8, 5);
+    // Neck shadow line
+    ctx.fillStyle = shade(skin, -0.25);
     ctx.fillRect(x+5, y+8+bob, 6, 1);
-    // hair tuft (sides)
+
+    return { f, bob, skin };
+  }
+
+  // Player: blue trainer with red cap. Reads as Pokemon-Red-protagonist
+  // silhouette but with a more refined face.
+  function drawPlayer(ctx, x, y, dir, frame) {
+    shadow16(ctx, x, y);
+    const { f, bob, skin } = drawHumanBody(ctx, x, y, frame, {
+      skin: "#ffd9a0",
+      shirt: "#ffe6c0",
+      overalls: "#1a3aaa",
+      overallsLight: "#3a5cff",
+      shoe: "#1a1a1a",
+    });
+
+    // Hair tufts visible under the cap (sides + back)
     ctx.fillStyle = "#5a3a1a";
     ctx.fillRect(x+4, y+5+bob, 1, 2);
     ctx.fillRect(x+11, y+5+bob, 1, 2);
-    // cap (bigger, brim)
+    if (dir === "up") ctx.fillRect(x+4, y+6+bob, 8, 1);  // back of head
+
+    // Cap base (red Pokemon-style, with a thin white band)
     ctx.fillStyle = "#cc2222";
     ctx.fillRect(x+3, y+1+bob, 10, 3);
     ctx.fillRect(x+5, y+bob, 6, 1);
-    // cap brim — directional
-    ctx.fillStyle = "#7a0e0e";
-    if (dir === "down") ctx.fillRect(x+5, y+4+bob, 6, 1);
-    else if (dir === "up") ctx.fillRect(x+5, y+1+bob, 6, 1);
-    else if (dir === "left") ctx.fillRect(x+1, y+3+bob, 3, 1);
-    else if (dir === "right") ctx.fillRect(x+12, y+3+bob, 3, 1);
-    // cap highlight
+    // Cap white band stripe
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(x+3, y+3+bob, 10, 1);
+    // Cap highlight (sun-side)
     ctx.fillStyle = "#ff5e5e";
     ctx.fillRect(x+5, y+1+bob, 2, 1);
-    // eyes — directional, blink occasionally
-    ctx.fillStyle = "#000";
-    const blink = (f === 2);
-    if (dir === "down") {
-      if (blink) { ctx.fillRect(x+5, y+6+bob, 1, 1); ctx.fillRect(x+10, y+6+bob, 1, 1); }
-      else { ctx.fillRect(x+5, y+5+bob, 1, 2); ctx.fillRect(x+10, y+5+bob, 1, 2); }
-    } else if (dir === "up") {
-      // back of head — no eyes; show hair extending down
-      ctx.fillStyle = "#5a3a1a";
-      ctx.fillRect(x+4, y+6+bob, 8, 1);
-    } else if (dir === "left") {
-      ctx.fillRect(x+4, y+5+bob, 1, blink ? 1 : 2);
-    } else if (dir === "right") {
-      ctx.fillRect(x+11, y+5+bob, 1, blink ? 1 : 2);
+    // Cap pokeball-style circle on the front (when facing down/sideways)
+    if (dir !== "up") {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(x+7, y+2+bob, 2, 1);
+      ctx.fillStyle = "#cc2222";
+      ctx.fillRect(x+7, y+1+bob, 2, 1);
     }
+    // Cap brim — directional
+    ctx.fillStyle = "#7a0e0e";
+    if (dir === "down")       ctx.fillRect(x+5, y+4+bob, 6, 1);
+    else if (dir === "up")    ctx.fillRect(x+5, y+1+bob, 6, 1);
+    else if (dir === "left")  ctx.fillRect(x+1, y+3+bob, 3, 1);
+    else if (dir === "right") ctx.fillRect(x+12, y+3+bob, 3, 1);
+
+    // Eyes + mouth — directional, eyes blink on f===2
+    drawHumanFace(ctx, x, y, dir, f, bob, skin, "#1a1a1a");
   }
 
-  function drawNpc(ctx, x, y, color, frame) {
-    const f = ((frame|0) % 4 + 4) % 4;
-    const bob = (f === 1 || f === 3) ? -1 : 0;
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
-    ctx.beginPath();
-    ctx.ellipse(x+8, y+15.5, 5, 1.5, 0, 0, Math.PI*2);
-    ctx.fill();
-    // legs — 4-frame stride
-    ctx.fillStyle = "#1a1a1a";
-    if (f === 0)      { ctx.fillRect(x+5, y+12+bob, 2, 3); ctx.fillRect(x+9, y+12+bob, 2, 3); }
-    else if (f === 1) { ctx.fillRect(x+5, y+11+bob, 2, 4); ctx.fillRect(x+9, y+13+bob, 2, 2); }
-    else if (f === 2) { ctx.fillRect(x+5, y+12+bob, 2, 3); ctx.fillRect(x+9, y+12+bob, 2, 3); }
-    else              { ctx.fillRect(x+5, y+13+bob, 2, 2); ctx.fillRect(x+9, y+11+bob, 2, 4); }
-    ctx.fillStyle = "#000";
-    ctx.fillRect(x+4, y+15+bob, 3, 1);
-    ctx.fillRect(x+9, y+15+bob, 3, 1);
-    // body
-    ctx.fillStyle = color;
-    ctx.fillRect(x+4, y+8+bob, 8, 5);
-    ctx.fillStyle = shade(color, -0.3);
-    ctx.fillRect(x+4, y+12+bob, 8, 1);
-    // arms (subtle swing)
-    ctx.fillStyle = "#e0c090";
-    const armOffL = (f === 1) ? 1 : (f === 3) ? -1 : 0;
-    const armOffR = (f === 3) ? 1 : (f === 1) ? -1 : 0;
-    ctx.fillRect(x+3, y+9+bob+armOffL, 1, 3);
-    ctx.fillRect(x+12, y+9+bob+armOffR, 1, 3);
-    // head
-    ctx.fillStyle = "#e0c090";
-    ctx.fillRect(x+4, y+3+bob, 8, 5);
-    ctx.fillRect(x+5, y+8+bob, 6, 1);
-    // hair
-    ctx.fillStyle = shade(color, -0.5);
-    ctx.fillRect(x+3, y+2+bob, 10, 2);
-    ctx.fillRect(x+4, y+1+bob, 8, 1);
-    // eyes (occasional blink)
-    ctx.fillStyle = "#000";
-    if (f === 2) { ctx.fillRect(x+5, y+6+bob, 1, 1); ctx.fillRect(x+10, y+6+bob, 1, 1); }
-    else { ctx.fillRect(x+5, y+5+bob, 1, 2); ctx.fillRect(x+10, y+5+bob, 1, 2); }
-    // mouth
-    ctx.fillRect(x+7, y+7+bob, 2, 1);
+  // NPCs: same body template, but with a `kind` field that swaps
+  // hair / hat / accessory so different roles are visually distinct.
+  // kind: "trainer" | "healer" | "shop" | "ferry" | "npc" | "sign" | "item"
+  function drawNpc(ctx, x, y, color, frame, kind) {
+    if (kind === "sign" || kind === "item") return; // tile-rendered, not human
+    shadow16(ctx, x, y);
+    // Healer / shop / ferry get specific uniform colors so the SHIRT
+    // color is more about role than the per-NPC `color` value (which
+    // becomes hair color instead — same as Pokemon Red NPCs).
+    const palette = npcPalette(kind, color);
+    const { f, bob, skin } = drawHumanBody(ctx, x, y, frame, palette);
+
+    // Hair (under hat, but visible on sides)
+    ctx.fillStyle = palette.hair;
+    if (kind !== "ferry" && kind !== "shop") {
+      // wide hair sweep across the top
+      ctx.fillRect(x+3, y+2+bob, 10, 2);
+      ctx.fillRect(x+4, y+1+bob, 8, 1);
+    } else {
+      // just side-burns when wearing a hat
+      ctx.fillRect(x+4, y+4+bob, 1, 2);
+      ctx.fillRect(x+11, y+4+bob, 1, 2);
+    }
+
+    // Role-specific hat
+    if (kind === "healer") {
+      // Pink barista hairband
+      ctx.fillStyle = "#ff8aa8";
+      ctx.fillRect(x+3, y+1+bob, 10, 2);
+      ctx.fillRect(x+5, y+bob, 6, 1);
+      // Heart decoration
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(x+7, y+1+bob, 2, 1);
+    } else if (kind === "shop") {
+      // Gold visor / shopkeeper apron tag
+      ctx.fillStyle = "#ffd700";
+      ctx.fillRect(x+3, y+3+bob, 10, 1);
+      ctx.fillStyle = "#5a3a1a";
+      ctx.fillRect(x+3, y+1+bob, 10, 2);
+    } else if (kind === "ferry") {
+      // Sailor hat (white round + black brim)
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(x+3, y+1+bob, 10, 2);
+      ctx.fillRect(x+4, y+bob, 8, 1);
+      ctx.fillStyle = "#1a1a1a";
+      ctx.fillRect(x+3, y+3+bob, 10, 1);
+      // Anchor squiggle
+      ctx.fillStyle = "#3a78dc";
+      ctx.fillRect(x+7, y+1+bob, 2, 1);
+    } else if (kind === "trainer") {
+      // No hat — the bright shirt color is the giveaway, plus a small
+      // shoulder strap accent to look "kitted out for battle"
+      ctx.fillStyle = shade(palette.shirt, -0.3);
+      ctx.fillRect(x+4, y+8+bob, 1, 1);
+      ctx.fillRect(x+11, y+8+bob, 1, 1);
+    }
+    // "npc" kind = no hat, just hair
+
+    drawHumanFace(ctx, x, y, "down", f, bob, skin, "#1a1a1a");
+  }
+
+  // Maps NPC kind + per-NPC color into shirt/overalls/hair palette.
+  function npcPalette(kind, color) {
+    if (kind === "healer") return {
+      skin: "#ffd9a0", shirt: "#ffffff",
+      overalls: "#ff8aa8", overallsLight: "#ffaac0",
+      shoe: "#fff", hair: shade(color || "#ff8aa8", -0.5),
+    };
+    if (kind === "shop") return {
+      skin: "#ffd9a0", shirt: "#ffe070",
+      overalls: "#5a3a1a", overallsLight: "#7a5a3a",
+      shoe: "#3a2218", hair: "#3a2218",
+    };
+    if (kind === "ferry") return {
+      skin: "#ffd9a0", shirt: "#ffffff",
+      overalls: "#1a3a78", overallsLight: "#3a78dc",
+      shoe: "#1a1a1a", hair: "#1a1a1a",
+    };
+    if (kind === "trainer") return {
+      skin: "#ffd9a0", shirt: color,
+      overalls: shade(color, -0.45), overallsLight: shade(color, -0.2),
+      shoe: "#1a1a1a", hair: shade(color || "#5a3a1a", -0.55),
+    };
+    // Generic civilian NPC
+    return {
+      skin: "#ffd9a0", shirt: color,
+      overalls: shade(color || "#aaa", -0.3),
+      overallsLight: shade(color || "#aaa", 0),
+      shoe: "#1a1a1a", hair: shade(color || "#5a3a1a", -0.5),
+    };
+  }
+
+  // Shared face renderer (eyes + mouth) for all humans.
+  function drawHumanFace(ctx, x, y, dir, f, bob, skin, eyeColor) {
+    const blink = (f === 2);
+    ctx.fillStyle = eyeColor;
+    if (dir === "down") {
+      if (blink) {
+        ctx.fillRect(x+5, y+6+bob, 1, 1);
+        ctx.fillRect(x+10, y+6+bob, 1, 1);
+      } else {
+        ctx.fillRect(x+5, y+5+bob, 1, 2);
+        ctx.fillRect(x+10, y+5+bob, 1, 2);
+      }
+      // Subtle mouth
+      ctx.fillRect(x+7, y+7+bob, 2, 1);
+      // Cheek tint (warm)
+      ctx.fillStyle = "rgba(255,138,168,0.55)";
+      ctx.fillRect(x+5, y+7+bob, 1, 1);
+      ctx.fillRect(x+10, y+7+bob, 1, 1);
+    } else if (dir === "up") {
+      // Back of head — nothing
+    } else if (dir === "left") {
+      ctx.fillRect(x+4, y+5+bob, 1, blink ? 1 : 2);
+      ctx.fillRect(x+5, y+7+bob, 2, 1);
+    } else if (dir === "right") {
+      ctx.fillRect(x+11, y+5+bob, 1, blink ? 1 : 2);
+      ctx.fillRect(x+9, y+7+bob, 2, 1);
+    }
   }
 
   function shade(hex, amt) {
@@ -1045,7 +1265,13 @@ const SpriteRenderer = (() => {
 
   // ----- TILE RENDERER -----
   const TILE_SIZE = 16;
-  function drawTile(ctx, type, x, y, time) {
+  // x, y = SCREEN coords (where to paint). tx, ty = WORLD tile coords,
+  // used for deterministic per-tile details (window placement etc.) so
+  // those don't dance as the camera scrolls. tx/ty are optional so older
+  // call sites still work but won't have stable details.
+  function drawTile(ctx, type, x, y, time, tx, ty) {
+    if (tx === undefined) tx = x / 16;
+    if (ty === undefined) ty = y / 16;
     switch(type) {
       case 0: // grass
         ctx.fillStyle = "#5fb86a";
@@ -1123,8 +1349,11 @@ const SpriteRenderer = (() => {
         ctx.fillRect(x, y+11, TILE_SIZE, 1);
         ctx.fillStyle = "#a07040";
         ctx.fillRect(x, y, TILE_SIZE, 1);
-        // small windowy detail
-        if ((x/16 + y/16) % 3 === 0) {
+        // Window placement based on world tile (tx, ty) so a given wall
+        // tile always has — or always doesn't have — a window. Used to
+        // be screen-coord-based, which made windows flicker in/out as
+        // the camera scrolled.
+        if ((tx + ty) % 3 === 0) {
           ctx.fillStyle = "#5b9bdc";
           ctx.fillRect(x+5, y+6, 6, 4);
           ctx.fillStyle = "#a0c8ff";

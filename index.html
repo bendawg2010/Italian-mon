@@ -23,6 +23,23 @@
       <!-- Small persistent "DESKTOP" badge in the corner once running -->
       <div id="desktop-badge" class="hidden">DESKTOP EDITION</div>
 
+      <!-- Sharp DOM overlays for the in-game HUD. Live in front of the
+           canvas; updated each frame from game.js. Replaces the old
+           canvas-rendered ones which were blurry from CSS upscaling. -->
+      <div id="overlay-hud" class="hidden">
+        <span id="overlay-hud-badges">Bdg:0/5</span>
+        <span id="overlay-hud-money">$500</span>
+        <span id="overlay-hud-team">T:1/6</span>
+      </div>
+      <div id="overlay-map-name" class="hidden">Pallet Town</div>
+      <div id="overlay-hint" class="hidden">
+        <span id="overlay-hint-text">Z=Talk · X=Menu · Walk INTO tall grass to fight</span>
+      </div>
+      <div id="overlay-banner" class="hidden">
+        <span id="overlay-banner-text">Pallet Town</span>
+      </div>
+      <div id="overlay-save-toast" class="hidden">✓ SAVED</div>
+
       <!-- Save-protection warning. Shown only on hosted domains, only on first
            visit, dismissible. Reminds the player that clearing site data wipes
            the save permanently. -->

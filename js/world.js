@@ -740,7 +740,11 @@ const World = (() => {
       for (let x = startX; x < endX; x++) {
         const sx = x*TILE - cam.x;
         const sy = y*TILE - cam.y;
-        SpriteRenderer.drawTile(ctx, m.tiles[y][x], sx, sy, time);
+        // Pass the world tile coords (tx, ty) so deterministic detail
+        // (windows, flowers, etc.) stays anchored to the world. Older
+        // code computed details from screen coords, which made them
+        // visibly flicker in/out as the camera scrolled past buildings.
+        SpriteRenderer.drawTile(ctx, m.tiles[y][x], sx, sy, time, x, y);
       }
     }
     const npcs = NPCS_BY_MAP[currentMapId] || [];
@@ -751,7 +755,7 @@ const World = (() => {
       const sx = n.x*TILE - cam.x;
       const sy = n.y*TILE - cam.y;
       if (sx < -TILE || sx > ctx.canvas.width || sy < -TILE || sy > ctx.canvas.height) continue;
-      SpriteRenderer.drawNpc(ctx, sx, sy, n.color, frame);
+      SpriteRenderer.drawNpc(ctx, sx, sy, n.color, frame, n.type);
     }
   }
 

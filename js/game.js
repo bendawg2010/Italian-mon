@@ -215,7 +215,7 @@
   let nowTime = 0;
 
   window.addEventListener("keydown", (e) => {
-    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Enter","z","x","Z","X","Escape","f","F","h","H","r","R"].includes(e.key)) {
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Enter","z","x","Z","X","Escape","f","F","h","H","r","R","w","W","a","A","s","S","d","D","q","Q","e","E"].includes(e.key)) {
       e.preventDefault();
     }
     if (e.key === "f" || e.key === "F") { toggleFullscreen(); return; }
@@ -286,6 +286,10 @@
   }
 
   function onKeyDown(key) {
+    // Q acts as a Z alias (confirm/A) and E as an X alias (cancel/B/menu)
+    // for players who already have one hand on WASD.
+    if (key === "q" || key === "Q") key = "z";
+    else if (key === "e" || key === "E") key = "x";
     const k = key.length === 1 ? key.toLowerCase() : key;
     if (game.mode === "title") {
       if (key === "Enter" || k === "z" || key === " ") startGame();
@@ -601,13 +605,13 @@
   function showTutorial() {
     showDialog([
       "═══ HOW TO PLAY ═══",
-      "▶ ARROW KEYS — walk around\n▶ Z — talk / confirm / fight\n▶ X — open menu / cancel",
+      "▶ ARROWS or WASD — walk around\n▶ Z or Q — talk / confirm / fight\n▶ X or E — open menu / cancel",
       "▶ WALK INTO tall dark-green grass to find wild memes!",
       "▶ Walk up to the Cappuccino Bar (red cross) to FULLY HEAL.",
       "▶ Beat 5 GYM LEADERS for badges, then face the Champion!",
       "▶ In battle: H = quick-heal with strongest item.",
       "▶ Catch wild memes — if your team is full (6), they go to your BOX.",
-      "▶ Open the BOX from this menu to swap mons in/out.",
+      "▶ Open the BOX or LORE from this menu anytime.",
     ], () => {});
   }
 
@@ -1365,10 +1369,11 @@
     const p = game.player;
     if (p.moving) return;
     let dx = 0, dy = 0, facing = p.facing;
-    if (keys["ArrowUp"]) { dy = -1; facing = "up"; }
-    else if (keys["ArrowDown"]) { dy = 1; facing = "down"; }
-    else if (keys["ArrowLeft"]) { dx = -1; facing = "left"; }
-    else if (keys["ArrowRight"]) { dx = 1; facing = "right"; }
+    // Accept WASD as well as the arrow keys for movement.
+    if (keys["ArrowUp"] || keys["w"]) { dy = -1; facing = "up"; }
+    else if (keys["ArrowDown"] || keys["s"]) { dy = 1; facing = "down"; }
+    else if (keys["ArrowLeft"] || keys["a"]) { dx = -1; facing = "left"; }
+    else if (keys["ArrowRight"] || keys["d"]) { dx = 1; facing = "right"; }
     else return;
     p.facing = facing;
     const nx = p.tileX + dx, ny = p.tileY + dy;
@@ -1654,6 +1659,7 @@
     if (game.flashTime > 0) game.flashTime--;
     if (game.healFx > 0) game.healFx--;
     if (game.saveToast > 0) game.saveToast--;
+    updateHudOverlays();
     // try to keep overworld music alive
     if ((game.mode === "overworld" || game.mode === "menu" || game.mode === "team" ||
          game.mode === "bag" || game.mode === "dex" || game.mode === "shop") &&
@@ -1720,58 +1726,90 @@
     // floating Z prompt above NPC the player faces
     drawInteractionPrompt(time);
 
-    // save toast (small, top-right under map name)
-    if (game.saveToast > 0) {
-      const a = game.saveToast < 15 ? game.saveToast / 15 : 1;
-      ctx.fillStyle = `rgba(0,0,0,${0.7 * a})`;
-      ctx.fillRect(canvas.width - 50, 14, 48, 9);
-      ctx.fillStyle = `rgba(120,255,180,${a})`;
-      ctx.font = "bold 5px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText("✓ SAVED", canvas.width - 26, 21);
+    // All HUD text is now rendered as DOM overlays for sharp text;
+    // see updateHudOverlays() called from update().
+    if (game.mapBanner.t > 0) game.mapBanner.t--;
+  }
+
+  // ----- Sharp DOM HUD overlays -----
+  // These mirror the game state into DOM elements that sit over the
+  // canvas. Updated once per frame from update(). The previous canvas-
+  // rendered text was readable but blurry due to CSS upscaling.
+  // Lazy because update() (which calls into here) is hoisted as a
+  // function declaration but runs before module-level `const` lines
+  // would otherwise initialize. Querying on first call also tolerates
+  // older index.html files that don't have these overlay elements yet.
+  let HUD_EL = null;
+  function getHudEl() {
+    if (HUD_EL) return HUD_EL;
+    const hud = document.getElementById("overlay-hud");
+    if (!hud) return null;
+    HUD_EL = {
+      hud,
+      badges: document.getElementById("overlay-hud-badges"),
+      money: document.getElementById("overlay-hud-money"),
+      team: document.getElementById("overlay-hud-team"),
+      mapName: document.getElementById("overlay-map-name"),
+      hint: document.getElementById("overlay-hint"),
+      hintText: document.getElementById("overlay-hint-text"),
+      banner: document.getElementById("overlay-banner"),
+      bannerText: document.getElementById("overlay-banner-text"),
+      saveToast: document.getElementById("overlay-save-toast"),
+    };
+    return HUD_EL;
+  }
+
+  function updateHudOverlays() {
+    const E = getHudEl();
+    if (!E) return;
+    const showOverworld =
+      game.mode === "overworld" ||
+      game.mode === "menu" ||
+      game.mode === "team" ||
+      game.mode === "bag" ||
+      game.mode === "dex" ||
+      game.mode === "shop" ||
+      game.mode === "box" ||
+      game.mode === "moveLearn";
+    const visible = showOverworld;
+
+    E.hud.classList.toggle("hidden", !visible);
+    E.mapName.classList.toggle("hidden", !visible);
+    E.hint.classList.toggle("hidden", !visible);
+
+    if (visible) {
+      E.badges.textContent = `Bdg:${game.badges}/5`;
+      E.money.textContent = `$${game.money}`;
+      E.team.textContent = `T:${game.team.length}/6`;
+      E.mapName.textContent = World.getMapName();
+      const grassHere = World.isEncounterTile(game.player.tileX, game.player.tileY);
+      if (grassHere) {
+        E.hint.classList.add("grass");
+        E.hintText.textContent = "! TALL GRASS — WILD MEMES MAY APPEAR !";
+      } else {
+        E.hint.classList.remove("grass");
+        E.hintText.textContent = "Z = Talk · X = Menu · Walk INTO tall grass to fight";
+      }
     }
 
-    // map banner (shows when entering new map)
-    if (game.mapBanner.t > 0) {
-      const a = game.mapBanner.t < 30 ? game.mapBanner.t / 30 : (game.mapBanner.t > 60 ? (90 - game.mapBanner.t) / 30 : 1);
-      ctx.fillStyle = `rgba(0,0,0,${0.75 * a})`;
-      ctx.fillRect(0, canvas.height/2 - 14, canvas.width, 22);
-      ctx.fillStyle = `rgba(255,203,5,${a})`;
-      ctx.font = "bold 9px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText(game.mapBanner.text, canvas.width/2, canvas.height/2 + 1);
-      game.mapBanner.t--;
-    }
-
-    // top hud
-    ctx.fillStyle = "rgba(0,0,0,0.7)";
-    ctx.fillRect(2, 2, 110, 12);
-    ctx.fillStyle = "#ffcb05";
-    ctx.font = "bold 5px monospace";
-    ctx.textAlign = "left";
-    ctx.fillText(`Bdg:${game.badges}/5  $${game.money}  T:${game.team.length}/6`, 4, 10);
-    // current map (small)
-    ctx.fillStyle = "rgba(0,0,0,0.7)";
-    const mapName = World.getMapName();
-    const mw = mapName.length * 4 + 8;
-    ctx.fillRect(canvas.width - mw - 2, 2, mw, 10);
-    ctx.fillStyle = "#cfe9ff";
-    ctx.textAlign = "center";
-    ctx.fillText(mapName, canvas.width - mw/2 - 2, 9);
-    ctx.textAlign = "left";
-
-    // bottom controls hint (always visible, prominent)
-    ctx.fillStyle = "rgba(0,0,0,0.7)";
-    ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
-    ctx.fillStyle = "#ffd";
-    ctx.font = "5px monospace";
-    ctx.textAlign = "center";
-    const grassHere = World.isEncounterTile(game.player.tileX, game.player.tileY);
-    if (grassHere) {
-      ctx.fillStyle = "#ff8a8a";
-      ctx.fillText("! TALL GRASS - WILD MEMES MAY APPEAR !", canvas.width/2, canvas.height - 3);
+    // Map banner: fade in/out using game.mapBanner.t (0..90 lifecycle)
+    const bt = game.mapBanner.t || 0;
+    if (bt > 0 && visible) {
+      const a = bt < 30 ? bt / 30 : (bt > 60 ? (90 - bt) / 30 : 1);
+      E.banner.classList.remove("hidden");
+      E.banner.style.opacity = String(Math.max(0, Math.min(1, a)));
+      E.bannerText.textContent = game.mapBanner.text || "";
     } else {
-      ctx.fillText("Z=Talk  X=Menu  Walk INTO tall grass to fight", canvas.width/2, canvas.height - 3);
+      E.banner.classList.add("hidden");
+    }
+
+    // Save toast: lifecycle 0..60
+    if (game.saveToast > 0 && visible) {
+      const a = game.saveToast < 15 ? game.saveToast / 15 : 1;
+      E.saveToast.classList.remove("hidden");
+      E.saveToast.style.opacity = String(Math.max(0, Math.min(1, a)));
+    } else {
+      E.saveToast.classList.add("hidden");
     }
   }
 

@@ -54,15 +54,15 @@ python3 -m http.server 8765
 
 ## Controls
 
-| Action          | Keyboard                | Touch       |
-| --------------- | ----------------------- | ----------- |
-| Move            | Arrow keys              | D-pad       |
-| Confirm / A     | `Z` or `Enter`          | A button    |
-| Cancel / B      | `X` or `Esc`            | B button    |
-| Open menu       | `X` (in overworld)      | B button    |
-| Quick-heal      | `H` (in battle)         | —           |
-| Toggle fullscr. | `F`                     | —           |
-| Start game      | `Enter` on title screen | Tap title   |
+| Action          | Keyboard                          | Touch       |
+| --------------- | --------------------------------- | ----------- |
+| Move            | Arrow keys **or WASD**            | D-pad       |
+| Confirm / A     | `Z` **or `Q`** or `Enter`         | A button    |
+| Cancel / B      | `X` **or `E`** or `Esc`           | B button    |
+| Open menu       | `X` (in overworld)                | B button    |
+| Quick-heal      | `H` (in battle)                   | —           |
+| Toggle fullscr. | `F`                               | —           |
+| Start game      | `Enter` on title screen           | Tap title   |
 
 In battle, click the `FIGHT` / `BAG` / `TEAM` / `RUN` buttons or press
 `Z` to open Fight, then click a move. `H` instantly uses your strongest
