@@ -419,6 +419,17 @@ const Battle = (() => {
     mon.maxHp = maxHp(sp, mon.level);
     mon.hp += (mon.maxHp - oldMax);
     Audio.play("levelUp");
+    // Trigger the visual flourish on the player mon (the only one who
+    // can level up). draw() reads state.levelUpFx and renders halo +
+    // sparkles + "LEVEL UP!" text floating up. Lifecycle = 1.4s.
+    state.levelUpFx = {
+      who: "player",
+      startTime: performance.now(),
+      duration: 1400,
+      // Snapshot the new level so the floating text reads "Lv 12"
+      // even if the same mon levels twice in one battle (rare).
+      newLevel: mon.level,
+    };
     enqueue(`${SPECIES[mon.species].name} grew to Lv. ${mon.level}!`);
     for (const moveId of movesLearnedAt(sp, mon.level)) {
       if (mon.moves.find(m => m.id === moveId)) continue;
@@ -530,8 +541,9 @@ const Battle = (() => {
     });
   }
 
-  // Drive the throw → shake → result animation by stepping `state.catchAnim`
-  // through phases on a wall-clock timer. Calls onDone when finished.
+  // Drive the throw → shake → result → (success: celebrate) animation
+  // by stepping `state.catchAnim` through phases on a wall-clock timer.
+  // Calls onDone when finished.
   function runCatchAnim(onDone) {
     const a = state.catchAnim;
     if (!a) { onDone(); return; }
@@ -539,6 +551,10 @@ const Battle = (() => {
     const THROW_MS = 360;
     const PER_SHAKE_MS = 380;
     const RESULT_MS = 360;
+    // After the sparkle burst on a successful catch, the ball stays
+    // visible on the ground for 1.5s — gentle bob, soft glow, "CAUGHT!"
+    // badge — so the moment lands instead of cutting straight to text.
+    const CELEBRATE_MS = 1500;
 
     const start = performance.now();
     function tick(now) {
@@ -552,8 +568,24 @@ const Battle = (() => {
         a.shakeIdx = Math.min(a.shakes, Math.floor(sinceShake / PER_SHAKE_MS));
         a.t = (sinceShake % PER_SHAKE_MS) / PER_SHAKE_MS;
         if (sinceShake >= a.shakes * PER_SHAKE_MS) { a.phase = "result"; a.resultStart = now; }
-      } else {
+      } else if (a.phase === "result") {
         a.t = Math.min(1, (now - a.resultStart) / RESULT_MS);
+        if (a.t >= 1) {
+          // Failure: ball pops open and we're done.
+          // Success: linger so the player can FEEL the catch.
+          if (a.success) {
+            a.phase = "celebrate";
+            a.celebrateStart = now;
+            a.t = 0;
+          } else {
+            state.catchAnim = null;
+            state.uiBlocked = false;
+            onDone();
+            return;
+          }
+        }
+      } else if (a.phase === "celebrate") {
+        a.t = Math.min(1, (now - a.celebrateStart) / CELEBRATE_MS);
         if (a.t >= 1) {
           state.catchAnim = null;
           state.uiBlocked = false;
@@ -826,6 +858,10 @@ const Battle = (() => {
     const py = H*0.50 + state.playerOffsetY;
     if (!state.playerFainted || state.playerOffsetY < 70) {
       drawMonWithFlash(ctx, playerMon().species, px, py, pSize, time, state.playerFlash);
+      // Level-up flourish on the player mon
+      if (state.levelUpFx && state.levelUpFx.who === "player") {
+        drawLevelUpFx(ctx, px + pSize/2, py + pSize/2, pSize, W, H);
+      }
     }
 
     // typing arrow indicator
@@ -852,26 +888,36 @@ const Battle = (() => {
     if (!a) return;
     const r = Math.max(6, W * 0.018);
     let x = ex, y = ey;
+
     if (a.phase === "throwing") {
       // arc from lower-left toward enemy
       const startX = -r * 2, startY = H * 0.55;
       x = startX + (ex - startX) * a.t;
       y = startY + (ey - startY) * a.t - Math.sin(a.t * Math.PI) * H * 0.25;
-    } else if (a.phase === "shaking") {
+      drawBall(ctx, x, y, r);
+      return;
+    }
+
+    if (a.phase === "shaking") {
       const sw = Math.sin(a.t * Math.PI * 4) * r * 0.5 * (1 - a.t);
       x = ex + sw;
       y = ey + r * 1.2;
-    } else {
-      // result phase
+      drawBall(ctx, x, y, r);
+      return;
+    }
+
+    if (a.phase === "result") {
       y = ey + r * 1.2;
       if (a.success) {
-        // captured: small sparkle burst around the ball
+        // captured: small sparkle burst around the ball + halo grow
         for (let i = 0; i < 8; i++) {
           const ang = (i / 8) * Math.PI * 2;
           const dist = a.t * r * 4;
           ctx.fillStyle = `rgba(255,215,0,${1 - a.t})`;
           ctx.fillRect(x + Math.cos(ang) * dist - 1, y + Math.sin(ang) * dist - 1, 2, 2);
         }
+        drawBall(ctx, x, y, r);
+        return;
       } else {
         // failed: ball "opens" — grow slightly then fade
         const grow = 1 + a.t * 0.6;
@@ -881,7 +927,73 @@ const Battle = (() => {
         return;
       }
     }
-    drawBall(ctx, x, y, r);
+
+    if (a.phase === "celebrate") {
+      // The CAPTURE-MOMENT: ball sits proudly on the ground with a
+      // gentle bob, soft gold halo pulse, slow rotating sparkles, and
+      // a "✓ CAUGHT!" badge floating up. Lasts ~1.5s so the player
+      // actually feels the win.
+      const t = a.t;
+      const bobOffset = Math.sin(performance.now() * 0.006) * (r * 0.18);
+      y = ey + r * 1.2 + bobOffset;
+
+      // Soft gold halo around the ball, expanding as the celebrate
+      // settles in
+      const haloR = r * (2.0 + t * 1.5);
+      const haloA = 0.45 * (1 - t * 0.5);
+      const grad = ctx.createRadialGradient(x, y, r * 0.4, x, y, haloR);
+      grad.addColorStop(0, `rgba(255,215,0,${haloA})`);
+      grad.addColorStop(0.6, `rgba(255,138,0,${haloA * 0.5})`);
+      grad.addColorStop(1, "rgba(255,138,0,0)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(x, y, haloR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Slow orbiting sparkles
+      const orbitT = performance.now() * 0.001;
+      for (let i = 0; i < 6; i++) {
+        const ang = orbitT + i * (Math.PI / 3);
+        const orbitR = r * 1.8;
+        const sx = x + Math.cos(ang) * orbitR;
+        const sy = y + Math.sin(ang) * orbitR * 0.6;
+        ctx.fillStyle = `rgba(255,255,210,${0.85 - t * 0.5})`;
+        ctx.fillRect(sx - 1, sy - 1, 2, 2);
+        ctx.fillStyle = `rgba(255,215,0,${0.6 - t * 0.4})`;
+        ctx.fillRect(sx - 2, sy, 4, 1);
+        ctx.fillRect(sx, sy - 2, 1, 4);
+      }
+
+      // Small periodic upward burst sparkles (every ~280ms)
+      const burstPhase = (performance.now() % 280) / 280;
+      if (burstPhase < 0.4) {
+        const burstY = y - burstPhase * r * 4;
+        for (let i = 0; i < 3; i++) {
+          const sx = x + (i - 1) * r * 0.6;
+          ctx.fillStyle = `rgba(255,255,255,${1 - burstPhase * 2})`;
+          ctx.fillRect(sx - 0.5, burstY, 1, 1);
+        }
+      }
+
+      // The ball itself, with a slight scale-up to read as a "trophy"
+      const ballScale = 1 + Math.sin(t * Math.PI) * 0.08;
+      drawBall(ctx, x, y, r * ballScale);
+
+      // "CAUGHT!" badge floating up above the ball
+      const badgeY = y - r * 3 - t * r * 1.2;
+      const badgeOpacity = t < 0.85 ? 1 : Math.max(0, (1 - t) / 0.15);
+      const badgeText = "✓ CAUGHT!";
+      ctx.font = `bold ${Math.floor(r * 1.4)}px monospace`;
+      ctx.textAlign = "center";
+      // Drop shadow
+      ctx.fillStyle = `rgba(0,0,0,${badgeOpacity * 0.7})`;
+      ctx.fillText(badgeText, x + 1, badgeY + 1);
+      // Gold gradient text
+      ctx.fillStyle = `rgba(255,215,0,${badgeOpacity})`;
+      ctx.fillText(badgeText, x, badgeY);
+      ctx.textAlign = "start";
+      return;
+    }
   }
 
   // Two-tone catch ball (red top, white bottom, black band, button).
@@ -924,6 +1036,63 @@ const Battle = (() => {
       ctx.fillRect(x, y, size, size);
       ctx.globalCompositeOperation = "source-over";
     }
+  }
+
+  // Level-up flourish: gold halo pulsing out, ring of rising sparkles,
+  // and a "LEVEL UP!" badge floating up. Cleaned up automatically once
+  // state.levelUpFx.duration elapses.
+  function drawLevelUpFx(ctx, cx, cy, size, W, H) {
+    const fx = state.levelUpFx;
+    if (!fx) return;
+    const t = (performance.now() - fx.startTime) / fx.duration;
+    if (t >= 1) {
+      state.levelUpFx = null;
+      return;
+    }
+    // Halo expands and fades out
+    const haloR = size * (0.55 + t * 0.5);
+    const haloA = (1 - t) * 0.55;
+    const grad = ctx.createRadialGradient(cx, cy, size * 0.2, cx, cy, haloR);
+    grad.addColorStop(0, `rgba(255,255,170,${haloA})`);
+    grad.addColorStop(0.5, `rgba(255,215,0,${haloA * 0.7})`);
+    grad.addColorStop(1, "rgba(255,138,0,0)");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, haloR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 12 rising sparkles staggered by index
+    for (let i = 0; i < 12; i++) {
+      const seed = i / 12;
+      const localT = (t * 1.4 - seed) % 1;
+      if (localT < 0 || localT > 1) continue;
+      const ang = seed * Math.PI * 2;
+      const rNow = size * 0.30 + localT * size * 0.45;
+      const sx = cx + Math.cos(ang) * rNow;
+      const sy = cy + Math.sin(ang) * rNow * 0.7 - localT * size * 0.4;
+      const sa = (1 - localT) * 0.95;
+      // 4-pixel cross sparkle
+      ctx.fillStyle = `rgba(255,255,210,${sa})`;
+      ctx.fillRect(sx - 0.5, sy - 0.5, 1, 1);
+      ctx.fillStyle = `rgba(255,215,0,${sa * 0.8})`;
+      ctx.fillRect(sx - 2, sy, 4, 1);
+      ctx.fillRect(sx, sy - 2, 1, 4);
+    }
+
+    // Floating "LEVEL UP! Lv N" badge above the mon
+    const badgeY = cy - size * 0.45 - t * size * 0.35;
+    const badgeOpacity = t < 0.85 ? 1 : Math.max(0, (1 - t) / 0.15);
+    const fontSize = Math.max(10, Math.floor(size * 0.13));
+    const text = `LEVEL UP! · Lv ${fx.newLevel}`;
+    ctx.font = `bold ${fontSize}px monospace`;
+    ctx.textAlign = "center";
+    // Drop shadow
+    ctx.fillStyle = `rgba(0,0,0,${badgeOpacity * 0.7})`;
+    ctx.fillText(text, cx + 1, badgeY + 1);
+    // Gold text
+    ctx.fillStyle = `rgba(255,215,0,${badgeOpacity})`;
+    ctx.fillText(text, cx, badgeY);
+    ctx.textAlign = "start";
   }
 
   function handleKey(key) {
