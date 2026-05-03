@@ -68,7 +68,9 @@ export const Ad2: React.FC = () => {
       <Audio
         src={staticFile("music.wav")}
         loop
-        volume={fadeOut}
+        // Cap at 0.55 baseline (already low in the WAV itself) and
+        // fade out the last 0.7s so it doesn't cut hard.
+        volume={(f) => fadeOut(f) * 0.55}
       />
       <TransitionSeries>
         <TransitionSeries.Sequence durationInFrames={2 * fps}>
@@ -117,6 +119,68 @@ export const Ad2: React.FC = () => {
           <EndCard2 />
         </TransitionSeries.Sequence>
       </TransitionSeries>
+
+      {/* Persistent URL watermark — sits over every scene so the
+          viewer always knows where to play. Fades out before the
+          end card so it doesn't fight the big URL pill there. */}
+      <UrlWatermark />
     </AbsoluteFill>
+  );
+};
+
+const UrlWatermark: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps, durationInFrames } = useVideoConfig();
+  const endCardFrame = durationInFrames - 3 * fps;
+
+  const opacity = interpolate(
+    frame,
+    [
+      fps * 0.6,
+      fps * 1.4,
+      endCardFrame - fps * 0.3,
+      endCardFrame,
+    ],
+    [0, 0.92, 0.92, 0],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  );
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        bottom: 28,
+        right: 28,
+        opacity,
+        pointerEvents: "none",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        background: "rgba(0,0,0,0.62)",
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
+        padding: "10px 18px",
+        borderRadius: 100,
+        border: "1px solid rgba(255,203,5,0.6)",
+        boxShadow: "0 6px 20px rgba(0,0,0,0.5)",
+        fontFamily: "monospace",
+        color: "#ffffff",
+        fontSize: 22,
+        fontWeight: 700,
+        letterSpacing: 0.4,
+      }}
+    >
+      <div
+        style={{
+          width: 14,
+          height: 14,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle at 35% 35%, #fff5b3 0%, #ffcb05 45%, #ff8a00 100%)",
+          boxShadow: "0 0 8px rgba(255,203,5,0.8)",
+        }}
+      />
+      brainrot-monsters.pages.dev
+    </div>
   );
 };

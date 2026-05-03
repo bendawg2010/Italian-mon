@@ -56,51 +56,77 @@ function buildStream(pattern) {
 const leadStream = buildStream(LEAD);
 const bassStream = buildStream(BASS);
 
-// Render one wave into a Float32 buffer
-function square(phase) { return phase % 1 < 0.5 ? 1 : -1; }
+// Waveforms
+function sine(phase) { return Math.sin(phase * Math.PI * 2); }
 function triangle(phase) {
   const p = phase % 1;
   return p < 0.5 ? 4*p - 1 : 3 - 4*p;
 }
 
+// Soft pad envelope: slow attack + long release so the melody breathes
+// instead of clicking. The lead is meant to sit under the video, not
+// punch through it.
 function envelope(tInNote, dur) {
-  // Quick attack, slow decay, soft release
-  const attack = 0.01;
-  const release = 0.06;
-  if (tInNote < attack) return tInNote / attack;
+  const attack = 0.06;
+  const release = Math.min(0.18, dur * 0.4);
+  if (tInNote < attack) return (tInNote / attack);
   if (tInNote > dur - release) return Math.max(0, (dur - tInNote) / release);
-  // Mild decay during sustain so notes don't sound static
-  const sustainStart = attack;
-  const sustainEnd = dur - release;
-  const sustainProg = (tInNote - sustainStart) / Math.max(0.001, sustainEnd - sustainStart);
-  return 1.0 - sustainProg * 0.3;
+  return 1.0;
 }
 
 const buf = new Float32Array(TOTAL_SAMPLES);
 
-function renderStream(stream, waveFn, gain) {
+function renderStream(stream, waveFn, gain, harmonic2 = 0) {
   for (const { freq, t, dur } of stream) {
     if (freq <= 0) continue;
     const start = Math.floor(t * SAMPLE_RATE);
-    const end = Math.min(TOTAL_SAMPLES, Math.floor((t + dur) * SAMPLE_RATE));
+    // Let notes ring out past their nominal duration for legato feel
+    const tail = 0.25;
+    const end = Math.min(TOTAL_SAMPLES, Math.floor((t + dur + tail) * SAMPLE_RATE));
     let phase = 0;
+    let phase2 = 0;
     const phaseStep = freq / SAMPLE_RATE;
+    const phaseStep2 = (freq * 2) / SAMPLE_RATE;
     for (let i = start; i < end; i++) {
       const tInNote = (i - start) / SAMPLE_RATE;
-      const env = envelope(tInNote, dur);
-      buf[i] += waveFn(phase) * env * gain;
+      // Extend envelope into the tail with a smooth decay
+      let env;
+      if (tInNote <= dur) {
+        env = envelope(tInNote, dur);
+      } else {
+        const tailProg = (tInNote - dur) / tail;
+        env = Math.max(0, 1 - tailProg) * 0.4;  // fade tail to silence
+      }
+      const sample = waveFn(phase) + (harmonic2 ? waveFn(phase2) * harmonic2 : 0);
+      buf[i] += sample * env * gain;
       phase += phaseStep;
+      phase2 += phaseStep2;
     }
   }
 }
 
-renderStream(leadStream, square, 0.18);
-renderStream(bassStream, triangle, 0.22);
+// Lead = soft sine (much gentler than square), barely-there harmonic
+renderStream(leadStream, sine, 0.07, 0.04);
+// Bass = warm triangle, slightly louder than lead so it grounds the mix
+renderStream(bassStream, triangle, 0.10);
 
-// Soft clip + final mix gain
+// One-pole low-pass: kills high-frequency harshness, makes it sound
+// like a music-from-the-next-room vibe instead of an arcade cabinet.
+const cutoff = 2400; // Hz
+const rc = 1.0 / (2 * Math.PI * cutoff);
+const dt = 1.0 / SAMPLE_RATE;
+const alpha = dt / (rc + dt);
+let prev = 0;
+for (let i = 0; i < buf.length; i++) {
+  prev = prev + alpha * (buf[i] - prev);
+  buf[i] = prev;
+}
+
+// Gentle soft clip + master gain — leaves headroom so the chiptune
+// sits BEHIND the (eventual) voiceover / SFX rather than competing.
 let peak = 0;
 for (let i = 0; i < buf.length; i++) {
-  buf[i] = Math.tanh(buf[i] * 1.2) * 0.85;
+  buf[i] = Math.tanh(buf[i] * 1.0) * 0.55;
   if (Math.abs(buf[i]) > peak) peak = Math.abs(buf[i]);
 }
 
