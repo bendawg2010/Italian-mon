@@ -753,6 +753,8 @@ html, body {
 const Audio = (() => {
   let ctx = null;
   let masterGain = null;
+  // Default master volume (also our "unmuted" target).
+  const MASTER_VOL = 0.18;
   // Restore previous mute preference on page load so the player doesn't
   // have to mute every single visit.
   let muted = false;
@@ -764,9 +766,21 @@ const Audio = (() => {
     try {
       ctx = new (window.AudioContext || window.webkitAudioContext)();
       masterGain = ctx.createGain();
-      masterGain.gain.value = 0.18;
+      // Honor the saved mute state immediately so we don't briefly play
+      // sound on a muted reload.
+      masterGain.gain.value = muted ? 0 : MASTER_VOL;
       masterGain.connect(ctx.destination);
     } catch(e) { ctx = null; }
+  }
+
+  // Hard-silence the entire audio graph by ramping master gain to 0.
+  // Sample-accurate, takes effect on the next audio render quantum,
+  // and silences notes that were scheduled minutes into the future.
+  function applyMute() {
+    if (!ctx || !masterGain) return;
+    const t = ctx.currentTime;
+    masterGain.gain.cancelScheduledValues(t);
+    masterGain.gain.setValueAtTime(muted ? 0 : MASTER_VOL, t);
   }
 
   function unlock() {
@@ -842,8 +856,17 @@ const Audio = (() => {
     setMuted: (m) => {
       muted = m;
       try { localStorage.setItem("brainrot_muted", m ? "1" : "0"); } catch (e) {}
-      if (m) Music.stop();
-      else if (Music._wasPlaying) Music.start();
+      // Single source of truth: master gain. 0 = inaudible (everything,
+      // SFX + music + scheduled-ahead notes), default = audible.
+      applyMute();
+      if (m) {
+        Music.stop();
+      } else {
+        // Game's update loop calls Music.start() on the next frame
+        // anyway (idempotent), so we don't need to re-trigger here.
+        // We just need to make sure the next start() actually works.
+        Music._wasPlaying = false;
+      }
     },
     isMuted: () => muted,
     _ctx: () => ctx,
@@ -884,10 +907,13 @@ const Music = (() => {
 
   function start() {
     if (_wasPlaying) return;
-    if (Audio._isMuted && Audio._isMuted()) { _wasPlaying = true; return; }
+    // Don't set _wasPlaying when bailing — that flag means "scheduler
+    // is actively running." Setting it on a bail caused the unmute
+    // path to no-op forever after.
+    if (Audio._isMuted && Audio._isMuted()) return;
     const ctx = Audio._ctx && Audio._ctx();
-    if (!ctx) { _wasPlaying = true; return; }
-    if (!Audio._isUnlocked || !Audio._isUnlocked()) { _wasPlaying = true; return; }
+    if (!ctx) return;
+    if (!Audio._isUnlocked || !Audio._isUnlocked()) return;
     _wasPlaying = true;
     const bpm = 144;
     const beat = 60 / bpm;
